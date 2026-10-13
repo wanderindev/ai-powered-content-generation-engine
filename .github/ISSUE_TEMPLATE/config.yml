@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Agent-friendly criteria
+    url: https://github.com/wanderindev/panama-in-context/blob/main/docs/pilot/agent-friendly-criteria.md
+    about: Read this before filing an Agent task or applying the agent-friendly label.
+  - name: Phase 1 README
+    url: https://github.com/wanderindev/panama-in-context/blob/main/docs/pilot/phase-1-readme.md
+    about: How labels, templates, and the agent-friendly axis fit together.

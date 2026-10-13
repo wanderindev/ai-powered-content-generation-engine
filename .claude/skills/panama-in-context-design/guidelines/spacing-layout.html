@@ -1,0 +1,39 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Layout rhythm" subtitle="max-w-7xl column · px-6/lg:px-8 gutters · py-24/32 sections" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); color: var(--text-heading); }
+  .wrap { padding: 20px 24px; }
+  .frame { position: relative; border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); height: 104px; display: flex; }
+  .gutter { width: 28px; background: repeating-linear-gradient(45deg, var(--brand-50), var(--brand-50) 5px, var(--surface) 5px, var(--surface) 10px); }
+  .content { flex: 1; padding: 14px; }
+  .content .bar { height: 10px; border-radius: 3px; background: var(--gray-200); margin-bottom: 8px; }
+  .content .bar.s { width: 40%; background: var(--brand-200); }
+  .content .bar.m { width: 70%; }
+  .lbl { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); background: var(--surface); padding: 0 6px; }
+  .legend { margin-top: 12px; display: flex; gap: 22px; font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="frame">
+      <span class="lbl">--container-max · 80rem</span>
+      <div class="gutter"></div>
+      <div class="content">
+        <div class="bar s"></div>
+        <div class="bar m"></div>
+        <div class="bar" style="width:90%"></div>
+      </div>
+      <div class="gutter"></div>
+    </div>
+    <div class="legend">
+      <span>gutter px-6 → lg:px-8</span>
+      <span>section py-24 → sm:py-32</span>
+      <span>prose max-w-2xl</span>
+    </div>
+  </div>
+</body>
+</html>

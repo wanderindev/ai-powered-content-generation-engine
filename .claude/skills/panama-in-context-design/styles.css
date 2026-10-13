@@ -1,0 +1,10 @@
+/* ============================================================
+   Panama In Context — Design System
+   Global entry point. Consumers link THIS file only.
+   Imports-only: every token & font-face is reached from here.
+   ============================================================ */
+
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/effects.css";

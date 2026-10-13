@@ -1,0 +1,78 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/format-python.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/quality-gate.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(docker build:*)",
+      "Bash(docker build *)",
+      "Edit(CLAUDE.md)",
+      "Edit(.claude/**)"
+    ],
+    "ask": [
+      "Bash(docker push registry.digitalocean.com*)",
+      "Bash(docker push *registry.digitalocean*)"
+    ],
+    "deny": [
+      "Bash(*ondigitalocean.com*)",
+      "Bash(*:25060*)",
+      "Bash(*AVNS_*)",
+      "Bash(gh pr merge*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(git push * main*)",
+      "Bash(git push * master*)",
+      "Bash(git push origin main*)",
+      "Bash(git push origin master*)",
+      "Bash(git reset --hard origin/*)",
+      "Bash(git reset --hard HEAD~*)",
+      "Bash(git filter-branch*)",
+      "Bash(git rebase -i*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(git clean -fd*)",
+      "Bash(git clean -fx*)",
+      "Bash(alembic upgrade*)",
+      "Bash(alembic downgrade*)",
+      "Bash(alembic stamp*)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.prod*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.local)",
+      "Edit(**/.env.prod*)",
+      "Edit(**/secrets/**)",
+      "Edit(**/credentials*)",
+      "Write(.env)",
+      "Write(.env.local)",
+      "Write(.env.prod*)",
+      "Write(**/.env)",
+      "Write(**/.env.local)",
+      "Write(**/.env.prod*)",
+      "Write(**/secrets/**)",
+      "Write(**/credentials*)"
+    ]
+  }
+}

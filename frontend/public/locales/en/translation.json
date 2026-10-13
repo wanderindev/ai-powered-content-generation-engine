@@ -1,0 +1,1302 @@
+{
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "message": "We hit an unexpected error. Please try reloading the page.",
+    "reload": "Reload page",
+    "home": "Back to home"
+  },
+  "home": {
+    "hero": {
+      "title": "Panama In Context",
+      "subtitle": "Where every site tells a story. Expert-guided experiences that transform visits into meaningful journeys through Panama's rich history and vibrant culture.",
+      "cta_schools": "For Schools",
+      "cta_tourists": "For Tourists"
+    },
+    "hero_promo": {
+      "badge": "Holy Week 2026 — April 2 to 4",
+      "title": "The Route of the Seven Churches",
+      "subtitle": "This Holy Week, walk through the architecture, art, and history of Casco Antiguo's seven most significant churches. An expert-guided experience you won't forget.",
+      "cta_primary": "More Information",
+      "cta_secondary": "Reserve Now"
+    },
+    "schools": {
+      "eyebrow": "For Educators",
+      "title": "Transforming Field Trips Into Learning Experiences",
+      "subtitle": "Move beyond the standard field trip. Our expert-guided excursions bring Panama's history to life, creating memorable educational experiences that students will carry with them long after they return to the classroom.",
+      "features": {
+        "expert": {
+          "title": "Expert-Led Experiences",
+          "desc": "Professional guide, expert in Panamanian history, leads students through Panama's most significant sites with engaging, age-appropriate narratives."
+        },
+        "curriculum": {
+          "title": "Curriculum-Aligned Content",
+          "desc": "Each excursion includes educational materials that connect to your existing curriculum."
+        },
+        "adaptable": {
+          "title": "Adaptable for All Grades",
+          "desc": "Content is tailored to different grade levels, ensuring meaningful engagement for every student."
+        }
+      },
+      "cta_learn": "Learn More",
+      "cta_contact": "Contact Us"
+    },
+    "mailing_educators": {
+      "title": "Stay Connected with Panama's History",
+      "subtitle": "Register for free to access our educational materials, including historical infographics, classroom resources, and more.",
+      "success": "Thanks! Check your email to confirm your registration. Redirecting...",
+      "error": "Something went wrong. Please try again later.",
+      "placeholder": "Enter your email",
+      "button": "Register",
+      "submitting": "Registering...",
+      "email_label": "Email address"
+    },
+    "tourists": {
+      "eyebrow": "For Travelers",
+      "title": "Experience Panama Beyond the Surface",
+      "subtitle": "Discover the real Panama through the eyes of a local expert. Our private guided tours reveal the fascinating stories, hidden gems, and cultural richness that make this country truly unique.",
+      "features": {
+        "private": {
+          "title": "Private Guided Experiences",
+          "desc": "Enjoy personalized attention with private tours led by an expert guide who brings every destination to life."
+        },
+        "context": {
+          "title": "Deep Cultural Context",
+          "desc": "Go beyond surface-level tourism. Understand the stories, traditions, and significance behind what you see."
+        },
+        "personalized": {
+          "title": "Personalized Itineraries",
+          "desc": "Tours tailored to your interests, pace, and schedule. Whether you have a few hours or several days."
+        }
+      },
+      "cta_explore": "Explore Tours",
+      "cta_plan": "Plan Your Visit"
+    },
+    "guide": {
+      "eyebrow": "Your Guide",
+      "title": "Meet Diego Raúl Feliu",
+      "bio_1": "Diego Raúl Feliu holds a degree in Historical Tourism and has over a decade of experience bringing Panama's rich heritage to life. Born and raised in Panama City, he is a member of the Asociación Panameña de Antropología e Historia and has dedicated his career to making the nation's complex past accessible and engaging for visitors of all ages.",
+      "bio_2": "Whether leading school groups through the ruins of Panamá Viejo or guiding tourists through the colorful streets of Casco Antiguo, Diego combines deep knowledge with a natural gift for storytelling that transforms every tour into an unforgettable journey.",
+      "cta": "Get in Touch"
+    },
+    "blog": {
+      "eyebrow": "From the Blog",
+      "title": "Stories from Panama's Past",
+      "subtitle": "Deep dives into the events, people, and places that shaped Panama's rich history.",
+      "seriesHeader": "Read our latest article series covering:",
+      "cta": "View All Articles",
+      "posts": {
+        "post_1": {
+          "title": "The Three Panamas: Understanding the Country's Colonial History",
+          "desc": "From Panamá Viejo to Casco Antiguo to modern Panama City—explore how three distinct urban centers tell the story of 500 years of Panamanian history.",
+          "category": "History"
+        },
+        "post_2": {
+          "title": "The Panama Canal: Engineering Marvel and Global Impact",
+          "desc": "How the \"Big Ditch\" transformed global trade and shaped Panama's national identity. A deep dive into the canal's construction and legacy.",
+          "category": "Canal"
+        },
+        "post_3": {
+          "title": "Teaching History Through Field Trips: A Guide for Educators",
+          "desc": "Practical strategies for making historical sites come alive for students. How to prepare, engage, and follow up for maximum learning impact.",
+          "category": "Education"
+        }
+      },
+      "author": {
+        "name": "Diego Raúl Feliu",
+        "role": "Expert Guide"
+      }
+    },
+    "mailing_blog": {
+      "title": "Never Miss a Story",
+      "subtitle": "Subscribe to be notified when we publish new articles about Panama's history and culture.",
+      "success": "Thanks! Please check your email to confirm your subscription.",
+      "error": "Something went wrong. Please try again later.",
+      "placeholder": "Enter your email",
+      "button": "Subscribe",
+      "submitting": "Subscribing...",
+      "email_label": "Email address"
+    },
+    "cta": {
+      "title": "Ready to Discover Panama?",
+      "subtitle": "Whether you're planning a school field trip or looking for an authentic travel experience, we're here to help you explore Panama's rich history and culture.",
+      "cta_contact": "Contact Us",
+      "cta_schools": "For Schools",
+      "cta_tourists": "For Tourists"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "excursions": "Academic Field Trips",
+    "tours": "Tours",
+    "blog": "Blog",
+    "contact": "Contact",
+    "edu_materials": "Educational Materials",
+    "open_menu": "Open main menu",
+    "close_menu": "Close menu"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "about": "About Us",
+    "legal": "Legal",
+    "social": "Social",
+    "terms": "Terms and Conditions",
+    "privacy": "Privacy Policy"
+  },
+  "hero": {
+    "title": "Experience Panama Like Never Before",
+    "subtitle": "Immersive educational excursions and curated tours designed to connect you with the history, culture, and nature of the isthmus.",
+    "cta_schools": "For Schools",
+    "cta_tourists": "For Tourists"
+  },
+  "excursions": {
+    "eyebrow": "Explore Our Destinations",
+    "title": "Featured Field Trips",
+    "subtitle": "Explore our most requested educational experiences.",
+    "hero": {
+      "title": "Learning Comes Alive",
+      "subtitle": "Academic field trips aligned with curriculum standards. We transform learning through immersive historical experiences.",
+      "cta_methodology": "Our Methodology",
+      "cta_featured": "Featured Field Trips"
+    },
+    "value_prop": {
+      "eyebrow": "Why Choose Us?",
+      "title": "Education Beyond the Classroom",
+      "description": "We solve the challenges of traditional field trips (poor audio, lack of context, and management struggles) by providing a complete academic experience supported by technology.",
+      "quote": "Diego was in charge of guiding our 5th-grade students on a school field trip to Casco Viejo. He is not only well-versed but also kept their attention with anecdotes and interesting information not found in schoolbooks. With the audio equipment, he was able to easily manage the 85 ten-year-olds on the field trip.",
+      "author": "Montgomery J",
+      "columns_intro": "Traditional field trips often lack context, turning into simple sightseeing. Our approach ensures that every excursion has clear learning objectives, making them a valuable extension of your curriculum.",
+      "columns_outro": "We focus on the educational experience, providing you with all the academic tools you need for a successful trip.",
+      "features": {
+        "audio": {
+          "title": "Audio Technology.",
+          "desc": "Every student listens throughout the tour using lightweight Bluetooth receivers, ensuring 100% engagement and easier group management."
+        },
+        "engagement": {
+          "title": "Higher Retention.",
+          "desc": "Our multi-exposure methodology significantly improves historical information retention and critical thinking skills compared to standard tours."
+        },
+        "curriculum": {
+          "title": "Curriculum Aligned.",
+          "desc": "Content tailored to your specific grade level and curriculum standards."
+        }
+      }
+    },
+    "methodology": {
+      "title": "Our Learning Methodology",
+      "description": "A three-step process designed to maximize retention and engagement.",
+      "steps": {
+        "context": {
+          "title": "1. Pre-Visit: Context",
+          "desc": "We provide a virtual Zoom session to set the stage. We give background context, a vocabulary list, and \"inquiry questions\" to spark curiosity before the trip."
+        },
+        "immersion": {
+          "title": "2. The Excursion: Immersion",
+          "desc": "An immersive on-site guided tour using premium audio technology. Students hear clearly, allowing deeper engagement with historical content."
+        },
+        "reflection": {
+          "title": "3. Post-Visit: Reflection",
+          "desc": "We provide a grade-level adapted study guide for the classroom to synthesize learning and reinforce the newly acquired knowledge."
+        }
+      }
+    },
+    "resources": {
+      "title": "Resources for Teachers",
+      "description": "We provide everything you need to make the field trip an educational success.",
+      "cta_pdf": "Download PDF",
+      "cta_video": "Watch now",
+      "items": {
+        "guide": {
+          "title": "Download Sample Study Guide",
+          "desc": "See how our post-visit materials reinforce the concepts covered during the field trip."
+        },
+        "infographic": {
+          "title": "Download Sample Infographic",
+          "desc": "Visual aids that help students contextualize the timeline and key figures of the historical site."
+        },
+        "video": {
+          "title": "Watch Sample Zoom",
+          "desc": "A snippet of our virtual pre-visit session where we prepare the class for the excursion."
+        }
+      }
+    },
+    "plan_trip": {
+      "title": "Plan Your Field Trip",
+      "description": "Ready to bring history to life? Contact us to schedule a visit or request a custom proposal for your school.",
+      "cta_primary": "Get started",
+      "cta_secondary": "Learn more"
+    },
+    "casco_plazas": {
+      "title": "Casco Antiguo: Plazas and Churches",
+      "desc": "Explore UNESCO-recognized Casco Antiguo, a living museum where colonial architecture tells the story of the nation's evolution. Visit magnificent plazas and historic churches representing Panama's journey from Spanish colony to independent republic.",
+      "details": {
+        "description_1": "Students step into Panama's living museum as they explore UNESCO-recognized Casco Antiguo, where cobblestone streets and colonial architecture tell the story of a nation's evolution. This immersive walking tour guides students through the district's magnificent plazas and historic churches, each representing a crucial chapter in Panama's journey from Spanish colony to independent republic.",
+        "description_2": "3 hours of guided exploration available in Spanish and English",
+        "highlights_title": "Highlights",
+        "highlights": [
+          {
+            "category": "Main Plazas",
+            "items": "Plaza Mayor, Plaza Bolívar, Plaza de Francia, Plaza Herrera"
+          },
+          {
+            "category": "Historic Churches",
+            "items": "Metropolitan Cathedral, Church of La Merced, St. Joseph's Church, St. Francis Church, St. Dominic's Church, St. Phillip of Neri Oratory"
+          },
+          {
+            "category": "Cultural Landmarks",
+            "items": "National Theater, Bolivar Palace, Old Seawall"
+          }
+        ],
+        "adaptations_title": "Grade Level Adaptations",
+        "adaptations": [
+          {
+            "grade": "3rd - 6th Grade",
+            "desc": "Focus on architectural features, basic historical sequence, and Panama's strategic importance."
+          },
+          {
+            "grade": "7th - 8th Grade",
+            "desc": "Examine the independence movements, Bolivar's vision, and the Amphictyonic Congress."
+          },
+          {
+            "grade": "9th - 12th Grade",
+            "desc": "Analyze the complex geopolitical forces behind Panama's 1903 independence and evaluate competing historical narratives from Panamanian, Colombian, and American sources."
+          }
+        ]
+      }
+    },
+    "casco_museums": {
+      "title": "Casco Antiguo Museum Circuit",
+      "desc": "Students actively trace Panama's evolution from Spanish colony to modern republic through guided museum exploration tailored to your curriculum.",
+      "details": {
+        "description_1": "Students actively trace Panama's evolution from Spanish colony to modern republic through guided museum exploration tailored to your curriculum.",
+        "description_2": "3 hours of guided exploration available in Spanish and English",
+        "highlights_title": "Select 3 Museums",
+        "highlights": [
+          {
+            "category": "Interoceanic Canal Museum",
+            "items": "Engineering marvel that transformed global shipping"
+          },
+          {
+            "category": "History Museum",
+            "items": "Colonial to republican period transition at Municipal Palace"
+          },
+          {
+            "category": "Mola Museum",
+            "items": "Indigenous artistry and cultural expression"
+          },
+          {
+            "category": "La Merced Museum",
+            "items": "Colonial religious heritage"
+          },
+          {
+            "category": "Bolívar Palace",
+            "items": "Historical documents, diplomatic gifts, and the Roberto F. Chiari Library"
+          }
+        ],
+        "adaptations_title": "Grade Level Adaptations",
+        "adaptations": [
+          {
+            "grade": "3rd - 6th Grade",
+            "desc": "Engage with interactive displays on Panama's diverse cultural heritage and learn about Panama's independence."
+          },
+          {
+            "grade": "7th - 8th Grade",
+            "desc": "Critically evaluate how Panama's strategic location shaped its historical development."
+          },
+          {
+            "grade": "9th - 12th Grade",
+            "desc": "Explore how Panama's unique position created complex political and economic relationships with global powers, particularly Spain, Colombia, and the United States."
+          }
+        ]
+      }
+    },
+    "panama_viejo": {
+      "title": "Panama Viejo Archeological Complex",
+      "desc": "Step onto the excavated streets of the first European settlement on the Pacific coast, founded in 1519. Explore the ruins of this once-thriving colonial hub destroyed by pirate Henry Morgan in 1671.",
+      "details": {
+        "description_1": "Students step directly onto the excavated streets of Panama's original capital, founded in 1519 as the first European settlement on the Pacific coast of the Americas. This immersive archaeological site allows students to physically explore the ruins of a once-thriving colonial hub destroyed by pirate Henry Morgan in 1671. Students climb the restored Cathedral Tower for panoramic views while learning how archaeologists piece together historical narratives from physical evidence.",
+        "description_2": "3 hours of guided exploration available in Spanish and English",
+        "highlights_title": "Highlights",
+        "highlights": [
+          {
+            "category": "Cathedral Ruins",
+            "items": "Cathedral ruins and bell tower (with optional climb)"
+          },
+          {
+            "category": "Public Buildings",
+            "items": "Town hall (cabildo) foundations"
+          },
+          {
+            "category": "Daily Life",
+            "items": "Old colonial water cisterns and the convent of the Nuns of the Divine Conception"
+          },
+          {
+            "category": "Civil Structures",
+            "items": "Market area and residential quarters"
+          },
+          {
+            "category": "Museum",
+            "items": "Plaza Mayor Museum with authentic artifacts"
+          }
+        ],
+        "adaptations_title": "Grade Level Adaptations",
+        "adaptations": [
+          {
+            "grade": "3rd - 6th Grade",
+            "desc": "Focus on basic archaeological concepts and colonial life."
+          },
+          {
+            "grade": "7th - 8th Grade",
+            "desc": "Examine trade networks and piracy's impact on settlement patterns."
+          },
+          {
+            "grade": "9th - 12th Grade",
+            "desc": "Explore how Panama Viejo functioned as a staging area for Francisco Pizarro's conquest of the Inca Empire, analyzing the expedition's logistics and ethical questions surrounding colonization."
+          }
+        ]
+      }
+    },
+    "biomuseo": {
+      "title": "Museum of Biodiversity",
+      "desc": "Inside Frank Gehry's only Latin American architectural masterpiece, discover how Panama literally changed Earth's biology by uniting two continents.",
+      "details": {
+        "description_1": "Inside Frank Gehry's only Latin American architectural masterpiece, students discover how Panama literally changed Earth's biology by uniting two continents and dividing a vast ocean. Through dynamic, interactive exhibits, students investigate how this narrow isthmus triggered one of the most significant biodiversity events in Earth's history – the Great American Biotic Interchange.",
+        "description_2": "2 hours of guided exploration available in Spanish and English",
+        "highlights_title": "Highlights",
+        "highlights": [
+          {
+            "category": "Panamarama",
+            "items": "Surrounds students with 10 screens showcasing Panama's diverse ecosystems"
+          },
+          {
+            "category": "Building the Bridge",
+            "items": "Examine actual geological formations showing how volcanic activity created the isthmus"
+          },
+          {
+            "category": "Worlds Collide",
+            "items": "Demonstrates species migration between continents with life-sized models"
+          },
+          {
+            "category": "The Human Path",
+            "items": "Traces 15,000 years of human impact on Panama's environment"
+          },
+          {
+            "category": "Oceans Divided",
+            "items": "Uses twin aquariums to show how identical marine species evolved differently when separated"
+          }
+        ],
+        "adaptations_title": "Grade Level Adaptations",
+        "adaptations": [
+          {
+            "grade": "3rd - 6th Grade",
+            "desc": "Focus on observable biodiversity and basic ecological concepts."
+          },
+          {
+            "grade": "7th - 8th Grade",
+            "desc": "Explore species adaptation, geology, and complex biological systems."
+          },
+          {
+            "grade": "9th - 12th Grade",
+            "desc": "Examine current research on climate change impacts on Panama's biodiversity. Analyze data showing how the isthmus creation altered global ocean currents and climate patterns."
+          }
+        ]
+      }
+    },
+    "miraflores": {
+      "title": "Miraflores Visitor Center and IMAX",
+      "desc": "Witness the engineering marvel of the Panama Canal as massive ships navigate the locks. Perfect for 4th-6th graders to observe engineering in action.",
+      "details": {
+        "description_1": "Perfect for 4th-6th graders, this field trip transforms abstract concepts of engineering and global trade into tangible, observable phenomena as ships weighing thousands of tons navigate the legendary Panama Canal locks. Students witness the \"Miraflores Ballet\" as massive gates open and close, water fills and empties, and electric \"mules\" guide vessels through precision operations that demonstrate core physical science principles.",
+        "description_2": "2 hours of guided exploration available in Spanish and English",
+        "highlights_title": "Highlights",
+        "highlights": [
+          {
+            "category": "Engineering Tools",
+            "items": "Compare canal construction tools with modern counterparts"
+          },
+          {
+            "category": "Ship Identification",
+            "items": "Identify ships passing through by country flag, cargo type, and dimensions"
+          },
+          {
+            "category": "Observation Deck",
+            "items": "Observe ship transits from the observation deck"
+          },
+          {
+            "category": "IMAX Experience",
+            "items": "\"A Land Divided, A World United\" IMAX experience"
+          }
+        ],
+        "adaptations_title": "Recommended Grade Levels",
+        "adaptations": [
+          {
+            "grade": "4th - 6th Grade",
+            "desc": "Educational materials incorporate science, history, and global economics in age-appropriate formats."
+          }
+        ]
+      }
+    },
+    "religious": {
+      "title": "Panama's Inter-Religious Journey",
+      "desc": "Explore Panama's remarkable religious diversity and gain deep understanding of how different faith communities have enriched society.",
+      "details": {
+        "description_1": "In this unique academic expedition, students explore Panama's remarkable religious diversity while gaining deep understanding of how different faith communities have enriched our society throughout centuries. Students visit representative temples of various religions practiced in Panama, learning about the history, beliefs, and cultural contributions of these communities through direct interaction with religious leaders.",
+        "description_2": "4 hours of guided exploration available in Spanish and English",
+        "highlights_title": "Highlights",
+        "highlights": [
+          {
+            "category": "Abrahamic Religions",
+            "items": "Greek Orthodox Cathedral, Kol Shearith Synagogue, Jama Masjid Mosque, Continental Bahai Temple"
+          },
+          {
+            "category": "Eastern Religions",
+            "items": "Hindu Temple of Panama, Soka Gakkai International Cultural Center"
+          }
+        ],
+        "adaptations_title": "Grade Level Adaptations",
+        "adaptations": [
+          {
+            "grade": "9th - 12th Grade",
+            "desc": "Analyze similarities and differences in belief systems, examine how immigrant religious communities adapted, and evaluate how different religious perspectives address modern challenges."
+          }
+        ]
+      }
+    }
+  },
+  "tours": {
+    "hero": {
+      "title": "Discover the Stories Behind Panama",
+      "subtitle": "Private guided tours led by experts in history. We go beyond the surface to reveal the rich context that shaped our cultural identity—helping you truly understand Panama, not just see it.",
+      "cta_primary": "Explore Our Tours",
+      "cta_secondary": "Contact Us"
+    },
+    "audience": {
+      "eyebrow": "Expert-Led Private Experiences",
+      "title": "Tailored for Every Occasion",
+      "description": "Whether you're a curious traveler, a wedding planner coordinating guest activities, or hosting VIP visitors, we craft private experiences that leave lasting impressions.",
+      "features": {
+        "travelers": {
+          "title": "Individual Travelers & Families.",
+          "desc": "Personalized attention with flexibility to explore at your own pace and dive deeper into topics that spark your interest."
+        },
+        "wedding": {
+          "title": "Wedding & Event Planners.",
+          "desc": "Memorable group activities for destination wedding guests—a unique way to showcase Panama's heritage."
+        },
+        "corporate": {
+          "title": "Corporate & Diplomatic Visitors.",
+          "desc": "Professional tours for conference attendees and embassy guests, offering meaningful cultural context."
+        }
+      },
+      "closing": "Every tour is led by an expert guide who brings Panama's history to life through compelling storytelling and deep local knowledge."
+    },
+    "highlights": {
+      "title": "More Than Sightseeing",
+      "subtitle": "Discover what makes our guided experiences unique.",
+      "features": {
+        "context": {
+          "title": "Deep Historical Context",
+          "desc": "We don't just recite dates. We explain the geopolitical, social, and economic forces that shaped Panama's identity."
+        },
+        "private": {
+          "title": "Private & Personalized",
+          "desc": "No mixed groups. Your tour is exclusively for your party, allowing for meaningful conversation and flexibility."
+        },
+        "guides": {
+          "title": "Expert Guide",
+          "desc": "Our guide is a specialist in historical tourism who makes the past come alive with local insights you won't find in any guidebook."
+        }
+      }
+    },
+    "grid": {
+      "eyebrow": "Our Tours",
+      "title": "Where Would You Like to Go?"
+    },
+    "canal": {
+      "title": "Panama Canal: Miraflores Locks",
+      "desc": "Witness the legendary Panama Canal in action as massive ships navigate the historic Miraflores Locks—an engineering feat that changed global trade forever.",
+      "details": {
+        "title": "The Panama Canal Experience",
+        "description_1": "Stand at the crossroads of world commerce and witness one of humanity's greatest engineering achievements in action. At the Miraflores Locks, you'll watch in awe as massive cargo ships and cruise liners rise and fall through the lock chambers—a gravity-defying dance of water and steel that has connected oceans for over a century.",
+        "description_2": "Approximately 3 hours including IMAX film and lock viewing. Available in English and Spanish.",
+        "highlights_title": "Tour Highlights",
+        "highlights": [
+          {
+            "title": "Live Ship Transits",
+            "desc": "Experience the thrill of watching vessels navigate the locks in real time. Your guide will explain the intricate process as ships are raised or lowered 27 feet using only gravity-fed water from Gatun Lake."
+          },
+          {
+            "title": "The Story Behind the Canal",
+            "desc": "Discover the dramatic history—from the French attempt that ended in tragedy to the American triumph that reshaped global trade. Learn how Panama ultimately gained sovereignty over this strategic waterway."
+          },
+          {
+            "title": "Engineering Marvels",
+            "desc": "Understand how the original 1914 locks work alongside the massive new Neopanamax locks opened in 2016, accommodating ships three times larger than the originals."
+          },
+          {
+            "title": "IMAX Theater Experience",
+            "desc": "Immerse yourself in the canal's story through a stunning 45-minute 3D film narrated by Morgan Freeman, bringing the history and operation of this engineering wonder to life."
+          }
+        ],
+        "includes_title": "What's Included",
+        "includes": [
+          "Expert bilingual guide",
+          "Visitor center and IMAX theater admission",
+          "Viewing platform access",
+          "Refreshments during the tour",
+          "Optional private transportation from your hotel"
+        ]
+      }
+    },
+    "casco_plazas": {
+      "title": "Casco Antiguo: Plazas & Churches",
+      "desc": "Explore the UNESCO World Heritage district where colonial plazas and historic churches reveal Panama's journey from Spanish colony to independent republic.",
+      "details": {
+        "title": "Plazas & Churches of the Old Quarter",
+        "description_1": "Step into a living museum where every plaza tells a story and every church holds centuries of secrets. The Casco Antiguo—Panama's historic heart and a UNESCO World Heritage Site—unfolds before you as your guide reveals the fascinating tales behind its colonial architecture, from the grandeur of the Metropolitan Cathedral to the legendary Golden Altar of San José Church.",
+        "description_2": "Approximately 3 hours of walking tour. Available in English and Spanish.",
+        "highlights_title": "Tour Highlights",
+        "highlights": [
+          {
+            "title": "Plaza de la Independencia",
+            "desc": "Stand where Panama declared independence not once, but twice—first from Spain in 1821, then from Colombia in 1903. Your guide brings these pivotal moments to life against the backdrop of the stunning Metropolitan Cathedral."
+          },
+          {
+            "title": "The Golden Altar",
+            "desc": "Marvel at the legendary altar of San José Church, said to have been saved from the pirate Henry Morgan through a clever disguise of black paint. Discover the truth behind this enduring tale."
+          },
+          {
+            "title": "Plaza Bolívar",
+            "desc": "Visit the elegant square dedicated to the Liberator, surrounded by neoclassical architecture and the historic Hotel Colombia where heads of state once gathered."
+          },
+          {
+            "title": "Hidden Architectural Gems",
+            "desc": "Explore the Arco Chato ruins, French-influenced mansions, and quiet corners where colonial, republican, and art deco styles blend in unexpected harmony."
+          }
+        ],
+        "includes_title": "What's Included",
+        "includes": [
+          "Expert bilingual guide",
+          "Church entrance fees",
+          "Bottled water",
+          "Flexible pace for photography",
+          "Optional private transportation from your hotel"
+        ]
+      }
+    },
+    "casco_museums": {
+      "title": "Casco Antiguo: Museum Circuit",
+      "desc": "Trace Panama's evolution through curated museum visits—from indigenous artistry to the engineering ambition that connected two oceans.",
+      "details": {
+        "title": "The Museum Circuit Experience",
+        "description_1": "Discover Panama's remarkable story through its finest museums, all nestled within the historic Casco Antiguo. This curated journey takes you from pre-Columbian treasures to the audacious dream of connecting two oceans, revealing how a small isthmus became one of the world's most strategic crossroads.",
+        "description_2": "Approximately 4 hours including museum visits. Available in English and Spanish.",
+        "highlights_title": "Tour Highlights",
+        "highlights": [
+          {
+            "title": "Panama Canal Museum",
+            "desc": "Housed in the original French Canal Company headquarters, explore the epic saga of the canal's construction—from the French tragedy to the American triumph and Panama's eventual sovereignty over this engineering marvel."
+          },
+          {
+            "title": "Museum of History",
+            "desc": "Journey through Panama's transformation from Spanish colony to independent nation, with artifacts and documents that bring five centuries of history to vivid life."
+          },
+          {
+            "title": "La Merced Church & Bell",
+            "desc": "Visit one of Panama's most historic churches and see the original bell that was rescued from Panama Viejo after the pirate attack of 1671."
+          },
+          {
+            "title": "Indigenous Heritage",
+            "desc": "Appreciate the artistry of Panama's indigenous peoples through exquisite molas, traditional crafts, and archaeological pieces that predate European contact."
+          }
+        ],
+        "includes_title": "What's Included",
+        "includes": [
+          "Expert bilingual guide",
+          "All museum entrance fees",
+          "Bottled water",
+          "Comfortable walking pace with rest stops",
+          "Optional private transportation from your hotel"
+        ]
+      }
+    },
+    "panama_viejo": {
+      "title": "Panama Viejo: Archaeological Site",
+      "desc": "Walk the excavated streets of Panama's original capital, founded in 1519 and destroyed by pirates in 1671. Climb the cathedral tower for panoramic views.",
+      "details": {
+        "title": "Where Panama Began",
+        "description_1": "Walk through the haunting ruins of the first European city on the Pacific coast of the Americas. Founded in 1519 and destroyed by the infamous pirate Henry Morgan in 1671, Panama Viejo stands as a powerful testament to colonial ambition, indigenous resilience, and the dramatic events that shaped the New World.",
+        "description_2": "Approximately 2.5 hours including museum and tower climb. Available in English and Spanish.",
+        "highlights_title": "Tour Highlights",
+        "highlights": [
+          {
+            "title": "The Cathedral Tower",
+            "desc": "Climb the iconic bell tower—the most photographed landmark in Panama—for breathtaking panoramic views that stretch from the ancient ruins to the modern skyline, perfectly capturing 500 years of history in a single glance."
+          },
+          {
+            "title": "The Pirate Attack of 1671",
+            "desc": "Stand where history's most dramatic raid unfolded as your guide recounts Henry Morgan's devastating attack and the desperate decision to burn the city rather than surrender its treasures."
+          },
+          {
+            "title": "Archaeological Discoveries",
+            "desc": "Explore excavated streets, convents, and plazas while learning about ongoing archaeological work that continues to reveal secrets of colonial life and the indigenous peoples who lived here before."
+          },
+          {
+            "title": "The Site Museum",
+            "desc": "View artifacts recovered from the ruins, scale models showing the city at its peak, and exhibits that bring the daily life of this once-thriving colonial capital back to life."
+          }
+        ],
+        "includes_title": "What's Included",
+        "includes": [
+          "Expert bilingual guide",
+          "Site and museum entrance fees",
+          "Tower access",
+          "Bottled water",
+          "Optional private transportation from your hotel"
+        ]
+      }
+    },
+    "mi_pueblito": {
+      "title": "Mi Pueblito: Cultural Heritage",
+      "desc": "Experience Panama's diverse cultural traditions at this living museum showcasing the architecture and customs of the country's three foundational roots.",
+      "details": {
+        "title": "The Three Roots of Panama",
+        "description_1": "Journey through Panama's cultural DNA at this unique open-air museum on the slopes of Ancon Hill. Mi Pueblito brings together the nation's three foundational identities—the Campesino traditions of the Interior, the Afro-Caribbean legacy of the Canal builders, and the Indigenous heritage that predates them all—into one walkable experience that reveals how these diverse roots intertwined to create modern Panama.",
+        "description_2": "Approximately 2.5 hours of guided exploration. Available in English and Spanish.",
+        "highlights_title": "Tour Highlights",
+        "highlights": [
+          {
+            "title": "The Pollera Museum",
+            "desc": "Discover Panama's iconic national costume—considered one of the most beautiful and intricate in the world. Your guide decodes the symbolism of the handcrafted lace, the shimmering tembleques headpieces, and why a single Pollera de Gala can take a year to create."
+          },
+          {
+            "title": "Campesino Village",
+            "desc": "Walk through replicas of traditional quincha houses from the Azuero Peninsula. Learn about the Junta de Embarre—the communal house-building tradition where entire villages gathered to stomp mud and straw while celebrating with music and seco."
+          },
+          {
+            "title": "Afro-Caribbean Quarter",
+            "desc": "Step into the colorful wooden architecture of the Canal Zone era, including the ship-shaped Casa Müller. Understand the Gold Roll vs. Silver Roll segregation system and how West Indian workers transformed Panama's cultural landscape."
+          },
+          {
+            "title": "Indigenous Artisan Encounter",
+            "desc": "Meet Guna and Emberá artisans crafting traditional molas and tagua nut carvings. These aren't mere souvenirs—molas are cosmological maps, and tagua carving is a centuries-old art form passed through generations."
+          }
+        ],
+        "includes_title": "What's Included",
+        "includes": [
+          "Expert bilingual guide",
+          "Site entrance fee",
+          "Pollera Museum access",
+          "Bottled water",
+          "Optional private transportation from your hotel"
+        ]
+      }
+    },
+    "biomuseo": {
+      "title": "Biomuseo: Museum of Biodiversity",
+      "desc": "Inside Frank Gehry's architectural masterpiece, discover how Panama's emergence changed Earth's biology by connecting two continents.",
+      "details": {
+        "title": "Where Continents Collide",
+        "description_1": "Enter Frank Gehry's only work in Latin America—a explosion of color on the Panama City waterfront—and discover how a tiny land bridge changed the course of life on Earth. The Biomuseo tells the extraordinary story of how Panama's emergence from the sea three million years ago triggered the Great American Biotic Interchange, forever transforming the biology of two continents.",
+        "description_2": "Approximately 2 hours including all galleries. Available in English and Spanish.",
+        "highlights_title": "Tour Highlights",
+        "highlights": [
+          {
+            "title": "Gehry's Architectural Vision",
+            "desc": "Experience the only building Frank Gehry designed in Latin America, where vibrant canopies of folded metal evoke the tropical biodiversity within. Your guide explains how the architecture itself tells the story of Panama's natural abundance."
+          },
+          {
+            "title": "The Bridge of Life",
+            "desc": "Understand how Panama's emergence created a biological superhighway. When North and South America connected, species migrated in both directions—armadillos headed north while big cats moved south, reshaping ecosystems across two continents."
+          },
+          {
+            "title": "Ocean Divided, Life Transformed",
+            "desc": "Explore how the isthmus split one great ocean into the Atlantic and Pacific, creating new currents, changing climates, and isolating marine species that had once swam freely between the seas."
+          },
+          {
+            "title": "Panama's Living Treasures",
+            "desc": "From the aquarium showcasing both ocean ecosystems to galleries celebrating Panama's incredible biodiversity, discover why this small nation is home to more species than the United States and Canada combined."
+          }
+        ],
+        "includes_title": "What's Included",
+        "includes": [
+          "Expert bilingual guide",
+          "Museum entrance fee",
+          "Access to all permanent galleries",
+          "Bottled water",
+          "Optional private transportation from your hotel"
+        ]
+      }
+    },
+    "cta": {
+      "title": "Ready to Experience Panama?",
+      "description": "Transform your visit into a meaningful journey. Contact us to plan your private tour or create a custom itinerary for your group.",
+      "button": "Start Planning"
+    },
+    "siete_iglesias": {
+      "title": "The Route of the Seven Churches",
+      "desc": "A specialized tour through the seven most significant temples of Casco Antiguo during Holy Week.",
+      "details": {
+        "title": "The Route of the Seven Churches",
+        "description_short": "A tour through the seven most significant churches of Panama's Casco Antiguo.",
+        "overview_title": "A Journey Through Architecture, Art, and History",
+        "description_1": "Beyond their spiritual significance, the churches of Panama City's Casco Antiguo are the ultimate witnesses to the city's resilience. This specialized tour takes you through the seven most significant temples of the district, exploring the transition from Baroque to Neoclassical styles, the legends of treasures from the pirate era, and the architectural triumphs that defined the city's rebirth in 1673.",
+        "description_2": "With Panama In Context, you don't just visit buildings — you decode the iconography, the art, and the social history of the religious orders (Jesuits, Franciscans, Mercedarians) that shaped the Isthmus.",
+        "route_title": "The Route: The Seven Churches",
+        "churches": [
+          {
+            "name": "Church of Our Lady of Mercy — The Gateway to History",
+            "desc": "We begin at the only church whose original Baroque facade was moved stone-by-stone from the ruins of Old Panama after the pirate attack of 1671. Includes a visit to the Museum of the Order of Mercy, housing colonial documents and religious artifacts dating back centuries."
+          },
+          {
+            "name": "Church of St. Joseph — The Legend of the Altar",
+            "desc": "Home to the iconic Golden Altar. We dive into the fascinating story of how the monks outsmarted Henry Morgan by painting the altar to hide its gold. We explore what is known, what remains uncertain, and the theories proposed to reconcile the legend with surviving historical records and the visible artistic elements of the altar."
+          },
+          {
+            "name": "Church of the Company of Jesus — The Ruins of Knowledge",
+            "desc": "These majestic ruins represent the Jesuit legacy in Panama and the site of the first university on the Isthmus. Includes an exterior analysis of the stone masonry and the impact of the 1781 fire and subsequent earthquakes."
+          },
+          {
+            "name": "Church of Santo Domingo & The Flat Arch",
+            "desc": "Known for its famous \"Flat Arch,\" this site played a surprising role in 20th-century history: it was used as proof that Panama was not a high-risk earthquake zone, ultimately helping to secure political and financial support for the construction of the Panama Canal."
+          },
+          {
+            "name": "Metropolitan Cathedral Basilica — The Heart of the City",
+            "desc": "One of the largest cathedrals in Central America. We explore its 108-year construction period, the mix of styles in its towers, and its most recent restoration for the visit of Pope Francis."
+          },
+          {
+            "name": "Oratory of St. Philip Neri — The Hidden Gem",
+            "desc": "Often missed by tourists, this is one of the most beautifully restored peaceful spaces in the city. Includes an analysis of the delicate religious paintings, the unique courtyard reflecting the colonial monastic lifestyle, and an expansive Nativity scene (Belén) open to visitors."
+          },
+          {
+            "name": "Church of St. Francis of Assisi — The Panoramic Finale",
+            "desc": "Located across from Plaza Bolívar, this church is a masterclass in eclectic architecture. We conclude by ascending the Bell Tower, offering the most iconic 360-degree viewpoint of Casco Antiguo and the modern Panama City skyline."
+          }
+        ],
+        "why_title": "Why Choose This Tour?",
+        "why_items": [
+          {
+            "title": "Expert Analysis",
+            "desc": "Unlike standard walking tours, we focus on the \"why\" behind the architecture and the political power of the Church within the Spanish Empire."
+          },
+          {
+            "title": "Total Access",
+            "desc": "Your tour includes coordinated entrance to all six restored interiors and their specialized museums, as well as the ruins of the Church of the Company of Jesus."
+          }
+        ],
+        "facts_title": "Quick Facts",
+        "facts": [
+          "Duration: Approximately 3 hours",
+          "Physical activity: Moderate walking (we recommend sneakers or closed-toe shoes)",
+          "Includes: Expert guide, entrance tickets to all 6 churches/museums, and Bell Tower access",
+          "Dress code: Respectful attire required for church interiors (shoulders and knees covered)",
+          "Meeting point: Outside La Iglesia de la Merced, Casco Antiguo",
+          "Transportation not included — meeting point is in Casco Antiguo"
+        ]
+      },
+      "hero": {
+        "badge": "Holy Week 2026",
+        "subtitle": "A detailed journey through the architecture, art, and history of the Catholic churches of Casco Antiguo",
+        "dates": "April 2 - 4, 2026",
+        "duration": "~3 hours",
+        "type": "Open group",
+        "cta": "Reserve Now"
+      },
+      "spanish_notice": "This tour is conducted in Spanish. If you are comfortable with Spanish or would like to experience the tour in its original language, you are very welcome to join!",
+      "booking": {
+        "title": "Reserve Your Spot",
+        "subtitle": "Select your date, time, and number of participants",
+        "step_date": "Select Date",
+        "step_time": "Select Time",
+        "step_participants": "Participants",
+        "senior_female": "Senior Women (55+)",
+        "senior_male": "Senior Men (60+)",
+        "adult": "Adults & Youth (10+)",
+        "child_5_10": "Children (5-10)",
+        "child_under_5": "Children (under 5)",
+        "free": "Free",
+        "senior_discount": "Senior discount",
+        "total_participants": "Total: {{count}} participants",
+        "meeting_point": "Meeting point: Outside La Iglesia de la Merced, Casco Antiguo",
+        "dress_code": "Dress code: Respectful attire is required to enter the churches. Shoulders and knees must be covered.",
+        "reserve_button": "Add to Cart",
+        "added_to_cart": "Added to cart!",
+        "add_another": "Book another time slot",
+        "go_to_checkout": "Go to Checkout",
+        "senior_discount_note": "{{pct}}% senior discount"
+      }
+    }
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "bio": "Hi, I'm Diego Raúl Feliu. With a degree in historical tourism and a deep expertise in Panamanian history, I have dedicated my career to helping visitors and students truly understand our country. Whether you're planning a school field trip or a private tour, I'm here to help you create a meaningful experience.",
+    "email_sr": "Email",
+    "form": {
+      "interest_label": "I am interested in",
+      "interest_field_trips": "Academic Field Trips",
+      "interest_tours": "Private Tours",
+      "select_interest_hint": "Please select your interest to continue",
+      "first_name": "First name",
+      "last_name": "Last name",
+      "email": "Email",
+      "school_name": "School name",
+      "grade_levels": "Grade levels",
+      "grades": {
+        "3_4": "3rd - 4th Grade",
+        "5_6": "5th - 6th Grade",
+        "7_8": "7th - 8th Grade",
+        "9_10": "9th - 10th Grade",
+        "11_12": "11th - 12th Grade"
+      },
+      "field_trips_interested": "Which field trips are you interested in?",
+      "field_trips": {
+        "casco_plazas": "Casco Antiguo: Plazas & Churches",
+        "casco_museums": "Casco Antiguo: Museum Circuit",
+        "panama_viejo": "Panama Viejo Archaeological Site",
+        "biomuseo": "Museum of Biodiversity (Biomuseo)",
+        "miraflores": "Miraflores Visitor Center & IMAX",
+        "religious": "Inter-Religious Journey"
+      },
+      "country": "Country of residence",
+      "date_from": "Arrival date",
+      "date_to": "Departure date",
+      "group_size": "Group size",
+      "adults": "Adults",
+      "children_under_5": "Children < 5",
+      "children_5_17": "Children 5-17",
+      "tours_interested": "Which tours are you interested in?",
+      "tours_list": {
+        "canal": "Panama Canal: Miraflores Locks",
+        "casco_plazas": "Casco Antiguo: Plazas & Churches",
+        "casco_museums": "Casco Antiguo: Museum Circuit",
+        "panama_viejo": "Panama Viejo Archaeological Site",
+        "biomuseo": "Biomuseo: Museum of Biodiversity",
+        "mi_pueblito": "Mi Pueblito: Cultural Heritage"
+      },
+      "hotel_address": "Hotel or address",
+      "hotel_address_placeholder": "Where you'll be staying in Panama",
+      "needs_transport": "I need transportation from the airport to my hotel",
+      "message": "Message",
+      "submit": "Send message",
+      "submitting": "Sending...",
+      "success_message": "Thank you! Your message has been sent successfully. We'll be in touch soon.",
+      "error_message": "Sorry, there was an error sending your message. Please try again or contact us via WhatsApp."
+    },
+    "confirmation": {
+      "title": "Thank You!",
+      "message": "Your message has been sent successfully. We'll be in touch soon.",
+      "redirect": "You will be redirected in {{seconds}} seconds to",
+      "home": "Home"
+    }
+  },
+  "blog": {
+    "title": "Our Blog",
+    "subtitle": "Explore the fascinating history of Panama through our in-depth articles and series.",
+    "error": "Failed to load articles. Please try again later."
+  },
+  "confirm_subscription": {
+    "title": "Confirm Your Subscription",
+    "loading": "Confirming your subscription...",
+    "language_label": "Preferred language for emails:",
+    "success_title": "You're Subscribed!",
+    "success_message": "Thank you for confirming. You'll receive our updates in your preferred language.",
+    "error_title": "Invalid Link",
+    "error_message": "This confirmation link is invalid or has expired.",
+    "back_home": "Return to Homepage"
+  },
+  "unsubscribe": {
+    "title": "Unsubscribe",
+    "message": "Are you sure you want to unsubscribe?",
+    "email_label": "Email:",
+    "confirm_button": "Yes, Unsubscribe",
+    "cancel_button": "Cancel",
+    "success_title": "Unsubscribed",
+    "success_message": "You've been successfully unsubscribed. We're sorry to see you go!",
+    "resubscribe": "Changed your mind? Subscribe again",
+    "error_title": "Error",
+    "error_message": "We couldn't find this email in our list."
+  },
+  "booking": {
+    "modal": {
+      "title": "Book Your Tour",
+      "select_date": "Select Date",
+      "select_time": "Select Time",
+      "select_exact_time": "Select exact time",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "preferred_time": "Preferred start time (optional)",
+      "preferred_time_placeholder": "e.g., 9:00 AM",
+      "your_group": "Your Group",
+      "group_note": "Residency affects ticket prices at attractions",
+      "column_residents": "Panamanian / Residents",
+      "column_tourists": "Tourists / Visitors",
+      "seniors_female": "Seniors (Female 55+)",
+      "seniors_male": "Seniors (Male 60+)",
+      "adults": "Adults (18+)",
+      "children_10_17": "Children (10-17)",
+      "children_5_10": "Children (5-10)",
+      "children_under_5": "Children (under 5)",
+      "total_participants": "Total: {{count}} participants (max 7)",
+      "resident_info": "Residents = Panamanian citizens or legal residents",
+      "transportation": "Transportation",
+      "need_transport": "I need transportation",
+      "direction": "Direction",
+      "to_only": "Hotel → Attraction only",
+      "from_only": "Attraction → Hotel only",
+      "both_ways": "Both ways (round trip)",
+      "round_trip_only": "Groups of 5 or more are round-trip only.",
+      "hotel": "Hotel",
+      "hotel_placeholder": "Type to search hotels...",
+      "hotel_not_found": "Hotel not in our list. Transportation will be quoted separately after booking.",
+      "price_breakdown": "Price Breakdown",
+      "guide_service": "Guide Service",
+      "per_person": "per person",
+      "participants": "participants",
+      "senior_discount": "Senior discount",
+      "tickets": "Attraction Tickets",
+      "tickets_resident": "(Resident)",
+      "tickets_tourist": "(Tourist)",
+      "transport": "Transportation",
+      "total": "Total",
+      "add_to_cart": "Add to Cart",
+      "update_cart": "Update Cart",
+      "group_too_large": "For groups larger than 15, please contact us for a custom quote.",
+      "contact_for_quote": "Contact Us for Quote",
+      "select_hotel_for_transport": "Select a hotel to get the transportation price",
+      "close": "Close"
+    },
+    "availability": {
+      "unavailable": "Unavailable",
+      "limited": "Limited availability"
+    }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "continue_shopping": "Continue Shopping",
+    "edit": "Edit",
+    "remove": "Remove",
+    "remove_confirm": "Remove this tour from your cart?",
+    "participants_count": "{{count}} participant",
+    "participants_count_plural": "{{count}} participants",
+    "close_panel": "Close panel",
+    "or": "or",
+    "view_bag_sr": "items in cart, view bag"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "contact_info": "Contact Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "hotel": "Hotel (optional)",
+    "hotel_note": "For contact purposes",
+    "payment_method": "Payment Method",
+    "paypal": "PayPal",
+    "paypal_desc": "Invoice sent to your email",
+    "credit_card": "Credit Card",
+    "credit_card_desc": "Payment link sent to your email",
+    "order_summary": "Order Summary",
+    "place_order": "Place Order",
+    "terms_agreement": "By placing your order, you agree to our terms.",
+    "processing": "Processing...",
+    "invalid_email": "Please enter a valid email address",
+    "invalid_phone": "Please enter a valid phone number",
+    "yappy": "Yappy",
+    "yappy_desc": "Payment via Yappy by Banco General"
+  },
+  "order": {
+    "confirmation": {
+      "title": "Order Received!",
+      "thank_you": "Thank you for booking with Panama In Context.",
+      "reference": "Order Reference",
+      "what_next": "What happens next?",
+      "step_1": "You'll receive a payment link via email within {{hours}} hours",
+      "step_2": "Complete your payment to confirm your reservation",
+      "step_3": "We'll send you a confirmation with tour details",
+      "payment_valid": "Payment link valid for",
+      "hours": "hours",
+      "reservation_held": "Reservation held until",
+      "your_bookings": "Your Bookings",
+      "subtotal": "Subtotal",
+      "manage_booking": "Manage your booking",
+      "questions": "Questions? Contact us at",
+      "return_home": "Return to Home"
+    },
+    "status": {
+      "pending": "Pending",
+      "pending_payment": "Pending Payment",
+      "payment_link_sent": "Payment Link Sent",
+      "paid": "Paid",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    }
+  },
+  "booking_manage": {
+    "title": "Your Booking Details",
+    "status": "Status",
+    "actions": "Actions",
+    "cancel": "Cancel Booking",
+    "renew_payment": "Request New Payment Link",
+    "link_expired": "Link Expired",
+    "link_expired_desc": "This link has expired or is no longer valid.",
+    "request_new": "If you need to access your booking, please enter your email address to receive a new link.",
+    "send_new_link": "Send New Link"
+  },
+  "booking_cancel": {
+    "title": "Cancel Your Booking",
+    "confirm_question": "Are you sure you want to cancel this booking?",
+    "yes_cancel": "Yes, Cancel Booking",
+    "no_keep": "No, Keep Booking",
+    "success_title": "Booking Cancelled",
+    "success_message": "Your booking has been cancelled successfully.",
+    "sorry_message": "We're sorry to see you go! If you change your mind, you can always book again on our website.",
+    "browse_tours": "Browse Tours"
+  },
+  "booking_renew": {
+    "title": "New Payment Link Requested",
+    "message": "We've received your request for a new payment link.",
+    "eta": "Our team has been notified and will send you a new payment link by email as soon as possible.",
+    "not_received": "If you don't receive it, please contact us at"
+  },
+  "admin": {
+    "login": {
+      "title": "Admin Access",
+      "description": "Enter your admin email to receive an access link.",
+      "request_access": "Request Access",
+      "check_email": "Check your email for an access link.",
+      "link_valid": "The link is valid for 24 hours."
+    },
+    "orders": {
+      "title": "Pending Orders",
+      "refresh": "Refresh",
+      "filter": "Filter",
+      "mark_payment_sent": "Mark Payment Sent",
+      "mark_paid": "Mark as Paid",
+      "created": "Created",
+      "payment_sent": "Payment link sent",
+      "expires": "Link expires",
+      "bookings": "Bookings"
+    },
+    "mark_paid": {
+      "title": "Mark as Paid",
+      "order": "Order",
+      "customer": "Customer",
+      "amount": "Amount",
+      "notes": "Notes (optional)",
+      "notes_placeholder": "e.g., \"Paid via Cuanto - Ref #12345\"",
+      "cancel": "Cancel",
+      "confirm": "Confirm Payment Received"
+    }
+  },
+  "edu_materials": {
+    "title": "Educational Materials",
+    "tabs": {
+      "media_library": "Media Library",
+      "classroom_assets": "Classroom Assets",
+      "podcast": "Podcast"
+    },
+    "coming_soon": "Coming Soon",
+    "nav": {
+      "media_library": "Media Library",
+      "educational_content": "Educational Content",
+      "presentations": "Presentations",
+      "infographics": "Infographics",
+      "audio_guides": "Audio Guides",
+      "activities": "Activities",
+      "historical_trivia": "Historical Trivia",
+      "back_to_website": "Back to website"
+    },
+    "placeholder": {
+      "heading": "Coming soon",
+      "text": "This section will be available soon. We're preparing new classroom materials."
+    },
+    "deliverables": {
+      "intro": "Pre-visit video and study guide for each excursion and grade level.",
+      "grade_band": "Grades {{band}}",
+      "download_guide": "Download guide (PDF)",
+      "minutes": "{{count}} min",
+      "loading": "Loading materials...",
+      "error": "Couldn't load the materials. Please try again.",
+      "empty_heading": "Coming soon",
+      "empty_text": "We haven't published excursion materials yet. Check back soon."
+    },
+    "media_library": {
+      "intro_heading": "Historical Image Library",
+      "intro_text": "Browse our curated collection of public domain images from Wikimedia Commons and the Library of Congress, highly relevant to Panamanian history. Click on any thumbnail to view licensing and attribution details. You can download images directly for use in your classroom, research projects, or educational materials.",
+      "search_placeholder": "Search images...",
+      "total_images": "{{count}} images available",
+      "results_count": "{{count}} results",
+      "no_results": "No images found",
+      "no_results_hint": "Try different search terms",
+      "download": "Download",
+      "all_tags": "All Tags",
+      "loading": "Loading...",
+      "loading_image": "Loading image...",
+      "previous": "Previous",
+      "next": "Next",
+      "no_preview": "No preview",
+      "download_aria": "Download {{title}}",
+      "detail": {
+        "title": "Image Details",
+        "attribution": "Attribution",
+        "license": "License",
+        "dimensions": "Dimensions",
+        "source": "Source",
+        "tags": "Tags",
+        "description": "Description",
+        "view_source": "View original source",
+        "download_full": "Download full resolution"
+      }
+    },
+    "access": {
+      "loading": "Checking access...",
+      "login_title": "Educator Access",
+      "login_text": "Enter your registered email to access the educational materials.",
+      "login_submit": "Access",
+      "email_placeholder": "your.email@school.edu",
+      "no_account": "Don't have an account?",
+      "register_link": "Register for free",
+      "not_registered": "This email is not registered yet. Please create an account.",
+      "already_registered": "This email is already registered. Use it to log in.",
+      "register_title": "Create Account",
+      "register_text": "Register for free to access our educational materials.",
+      "register_submit": "Create Account",
+      "email_label": "Email address",
+      "name_label": "Name (optional)",
+      "name_placeholder": "Your name",
+      "institution_label": "Institution (optional)",
+      "institution_placeholder": "School or university",
+      "mailing_list_label": "Also subscribe me to the Panama In Context newsletter",
+      "sending": "Sending...",
+      "check_email_title": "Check Your Email",
+      "check_email_text": "We've sent a confirmation link to:",
+      "back_to_login": "Back to login",
+      "enter_code_title": "Verify Your Identity",
+      "enter_code_text": "We've sent a 6-digit code to:",
+      "verify": "Verify",
+      "verifying": "Verifying...",
+      "error": "Something went wrong. Please try again.",
+      "verify_unavailable": "We couldn't verify your access right now. Check your connection and try again.",
+      "confirming": "Confirming your access...",
+      "confirmed_title": "Access Activated!",
+      "error_title": "Confirmation Failed",
+      "go_to_materials": "Go to Educational Materials"
+    }
+  },
+  "terms": {
+    "title": "Terms and Conditions",
+    "effective_date": "Effective date: March 8, 2026",
+    "sections": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "body": "By accessing and using the Panama In Context website (panamaincontext.com), including our blog, educational materials, and tour booking services, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our website or services."
+      },
+      "intellectual_property": {
+        "title": "2. Intellectual Property",
+        "body": "All content on this website — including but not limited to blog articles, slide decks, infographics, videos, audio material, study guides, and images — is the property of Panama In Context and Diego Feliu, unless otherwise attributed. You may not reproduce, redistribute, republish, or otherwise use any of this content without express written consent from Diego Feliu.\n\nContent from third-party sources (such as images from the Library of Congress) is used under their respective licenses, which are indicated alongside each item."
+      },
+      "edu_materials_disclaimer": {
+        "title": "3. Educational Materials Disclaimer",
+        "body": "Our blog articles, study guides, slide decks, infographics, and other educational materials are provided free of charge for informational and educational purposes. While we make every effort to verify all facts contained in our educational materials, Panama In Context and Diego Feliu are not responsible for any losses, damages, or consequences arising from inaccurate or incomplete information.\n\nEach person using these materials is responsible for conducting their own fact-checking and independent verification before relying on the information for academic, professional, or any other purpose."
+      },
+      "tour_bookings": {
+        "title": "4. Tour Bookings and Payment",
+        "body": "Bookings for guided tours and academic excursions are not confirmed until full payment has been received. Prices are as listed on the website at the time of booking. Panama In Context reserves the right to update pricing at any time, though confirmed bookings will be honored at the price paid."
+      },
+      "cancellation_refunds": {
+        "title": "5. Cancellations and Refunds",
+        "body": "Customers are entitled to a full refund if the booking is cancelled at least 7 days prior to the scheduled date. Any bank or payment processing fees associated with the refund will be deducted from the refund amount. Cancellations made less than 7 days before the booking date are not eligible for a refund."
+      },
+      "force_majeure": {
+        "title": "6. Force Majeure",
+        "body": "Tours and excursions may be rescheduled or cancelled due to circumstances beyond our control, including but not limited to severe weather, natural disasters, civil unrest, government restrictions, or public health emergencies. In such cases, customers will be offered a full refund or the option to reschedule at no additional cost."
+      },
+      "photo_video": {
+        "title": "7. Photography and Video During Tours",
+        "body": "Panama In Context may take photographs and videos during excursions and guided tours for promotional and educational purposes. By participating in our tours, you consent to the use of such images and recordings unless you notify us in writing prior to the tour that you wish to opt out."
+      },
+      "liability": {
+        "title": "8. Limitation of Liability",
+        "body": "Participants in tours and excursions do so at their own risk. Panama In Context and Diego Feliu are not liable for any injuries, illness, loss of personal property, or other damages that may occur during tours or excursions. Participants are responsible for their own safety and personal belongings at all times."
+      },
+      "school_excursions": {
+        "title": "9. School Excursions and Minors",
+        "body": "Academic excursion bookings are made by educational institutions, not by individual students or minors. The school or institution is responsible for ensuring adequate supervision of students during excursions. Parents or legal guardians are responsible for any medical or special needs requirements, which should be communicated to us prior to the excursion."
+      },
+      "children": {
+        "title": "10. Children's Use of the Website",
+        "body": "This website is not directed at children under 13 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us so we can remove it promptly."
+      },
+      "governing_law": {
+        "title": "11. Governing Law",
+        "body": "These Terms and Conditions are governed by and construed in accordance with the laws of the Republic of Panama. Any disputes arising from or related to these terms or our services shall be subject to the jurisdiction of the courts of the Republic of Panama."
+      },
+      "changes": {
+        "title": "12. Changes to These Terms",
+        "body": "Panama In Context reserves the right to update or modify these Terms and Conditions at any time. Changes will be posted on this page with an updated effective date. Continued use of the website after changes are posted constitutes acceptance of the revised terms."
+      },
+      "contact": {
+        "title": "13. Contact",
+        "body": "If you have any questions about these Terms and Conditions, please contact us through our contact form at panamaincontext.com/contacto or write to Diego Feliu at diego@panamaincontext.com."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "effective_date": "Effective date: May 30, 2026",
+    "sections": {
+      "info_we_collect": {
+        "title": "1. Information We Collect",
+        "body": "Panama In Context collects limited personal information, only when you voluntarily provide it. We do not set cookies for tracking purposes. The information we may collect includes:\n\n• Name and email address when you submit our contact form\n• Email address when you subscribe to our mailing list\n• Email address when you register for educator access to our educational materials"
+      },
+      "analytics": {
+        "title": "2. Analytics",
+        "body": "We use Google Analytics and Meta Pixel to collect anonymized usage data about how visitors interact with our website. This data helps us understand user journeys and improve our products and services. The analytics data collected is anonymized and does not personally identify individual visitors. It includes information such as pages visited, time spent on the site, and general geographic region."
+      },
+      "contact_form": {
+        "title": "3. Contact Form Data",
+        "body": "When you submit our contact form, we collect your name, email address, and message content. This information is used solely to respond to your inquiry and, if applicable, to provide the services you requested. We do not share this information with third parties."
+      },
+      "mailing_list": {
+        "title": "4. Mailing List",
+        "body": "If you subscribe to our mailing list, we collect your email address to send you updates about our blog content, educational materials, and services. You can unsubscribe at any time using the link provided in each email."
+      },
+      "educator_access": {
+        "title": "5. Educator Access",
+        "body": "Educators who register for access to our educational materials provide their email address for verification purposes. This email is used to manage access to our materials and to send occasional updates about new educational content. You may request removal of your email at any time."
+      },
+      "third_party": {
+        "title": "6. Third-Party Services",
+        "body": "We use the following third-party services that may process data:\n\n• Google Analytics — for anonymized website usage analytics\n• Meta Pixel — for anonymized website usage analytics\n• Payment processors — for processing tour booking payments (payment details are handled directly by the processor and are never stored on our servers)\n• Sentry — for application error monitoring. Sentry receives only limited technical data about errors (such as error messages, browser type, and the page where an error occurred). It does not receive your contact-form messages, booking details, or mailing-list information."
+      },
+      "data_retention": {
+        "title": "7. Data Retention",
+        "body": "We retain personal data for the following periods:\n\n• Contact form inquiries: 6 months, or 3 months after any services related to the inquiry have been provided, whichever is later\n• Mailing list emails: until you unsubscribe\n• Educator access emails: until you request removal\n• Analytics data: governed by Google Analytics and Meta Pixel retention policies"
+      },
+      "children": {
+        "title": "8. Children's Privacy",
+        "body": "Our website serves educational content for schools, but we do not knowingly collect personal information from children under 13 years of age. Educational materials are accessed through educator accounts, not individual student accounts. If you believe a child has provided us with personal information, please contact us so we can promptly remove it."
+      },
+      "your_rights": {
+        "title": "9. Your Rights",
+        "body": "You have the right to:\n\n• Request access to the personal data we hold about you\n• Request correction of any inaccurate data\n• Request deletion of your personal data\n• Unsubscribe from our mailing list at any time\n• Opt out of analytics tracking by using your browser's Do Not Track setting or a browser extension\n\nTo exercise any of these rights, please contact us through our contact form or at diego@panamaincontext.com."
+      },
+      "changes": {
+        "title": "10. Changes to This Policy",
+        "body": "Panama In Context reserves the right to update this Privacy Policy at any time. Changes will be posted on this page with an updated effective date. Continued use of the website after changes are posted constitutes acceptance of the revised policy."
+      },
+      "contact": {
+        "title": "11. Contact",
+        "body": "If you have any questions about this Privacy Policy, please contact us through our contact form at panamaincontext.com/contacto or write to Diego Feliu at diego@panamaincontext.com."
+      }
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "The page you're looking for doesn't exist or may have been moved.",
+    "backHome": "Back to home"
+  }
+}

@@ -1,0 +1,26 @@
+<!-- @dsCard group="Type" viewport="700x230" name="Type scale" subtitle="xs → 7xl, the Tailwind rem ramp" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); color: var(--text-heading); }
+  .wrap { padding: 18px 24px; }
+  .row { display: flex; align-items: baseline; gap: 16px; padding: 2px 0; }
+  .row .name { width: 64px; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); flex: none; }
+  .row .spec { margin-left: auto; font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); }
+  .row .sample { font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row"><span class="name">7xl</span><span class="sample" style="font-size:var(--text-7xl)">Panama</span><span class="spec">72px</span></div>
+    <div class="row"><span class="name">5xl</span><span class="sample" style="font-size:var(--text-5xl)">Panama in Context</span><span class="spec">48px</span></div>
+    <div class="row"><span class="name">4xl</span><span class="sample" style="font-size:var(--text-4xl)">Section title</span><span class="spec">36px</span></div>
+    <div class="row"><span class="name">2xl</span><span class="sample" style="font-size:var(--text-2xl)">Subsection heading</span><span class="spec">24px</span></div>
+    <div class="row"><span class="name">lg</span><span class="sample" style="font-size:var(--text-lg);font-weight:400">Body copy / lead paragraph</span><span class="spec">18px</span></div>
+    <div class="row"><span class="name">sm</span><span class="sample" style="font-size:var(--text-sm);font-weight:600">Button &amp; UI label</span><span class="spec">14px</span></div>
+  </div>
+</body>
+</html>

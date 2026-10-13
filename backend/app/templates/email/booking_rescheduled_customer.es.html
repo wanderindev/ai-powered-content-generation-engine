@@ -1,0 +1,23 @@
+<html><body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #1095d3;">Reserva Reprogramada</h2>
+    <p>Hola {{ order.customer_name }},</p>
+    <p>Su reserva para <strong>{{ tour_name }}</strong> ha sido reprogramada{% if reason %} {{ reason }}{% endif %}.</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;"><strong>Fecha anterior</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ old_date.isoformat() }} — {{ old_time_slot }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; background: #f0f9ff;"><strong>Nueva fecha</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd; background: #f0f9ff;"><strong>{{ booking.tour_date.isoformat() }} — {{ booking.time_slot }}{% if booking.preferred_time %} ({{ booking.preferred_time }}){% endif %}</strong></td>
+        </tr>
+    </table>
+
+    <p>Si tiene alguna pregunta, no dude en contactarnos.</p>
+    <p style="color: #666; font-size: 12px; margin-top: 24px;">
+        Contáctenos en diego@panamaincontext.com
+    </p>
+</div>
+</body></html>

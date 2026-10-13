@@ -1,0 +1,42 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Forms — inputs, select, checkbox" subtitle="Inset-ring fields with label, hint, error & checkbox" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js?v=1"></script>
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); }
+  .wrap { padding: 22px 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; align-items: start; }
+  .full { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+  <div id="root" class="wrap"></div>
+  <script type="text/babel">
+    const { Input, Select, Checkbox } = window.PanamaInContextDesignSystem_0dba89;
+    function Demo() {
+      return (
+        <div className="grid">
+          <Input label="Email address" type="email" icon="envelope" placeholder="you@example.com" required />
+          <Select label="I am interested in" defaultValue="">
+            <option value="" disabled>Select an option</option>
+            <option value="field-trips">Academic Field Trips</option>
+            <option value="tours">Private Tours</option>
+          </Select>
+          <Input label="School name" hint="As it should appear on the invoice" />
+          <Input label="Email" error="Please enter a valid email" defaultValue="not-an-email" />
+          <div className="full">
+            <Checkbox label="I need transportation from my hotel" description="Round-trip vehicle for groups of 5 or more" defaultChecked />
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+  </script>
+</body>
+</html>

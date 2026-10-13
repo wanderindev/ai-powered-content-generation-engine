@@ -1,0 +1,26 @@
+<!-- @dsCard group="Brand" viewport="700x220" name="Logo" subtitle="Hexagon emblem + wordmark — clear space & dark/soft lockups" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); }
+  .wrap { padding: 24px; display: flex; gap: 18px; align-items: stretch; }
+  .panel { flex: 1; border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .panel.dark { background: var(--surface-dark); border-color: var(--surface-dark); }
+  .panel.soft { background: var(--brand-50); }
+  .panel img.h { height: 64px; width: auto; }
+  .panel img.e { height: 92px; width: auto; }
+  .cap { position: absolute; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 18px; }
+</style>
+</head>
+<body>
+  <div class="wrap grid">
+    <div class="panel"><img class="h" src="../assets/logo-h-116.png" alt="Panama In Context" /></div>
+    <div class="panel soft"><img class="e" src="../assets/logo_512x512.png" alt="emblem" /></div>
+    <div class="panel dark"><img class="e" src="../assets/logo_512x512.png" alt="emblem on dark" /></div>
+  </div>
+</body>
+</html>

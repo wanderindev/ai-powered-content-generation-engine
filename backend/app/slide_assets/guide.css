@@ -1,0 +1,243 @@
+/* ============================================================
+   Panama In Context — Study Guide template styles
+   Portrait, US Letter authored at 816×1056 (8.5×11 @96dpi).
+   Inherits brand tokens from ../../styles.css. Used by the
+   printable guide (index.html) and each standalone @dsCard page.
+   ============================================================ */
+
+:root {
+  --pg-w: 816px;
+  --pg-h: 1056px;
+  --pg-pad: 76px;
+
+  /* Study-guide type scale (tuned for the portrait page) */
+  --g-eyebrow:  15px;
+  --g-title:    38px;
+  --g-display:  54px;
+  --g-subtitle: 25px;
+  --g-body:     17px;
+  --g-caption:  14px;
+  --g-numeral:  108px;
+}
+
+/* ---- Page frame ----------------------------------------- */
+.page {
+  position: relative;
+  width: var(--pg-w);
+  height: var(--pg-h);
+  background: var(--surface);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.page * { box-sizing: border-box; }
+.page-pad { padding: var(--pg-pad); height: 100%; display: flex; flex-direction: column; }
+
+/* ---- Shared atoms --------------------------------------- */
+.g-eyebrow {
+  margin: 0;
+  font-size: var(--g-eyebrow);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+.g-eyebrow.on-dark { color: var(--brand-300); }
+
+.g-title {
+  margin: 12px 0 0;
+  font-size: var(--g-title);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+.g-subtitle {
+  margin: 0;
+  font-size: var(--g-subtitle);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-heading);
+}
+.g-rule { width: 56px; height: 4px; border-radius: 2px; background: var(--color-brand); margin: 18px 0 0; }
+
+.g-body {
+  font-size: var(--g-body);
+  line-height: 1.68;
+  color: var(--text-body);
+}
+.g-body + .g-body { margin-top: 16px; }
+.g-body b { color: var(--text-heading); font-weight: var(--weight-semibold); }
+
+.g-lead {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* Header eyebrow+title block used on most content pages */
+.g-head .g-title { margin-top: 10px; }
+
+/* Running foot (chapter · page). No logo on interior pages. */
+.g-foot {
+  position: absolute; left: var(--pg-pad); right: var(--pg-pad); bottom: 40px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12.5px; color: var(--text-faint);
+  border-top: 1px solid var(--border); padding-top: 14px;
+}
+.g-foot .brand { color: var(--text-muted); font-weight: var(--weight-medium); }
+.g-foot .num { font-variant-numeric: tabular-nums; }
+
+/* Corner emblem — only on title & closing */
+.g-emblem { position: absolute; top: var(--pg-pad); right: var(--pg-pad); height: 34px; width: auto; }
+
+/* Photo treatment */
+.g-photo { width: 100%; object-fit: cover; display: block; border-radius: var(--radius-lg); }
+.g-figure { position: relative; }
+.g-figure .ring { position: absolute; inset: 0; border-radius: var(--radius-lg); box-shadow: var(--ring-inset-imagery); }
+.g-caption { margin: 12px 0 0; font-size: var(--g-caption); color: var(--text-muted); line-height: 1.5; }
+.g-caption b { color: var(--text-secondary); font-weight: var(--weight-semibold); }
+
+/* Brand-marked bullets */
+.g-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.g-bullets li { display: flex; align-items: flex-start; gap: 14px; font-size: var(--g-body); line-height: 1.5; color: var(--text-body); }
+.g-bullets li .mk { flex: none; margin-top: 1px; color: var(--color-brand); display: inline-flex; }
+.g-bullets li b { color: var(--text-heading); font-weight: var(--weight-semibold); }
+
+/* Numbered list */
+.g-numbers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.g-numbers li { display: flex; align-items: flex-start; gap: 16px; font-size: var(--g-body); line-height: 1.5; color: var(--text-body); }
+.g-numbers li .n { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--color-brand); color: #fff; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.g-numbers li .n.soft { background: var(--color-brand-soft); color: var(--color-brand); }
+.g-numbers li b { color: var(--text-heading); font-weight: var(--weight-semibold); display: block; margin-bottom: 2px; }
+
+/* Key-terms / callout box */
+.g-callout {
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-soft);
+  border-left: 4px solid var(--color-brand);
+  padding: 22px 24px;
+}
+.g-callout .lbl { margin: 0 0 12px; font-size: 13px; font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand-800); display: flex; align-items: center; gap: 8px; }
+.g-callout dl { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.g-callout dt { font-size: var(--g-body); font-weight: var(--weight-semibold); color: var(--text-heading); }
+.g-callout dd { margin: 2px 0 0; font-size: 15px; line-height: 1.5; color: var(--text-secondary); }
+
+/* Pull quote */
+.g-quote { border-left: 4px solid var(--brand-200); padding: 6px 0 6px 22px; }
+.g-quote p { margin: 0; font-size: 21px; line-height: 1.45; font-weight: var(--weight-medium); color: var(--text-heading); font-style: italic; }
+.g-quote cite { display: block; margin-top: 10px; font-size: 14px; font-style: normal; color: var(--text-muted); }
+
+/* ---- Title page ----------------------------------------- */
+.p-title { padding: 0; display: flex; flex-direction: column; }
+.p-title .hero { position: relative; height: 46%; overflow: hidden; background: var(--surface-dark); }
+.p-title .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+.p-title .hero .tint { position: absolute; inset: 0; background: linear-gradient(to top, rgba(17,24,39,0.55), rgba(17,24,39,0.1)); }
+.p-title .body { flex: 1; padding: 56px var(--pg-pad) var(--pg-pad); display: flex; flex-direction: column; }
+.p-title .brandline { display: flex; align-items: center; gap: 12px; }
+.p-title .brandline img { height: 40px; }
+.p-title .brandline span { font-weight: var(--weight-semibold); letter-spacing: .05em; font-size: 15px; color: var(--text-heading); }
+.p-title h1 { margin: 34px 0 0; font-size: var(--g-display); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); line-height: 1.04; color: var(--text-heading); text-wrap: balance; }
+.p-title .sub { margin: 20px 0 0; font-size: 20px; line-height: 1.5; color: var(--text-secondary); max-width: 34ch; }
+.p-title .meta { margin-top: auto; padding-top: 30px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.p-title .meta .who { font-size: 17px; font-weight: var(--weight-semibold); color: var(--text-heading); }
+.p-title .meta .what { font-size: 15px; color: var(--text-muted); }
+
+/* ---- Section page --------------------------------------- */
+.p-section { background: var(--brand-900); }
+.p-section .photo-layer { position: absolute; inset: 0; }
+.p-section .photo-layer img { width: 100%; height: 100%; object-fit: cover; opacity: 0.2; }
+.p-section .inner { position: relative; height: 100%; padding: var(--pg-pad); display: flex; flex-direction: column; justify-content: center; }
+.p-section .num { font-size: var(--g-numeral); font-weight: var(--weight-bold); line-height: 0.9; color: var(--brand-400); letter-spacing: -0.04em; }
+.p-section h2 { margin: 14px 0 0; font-size: 44px; font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); color: #fff; text-wrap: balance; max-width: 16ch; }
+.p-section .sub { margin: 22px 0 0; font-size: 19px; line-height: 1.55; color: var(--brand-100); max-width: 44ch; }
+.p-section .chapters { margin-top: 40px; display: flex; flex-direction: column; gap: 12px; max-width: 60%; }
+.p-section .chapters div { display: flex; gap: 14px; align-items: baseline; color: var(--brand-100); font-size: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.14); }
+.p-section .chapters .cn { color: var(--brand-300); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---- Photo-top page ------------------------------------- */
+.p-photo .banner { position: relative; height: 40%; margin: 0 0 0; }
+.p-photo .banner img { width: 100%; height: 100%; object-fit: cover; }
+.p-photo .banner .chip { position: absolute; left: var(--pg-pad); bottom: 20px; background: var(--color-brand); color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 6px 13px; border-radius: var(--radius-full); }
+.p-photo .below { padding: 40px var(--pg-pad); flex: 1; }
+
+/* ---- Vertical timeline ----------------------------------
+   Event spacing MUST stay a flex gap and top spacing a padding (not per-event
+   padding-bottom or a .track margin): the PDF packer measures each .ev alone
+   inside its wrapper and re-adds gaps itself, so spacing hidden from a single
+   item's border box (a :last-child trim, a collapsing margin) under-counts the
+   rendered height and overflows the page footer. */
+.p-vtimeline { padding-top: 34px; }
+.p-vtimeline .track { position: relative; padding-left: 8px; display: flex; flex-direction: column; gap: 30px; }
+.p-vtimeline .track::before { content: ""; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 3px; background: linear-gradient(to bottom, var(--brand-300), var(--color-brand)); border-radius: 2px; }
+.p-vtimeline .ev { position: relative; padding: 0 0 0 52px; }
+.p-vtimeline .ev .node { position: absolute; left: 5px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 4px solid var(--color-brand); box-sizing: border-box; }
+.p-vtimeline .ev .yr { font-size: 22px; font-weight: var(--weight-bold); color: var(--color-brand); letter-spacing: -0.02em; }
+.p-vtimeline .ev .h { margin: 2px 0 0; font-size: 18px; font-weight: var(--weight-semibold); color: var(--text-heading); }
+.p-vtimeline .ev .d { margin: 5px 0 0; font-size: 15px; line-height: 1.5; color: var(--text-secondary); }
+
+/* ---- Two-paragraph / combo content grid ----------------- */
+.g-stack { display: flex; flex-direction: column; }
+.g-stack > * + * { margin-top: 20px; }
+.g-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+
+/* ---- Closing page --------------------------------------- */
+.p-closing { background: var(--surface-dark); }
+.p-closing .photo-layer { position: absolute; inset: 0; }
+.p-closing .photo-layer img { width: 100%; height: 100%; object-fit: cover; opacity: 0.26; }
+.p-closing .inner { position: relative; height: 100%; padding: var(--pg-pad); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.p-closing img.logo { height: 52px; margin-bottom: 28px; }
+.p-closing h2 { margin: 0; font-size: 44px; font-weight: var(--weight-semibold); color: #fff; letter-spacing: var(--tracking-tight); }
+.p-closing .sub { margin: 16px 0 0; font-size: 19px; line-height: 1.55; color: var(--text-on-dark); max-width: 40ch; }
+.p-closing .review { margin-top: 40px; width: 100%; max-width: 460px; text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: var(--radius-lg); padding: 24px 26px; }
+.p-closing .review .lbl { margin: 0 0 14px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-300); }
+.p-closing .review ol { margin: 0; padding-left: 20px; color: var(--text-on-dark); font-size: 15.5px; line-height: 1.5; }
+.p-closing .review li + li { margin-top: 10px; }
+.p-closing .contact { margin-top: 34px; display: flex; gap: 26px; align-items: center; color: #fff; font-size: 16px; }
+.p-closing .contact span { display: inline-flex; align-items: center; gap: 8px; }
+.p-closing .contact .ic { color: var(--brand-300); display: inline-flex; }
+
+/* ---- Printable multi-page document (index.html) --------- */
+.desk { margin: 0; background: #eceef1; }
+.doc { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 40px 16px; }
+.doc .page { box-shadow: 0 8px 24px -6px rgba(0,0,0,0.25); }
+@media print {
+  @page { size: letter portrait; margin: 0; }
+  .desk, .doc { background: #fff; }
+  .doc { gap: 0; padding: 0; }
+  .doc .page { box-shadow: none; break-after: page; page-break-after: always; }
+  .doc .page:last-child { break-after: auto; }
+}
+
+/* ============================================================
+   Renderer additions (backend/app/services/guide_pdf.py).
+   Everything above is a verbatim copy of the design kit's
+   ui_kits/study_guides/guide.css (minus the .standalone screen-
+   preview chrome, which the headless renderer never uses).
+   The classes below are needed by generated content the kit's
+   hand-authored samples don't cover.
+   ============================================================ */
+
+/* Cover hero band when no cover photo has been picked yet */
+.p-title .hero.hero-solid { background: var(--brand-900); }
+
+/* Continuation-page head (section flows past one page) */
+.g-cont-eyebrow { margin: 0; font-size: var(--g-eyebrow); font-weight: var(--weight-semibold);
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint); }
+
+/* Unresolved image slot — an editor picks the photo in the admin UI */
+.g-missing { border: 2px dashed var(--brand-200); background: var(--color-brand-soft);
+  border-radius: var(--radius-lg); padding: 30px 26px; text-align: center; }
+.g-missing .q { margin: 0; font-size: 15px; font-weight: var(--weight-semibold); color: var(--brand-800); }
+.g-missing .c { margin: 8px 0 0; font-size: var(--g-caption); color: var(--text-muted); }
+
+/* Multiple-choice review question (post-visit "Test Your Knowledge") */
+.g-mcq .q { margin: 0; font-size: var(--g-body); font-weight: var(--weight-semibold);
+  color: var(--text-heading); line-height: 1.5; }
+.g-mcq .q .qn { color: var(--color-brand); margin-right: 6px; }
+.g-mcq .choices { margin: 10px 0 0; padding-left: 24px; list-style: lower-alpha; }
+.g-mcq .choices li { font-size: 15.5px; line-height: 1.5; color: var(--text-secondary);
+  padding-left: 6px; margin: 0 0 6px; }
+.g-mcq .choices li::marker { color: var(--color-brand); font-weight: var(--weight-semibold); }

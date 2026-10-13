@@ -1,0 +1,27 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Corner radii" subtitle="md buttons · lg modals · 2xl imagery · full pills" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); color: var(--text-heading); }
+  .wrap { padding: 20px 24px; display: flex; gap: 20px; align-items: flex-end; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .box { width: 76px; height: 64px; background: var(--brand-50); border: 1.5px solid var(--color-brand); }
+  .col .n { font-size: 11px; font-weight: 600; color: var(--text-heading); }
+  .col .v { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+  .col .u { font-size: 10px; color: var(--text-faint); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="col"><div class="box" style="border-radius:var(--radius-sm)"></div><div class="n">sm</div><div class="v">4px</div><div class="u">chips</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-md)"></div><div class="n">md</div><div class="v">6px</div><div class="u">buttons · inputs</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-lg)"></div><div class="n">lg</div><div class="v">8px</div><div class="u">modals · images</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-xl)"></div><div class="n">xl</div><div class="v">12px</div><div class="u">cards</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-2xl)"></div><div class="n">2xl</div><div class="v">16px</div><div class="u">feature img</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-full)"></div><div class="n">full</div><div class="v">9999px</div><div class="u">pills · avatars</div></div>
+  </div>
+</body>
+</html>

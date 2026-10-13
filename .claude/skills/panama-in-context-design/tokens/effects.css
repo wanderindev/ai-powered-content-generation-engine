@@ -1,0 +1,49 @@
+/* ============================================================
+   Panama In Context — Effects: radii, shadows, borders, motion
+   ============================================================ */
+
+:root {
+  /* --- Corner radii --------------------------------------- */
+  --radius-none: 0;
+  --radius-sm:   0.25rem;   /* rounded     — small chips */
+  --radius-md:   0.375rem;  /* rounded-md  — buttons, inputs */
+  --radius-lg:   0.5rem;    /* rounded-lg  — modals, images, wells */
+  --radius-xl:   0.75rem;   /* rounded-xl  — large cards */
+  --radius-2xl:  1rem;      /* rounded-2xl — feature imagery */
+  --radius-3xl:  1.5rem;
+  --radius-full: 9999px;    /* pills, avatars, toggles */
+
+  /* --- Shadows (Tailwind elevation set) ------------------- */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Semantic elevation */
+  --elevation-button: var(--shadow-xs); /* resting primary button */
+  --elevation-card:   var(--shadow-sm);
+  --elevation-raised: var(--shadow-lg); /* avatar, popover */
+  --elevation-modal:  var(--shadow-xl);
+
+  /* --- Borders & rings ------------------------------------ */
+  --border-width: 1px;
+  --border-hairline: 1px solid var(--border);
+  --ring-inset-imagery: inset 0 0 0 1px var(--border-faint); /* on photos */
+  --focus-ring-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--focus-ring);
+
+  /* --- Motion --------------------------------------------- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --ease-out:      cubic-bezier(0, 0, 0.2, 1); /* @kind other */
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1); /* @kind other */
+
+  --duration-fast:   100ms; /* @kind other */  /* button/icon state */
+  --duration-base:   200ms; /* @kind other */  /* color/opacity transitions */
+  --duration-slow:   300ms; /* @kind other */  /* modal enter */
+  --duration-image:  1000ms; /* @kind other */ /* hero crossfade */
+
+  --transition-colors: color var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
+}

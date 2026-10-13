@@ -1,0 +1,92 @@
+name: Agent task
+description: Work specifically scoped for autonomous agent execution
+title: "[Agent] "
+labels: ["agent-friendly"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when filing work that an autonomous agent should pick up directly.
+        Before filing, confirm the work meets the
+        [agent-friendly criteria](../blob/main/docs/pilot/agent-friendly-criteria.md).
+        If it doesn't, file a **Code quality** or **Feature request** issue instead and let a human triage.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of what needs to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete, checkable conditions. The agent must be able to verify each one.
+      placeholder: |
+        - [ ] `foo()` returns `Bar` instead of `dict`
+        - [ ] All callers updated
+        - [ ] `pytest backend/tests/test_foo.py` passes
+        - [ ] `ruff check backend/app/foo.py` clean
+    validations:
+      required: true
+
+  - type: textarea
+    id: in-scope
+    attributes:
+      label: Files in scope
+      description: Files the agent may modify.
+      placeholder: |
+        - backend/app/services/foo.py
+        - backend/tests/test_foo.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Files explicitly out of scope
+      description: Files the agent must not touch — call out anything tempting but off-limits.
+      placeholder: |
+        - alembic/versions/*
+        - backend/app/auth.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test requirements
+      description: What tests must exist or pass? Where should new tests live?
+      placeholder: |
+        Existing: backend/tests/test_foo.py covers happy path.
+        Add: a regression test for the bug at line 42.
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety notes
+      description: Anything the agent should know about — schema, auth, payment, PII, third-party calls, irreversible operations.
+      placeholder: No DB migrations. No changes to auth flow. Safe to run repeatedly.
+
+  - type: checkboxes
+    id: criteria-check
+    attributes:
+      label: Agent-friendly criteria check
+      description: Confirm this issue meets the criteria. See docs/pilot/agent-friendly-criteria.md.
+      options:
+        - label: Single-file or tightly-scoped multi-file change
+          required: true
+        - label: No business logic decisions required
+          required: true
+        - label: No schema migrations
+          required: true
+        - label: No changes to auth, payment, or PII handling
+          required: true
+        - label: Tests exist for the affected area, or can be added trivially
+          required: true
+        - label: Clear acceptance criteria (filled in above)
+          required: true

@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs when a new commit lands on the same branch/PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets-scan:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION=8.21.2
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      # Scans the working tree only (--no-git). Pre-Phase-0 commits contain
+      # now-rotated secrets that gitleaks would otherwise flag forever;
+      # scanning the tree means every push is validated against its
+      # post-merge state, which is what actually matters for new leaks.
+      - name: Scan working tree
+        run: gitleaks detect --source . --no-git --redact --verbose --no-banner
+
+  backend:
+    name: Backend (pytest + ruff)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ruff
+        run: ruff check app
+
+      - name: Ruff format
+        run: ruff format --check app
+
+      # Tests use testcontainers, which spawns a sibling postgres:17-alpine
+      # container via the runner's docker socket (ubuntu-latest has Docker).
+      # DATABASE_URL is deliberately bogus so anything that bypasses the
+      # FastAPI `get_db` override fails loudly instead of hitting prod.
+      # Coverage is reported (--cov-report=term prints the per-file table
+      # at the end of the run) but not gated. The brief-writing pipeline
+      # for agent-friendly test-writing tasks relies on coverage being
+      # measurable; we can flip to --cov-fail-under=<N> once the baseline
+      # rises off 59% (2026-05-29). Closes #13.
+      - name: Pytest (with coverage report)
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:1/none
+          ENVIRONMENT: test
+        run: pytest --cov=app --cov-report=term -q
+
+  frontend:
+    # Name kept as "Frontend (build)" so it matches the required status
+    # check in branch protection — renaming it strands the required check
+    # in a permanent "Expected — Waiting for status" state. The job now
+    # runs lint before build (#273).
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # eslint exits non-zero only on errors (not warnings), so this gate
+      # passes today and fails on any newly-introduced error. The known
+      # baseline warnings (epic #284) stay visible without blocking. Closes #273.
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

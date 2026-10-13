@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      # Mount source for hot reload during development
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Run as root so the container can read the root-owned host docker socket
+    # (mounted below) that testcontainers needs for the pytest suite. Dev-only.
+    user: "0:0"
+    ports:
+      - "8000:8000"
+    environment:
+      # Default: local `db` service. To override with prod, source
+      # .env.prod-readonly in your shell before `docker compose up`.
+      - DATABASE_URL=${DATABASE_URL:-postgresql://panama:localdev@db:5432/panama_in_context}
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+      - DEBUG=true
+      - ENVIRONMENT=development
+    volumes:
+      # Mount source for hot reload during development
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+      - ./backend/alembic:/app/alembic
+      - backend_static:/app/static
+      # Mount the host docker socket so testcontainers (conftest.py) can spawn
+      # the ephemeral Postgres container the pytest suite needs. Dev-only.
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      db:
+        condition: service_started
+        required: false
+
+  db:
+    image: postgres:17-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=panama
+      - POSTGRES_PASSWORD=localdev
+      - POSTGRES_DB=panama_in_context
+    ports:
+      # Use 5433 to avoid conflict with local PostgreSQL on 5432
+      - "5433:5432"
+
+  # Local S3-compatible object store. Mimics DO Spaces for dev so pipelines
+  # don't write to the live panamaincontext bucket. Objects land in
+  # ./local-storage/ on the host.
+  # Web console: http://localhost:9001 (minioadmin / minioadmin)
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - ./local-storage:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # One-shot init: creates the bucket on first `docker-compose up` and grants
+  # anonymous-read so DO_SPACES_CDN_URL=http://localhost:9000/panamaincontext
+  # works the way DO Spaces' public-read ACL does in prod. Exits 0 after
+  # provisioning; safe to re-run.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done;
+      mc mb --ignore-existing local/panamaincontext;
+      mc anonymous set download local/panamaincontext;
+      "
+    restart: "no"
+
+volumes:
+  postgres_data:
+  backend_static:

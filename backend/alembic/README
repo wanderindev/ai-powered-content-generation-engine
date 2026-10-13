@@ -1,0 +1,20 @@
+Generic single-database configuration for Panama In Context.
+
+Usage:
+    # Check current revision
+    alembic current
+
+    # Create a new migration (auto-detect changes)
+    alembic revision --autogenerate -m "Description of changes"
+
+    # Create an empty migration (manual)
+    alembic revision -m "Description of changes"
+
+    # Apply all pending migrations
+    alembic upgrade head
+
+    # Rollback one migration
+    alembic downgrade -1
+
+    # Show SQL without running (dry run)
+    alembic upgrade head --sql

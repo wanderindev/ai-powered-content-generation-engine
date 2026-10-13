@@ -1,0 +1,7 @@
+<html><body style="font-family: Arial, sans-serif;">
+<h2>Payment Received</h2>
+<p><strong>Order:</strong> {{ order.reference }}</p>
+<p><strong>Customer:</strong> {{ order.customer_name }} ({{ order.customer_email }})</p>
+<p><strong>Amount:</strong> ${{ order.grand_total }}</p>
+<p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+</body></html>

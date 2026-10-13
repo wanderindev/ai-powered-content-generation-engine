@@ -1,0 +1,38 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Title slide" subtitle="Opening slide — emblem, eyebrow, big title, byline over a hero photo" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-title">
+  <div class="photo-layer"><img src="../../assets/images/ship-in-locks.jpg" alt=""></div>
+  <div class="s-scrim"></div>
+  <div class="content">
+    <div class="kicker"><img src="../../assets/logo_512x512.png" alt="Panama In Context"><span style="color:#fff;font-weight:600;letter-spacing:.05em;font-size:18px">PANAMA IN CONTEXT</span></div>
+    <p class="s-eyebrow on-dark">Educational Series · Module 1</p>
+    <h1>The Three Panamas</h1>
+    <p class="sub">How three cities — Panamá Viejo, Casco Antiguo, and the modern capital — tell five hundred years of history.</p>
+    <div class="byline"><span>Diego Raúl Feliu</span><span class="dot"></span><span>Historical Tourism</span></div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

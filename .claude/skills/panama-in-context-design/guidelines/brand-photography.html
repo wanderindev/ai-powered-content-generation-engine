@@ -1,0 +1,28 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Photography" subtitle="Warm, sun-lit heritage imagery — rounded-2xl with hairline ring" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); color: var(--text-heading); }
+  .wrap { padding: 22px 24px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  figure { margin: 0; position: relative; }
+  figure img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-2xl); display: block; }
+  figure .ring { position: absolute; inset: 0; border-radius: var(--radius-2xl); box-shadow: var(--ring-inset-imagery); }
+  .note { margin-top: 12px; font-size: 12px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid">
+      <figure><img src="../assets/images/cupula-san-francisco.jpg" alt="" /><span class="ring"></span></figure>
+      <figure><img src="../assets/images/ship-in-locks.jpg" alt="" /><span class="ring"></span></figure>
+      <figure><img src="../assets/images/biomuseo.jpg" alt="" /><span class="ring"></span></figure>
+      <figure><img src="../assets/images/mi-pueblito-mural.jpg" alt="" /><span class="ring"></span></figure>
+    </div>
+    <p class="note">Real Panamanian heritage sites — colonial domes, the Canal, the Biomuseo, Afro-Caribbean murals. Warm daylight, saturated, documentary. Rounded-2xl corners with an inset <code>ring-gray-900/10</code>.</p>
+  </div>
+</body>
+</html>

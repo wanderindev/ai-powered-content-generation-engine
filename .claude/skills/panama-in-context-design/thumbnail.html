@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  html, body { margin: 0; }
+  .tile { width: 1280px; height: 854px; display: flex; font-family: var(--font-sans); }
+  .main { flex: 1; background: var(--brand-600); display: flex; align-items: center; justify-content: center; }
+  .main img { width: 62%; height: auto; }
+  .strip { width: 25%; display: flex; flex-direction: column; }
+  .strip div { flex: 1; }
+</style>
+</head>
+<body>
+  <div class="tile">
+    <div class="main"><img src="assets/logo_512x512.png" alt="Panama In Context" /></div>
+    <div class="strip">
+      <div style="background:var(--brand-300)"></div>
+      <div style="background:var(--brand-500)"></div>
+      <div style="background:var(--brand-800)"></div>
+      <div style="background:var(--brand-950)"></div>
+    </div>
+  </div>
+</body>
+</html>

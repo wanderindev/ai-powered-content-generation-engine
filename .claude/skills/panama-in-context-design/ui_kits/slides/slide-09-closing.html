@@ -1,0 +1,39 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Closing" subtitle="Thank-you / contact slide on a dark photo" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-closing">
+  <div class="photo-layer"><img src="../../assets/images/plaza-herrera.jpg" alt=""></div>
+  <div class="content">
+    <img class="logo" src="../../assets/logo_512x512.png" alt="Panama In Context">
+    <h2>Gracias · Thank You</h2>
+    <p class="sub">Where every site tells a story.</p>
+    <div class="contact">
+      <span><span class="ic"><i data-hicon="globe-americas" style="font-size:22px"></i></span>panamaincontext.com</span>
+      <span><span class="ic"><i data-hicon="envelope" style="font-size:22px"></i></span>hello@panamaincontext.com</span>
+    </div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

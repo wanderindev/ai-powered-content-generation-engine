@@ -1,0 +1,9 @@
+<html><body style="font-family: Arial, sans-serif;">
+<h2>Payment Link Renewal Requested</h2>
+<p>A customer has requested a new payment link. Please re-issue and send it.</p>
+<p><strong>Order:</strong> {{ order.reference }}</p>
+<p><strong>Customer:</strong> {{ order.customer_name }} ({{ order.customer_email }})</p>
+<p><strong>Phone:</strong> {{ order.customer_phone }}</p>
+<p><strong>Payment method:</strong> {{ order.payment_method or 'N/A' }}</p>
+<p><strong>Amount:</strong> ${{ order.grand_total }}</p>
+</body></html>

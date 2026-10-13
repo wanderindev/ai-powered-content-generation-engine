@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose a new feature or significant enhancement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for net-new features or significant enhancements to existing ones.
+        For small refactors or tech debt, use the **Code quality** template instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem being solved
+      description: What user or operator pain does this address? Who feels it today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Rough shape of the change. Alternatives considered are welcome.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope estimate
+      options:
+        - Small — under a day, single area
+        - Medium — multi-day, touches 2-3 areas
+        - Large — multi-week, cross-cutting, needs design doc
+    validations:
+      required: true
+
+  - type: input
+    id: prd
+    attributes:
+      label: PRD / ADR / design doc reference
+      description: Link to any prior planning artifact, if one exists.
+      placeholder: docs/... or a URL
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will we know this is done?
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context

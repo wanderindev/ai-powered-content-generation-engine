@@ -1,0 +1,41 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Two column — image right" subtitle="Heading + copy on the left, photo on the right" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-split img-right">
+  <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+  <div class="copy">
+    <p class="s-eyebrow">UNESCO World Heritage</p>
+    <h2 class="s-title">Casco Antiguo</h2>
+    <p class="s-body">The walled "old quarter," rebuilt in 1673. Cobblestone streets blend colonial, republican, and French-influenced architecture.</p>
+    <ul>
+      <li><span class="mk"><i data-hicon="map-pin" style="font-size:26px"></i></span>Plaza de la Independencia &amp; the Cathedral</li>
+      <li><span class="mk"><i data-hicon="map-pin" style="font-size:26px"></i></span>The Golden Altar of San José</li>
+      <li><span class="mk"><i data-hicon="map-pin" style="font-size:26px"></i></span>Plaza Bolívar and the old seawall</li>
+    </ul>
+  </div>
+  <div class="media"><img class="s-photo" src="../../assets/images/catedral-interior.jpg" alt=""></div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

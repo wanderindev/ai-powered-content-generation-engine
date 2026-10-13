@@ -1,0 +1,44 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Timeline" subtitle="Horizontal timeline with alternating milestones" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-timeline">
+  <div class="slide-pad">
+    <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+    <p class="s-eyebrow">Five Centuries</p>
+    <h2 class="s-title">A timeline of Panamá's history</h2>
+    <div class="track">
+      <div class="line" style="background:linear-gradient(to right, var(--brand-300), var(--color-brand))"></div>
+      <div class="steps">
+        <div class="step"><div class="above"><span class="yr">1519</span><span class="lbl">Panamá Viejo founded</span></div><div class="node"></div></div>
+        <div class="step"><div class="node"></div><div class="below"><span class="yr">1671</span><span class="lbl">Morgan's raid destroys the city</span></div></div>
+        <div class="step"><div class="above"><span class="yr">1821</span><span class="lbl">Independence from Spain</span></div><div class="node"></div></div>
+        <div class="step"><div class="node"></div><div class="below"><span class="yr">1903</span><span class="lbl">Separation from Colombia</span></div></div>
+        <div class="step"><div class="above"><span class="yr">1914</span><span class="lbl">The Panama Canal opens</span></div><div class="node"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

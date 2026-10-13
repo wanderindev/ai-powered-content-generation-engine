@@ -1,0 +1,36 @@
+<!-- @dsCard group="Study Guides" viewport="816x1056" name="Vertical timeline" subtitle="Dated milestones down a vertical brand line" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="guide.css" />
+<script src="../../assets/heroicons.js"></script>
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="page p-vtimeline">
+  <div class="page-pad">
+    <p class="g-eyebrow">Five Centuries</p>
+    <h2 class="g-title">A timeline of Panamá's history</h2>
+    <div class="g-rule"></div>
+    <div class="track">
+      <div class="ev"><span class="node"></span><div class="yr">1519</div><p class="h">Panamá Viejo is founded</p><p class="d">Pedrarias Dávila establishes the first European settlement on the Pacific coast of the Americas.</p></div>
+      <div class="ev"><span class="node"></span><div class="yr">1671</div><p class="h">Morgan's raid destroys the city</p><p class="d">The Welsh privateer sacks and burns Panamá Viejo; the capital is abandoned.</p></div>
+      <div class="ev"><span class="node"></span><div class="yr">1673</div><p class="h">Casco Antiguo is founded</p><p class="d">The city is rebuilt two miles west on a fortified, defensible peninsula.</p></div>
+      <div class="ev"><span class="node"></span><div class="yr">1821</div><p class="h">Independence from Spain</p><p class="d">Panama joins Gran Colombia, ending three centuries of Spanish rule.</p></div>
+      <div class="ev"><span class="node"></span><div class="yr">1914</div><p class="h">The Panama Canal opens</p><p class="d">The waterway reshapes global trade and Panama's national identity.</p></div>
+    </div>
+    <div class="g-foot"><span class="brand">Panama In Context · The Three Panamas</span><span class="num">5</span></div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){ var s=document.querySelector('.scaler'); if(!s) return;
+    var k=Math.min((innerWidth-40)/816,(innerHeight-40)/1056); s.style.transform='scale('+k+')'; }
+  addEventListener('resize',fit); addEventListener('load',fit); fit();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+/* ============================================================
+   Panama In Context — Social post styles (Instagram)
+   Portrait 1080×1350 (4:5). Matches the @panamaincontextbydiego
+   feed: textured "Sabías que" fact cards (blue + warm-gray) and
+   photo-led blog announcements. Brand blue + accent orange.
+   ============================================================ */
+
+:root {
+  --post-w: 1080px;
+  --post-h: 1350px;
+  --post-pad: 96px;
+}
+
+.post {
+  position: relative;
+  width: var(--post-w);
+  height: var(--post-h);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+}
+.post * { box-sizing: border-box; }
+
+/* ---- Brand lockup (hexagon + typeset wordmark) ---------- */
+.pic-lockup { display: inline-flex; align-items: center; gap: 16px; }
+.pic-lockup img { height: 62px; width: auto; flex: none; }
+.pic-lockup .wm { display: flex; flex-direction: column; line-height: 1; }
+.pic-lockup .wm .b1 { font-size: 27px; font-weight: 800; letter-spacing: 0.14em; color: var(--wm, #fff); }
+.pic-lockup .wm .b2 { font-size: 13.5px; font-weight: 600; letter-spacing: 0.34em; color: var(--wm, #fff); opacity: 0.92; margin-top: 4px; }
+.pic-lockup .wm .b3 { font-size: 11px; font-style: italic; letter-spacing: 0.05em; color: var(--wm, #fff); opacity: 0.7; margin-top: 3px; }
+
+/* ---- "Sabías que" fact card (shared) -------------------- */
+.fact { padding: var(--post-pad); display: flex; flex-direction: column; }
+.fact .sabias { margin: 0; font-family: var(--font-hand, cursive); font-weight: 700; line-height: 0.95; }
+.fact .sabias .q { color: var(--accent-500); }
+.fact .body { font-size: 33px; line-height: 1.5; }
+.fact .body b { font-weight: 700; }
+
+/* hand-drawn connector line down the left margin */
+.connector { position: absolute; pointer-events: none; }
+
+/* ---- Polaroid ------------------------------------------- */
+.polaroid { background: #fff; padding: 16px 16px 0; box-shadow: 0 24px 50px -12px rgba(0,0,0,0.45); }
+.polaroid img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.polaroid .cap { font-family: var(--font-hand, cursive); font-size: 27px; line-height: 1.15; color: #3a3a3a; padding: 16px 6px 20px; text-align: center; }
+
+/* ---- Blog announcement ---------------------------------- */
+.announce { position: absolute; inset: 0; }
+.announce .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.announce .scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(11,32,45,0.55) 0%, rgba(11,32,45,0.15) 34%, rgba(11,32,45,0.45) 62%, rgba(11,32,45,0.9) 100%); }
+.announce .inner { position: relative; height: 100%; padding: var(--post-pad); display: flex; flex-direction: column; }
+.announce .top { display: flex; justify-content: center; }
+.announce .mid { margin-top: auto; }
+.chip {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--accent-600); color: #fff;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 13px 22px; border-radius: 9999px;
+}
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.announce h1 {
+  margin: 26px 0 0; color: #fff; font-size: 66px; font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1.06; text-wrap: balance;
+}
+.announce .kicker { margin: 0 0 4px; color: #fff; font-size: 26px; font-weight: 500; opacity: 0.9; }
+.announce .cta {
+  margin-top: 34px; display: inline-flex; align-items: center; gap: 14px; align-self: flex-start;
+  background: var(--accent-600); color: #fff; font-size: 25px; font-weight: 600;
+  padding: 20px 30px; border-radius: 9999px;
+}
+.announce .meta { margin-top: 30px; display: flex; align-items: center; gap: 14px; color: rgba(255,255,255,0.9); font-size: 22px; }
+.announce .meta .av { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.6); }
+
+/* ---- Standalone scaler (screen preview) ----------------- */
+.pv { margin: 0; background: #14181f; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.pv .scaler { width: var(--post-w); height: var(--post-h); flex: none; }

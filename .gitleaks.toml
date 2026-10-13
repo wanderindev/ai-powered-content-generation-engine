@@ -1,0 +1,36 @@
+# gitleaks configuration — keep the default ruleset and add a project-specific
+# allowlist. Run via: gitleaks detect --source . --no-git --verbose --no-banner
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "panama-in-context project allowlist"
+
+# --- Paths that should never be scanned ---------------------------------------
+# Most of these are gitignored, but we run gitleaks with --no-git (scans
+# the filesystem, not the git tree) so .gitignore is not honored. We list
+# them explicitly here.
+paths = [
+    '''^\.env$''',
+    '''^\.env\..*$''',
+    # Permit the committed root template (placeholder values only).
+    # `.env.example` itself is already in scope via the `.env\..*` allowlist
+    # above; this comment documents that the file is intentionally committed.
+    '''^backend/\.env(\..*)?$''',
+    '''^backend/\.ruff_cache/''',
+    '''^\.claude/settings\.local\.json$''',
+    # Frontend build artifacts (dist contains hashed JS that can trip rules)
+    '''^frontend/dist/''',
+    '''^frontend/node_modules/''',
+    # Vendored Tailwind Plus theme zips contain example credentials
+    '''^docs/tailwind-plus/''',
+]
+
+# --- Known-false-positive patterns --------------------------------------------
+# PricingConfig rows are declared as `key="<config-name>"` in alembic seeds
+# and tests. The generic-api-key rule fires on the value portion, so we
+# allowlist the actual config names (the "Secret" gitleaks captures).
+regexes = [
+    '''^(base_fee|hourly_rate_pax_[0-9_]+|senior_discount_percent|reservation_validity_days)$''',
+]

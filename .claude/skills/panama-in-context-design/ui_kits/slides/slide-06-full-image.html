@@ -1,0 +1,37 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Full image" subtitle="Full-bleed photo with a brand caption chip and title" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-image">
+  <div class="media"><img class="s-photo" src="../../assets/images/cupula-san-francisco.jpg" alt=""></div>
+  <div class="s-scrim"></div>
+  <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+  <div class="caption">
+    <span class="chip">Casco Antiguo</span>
+    <h3>Where the city was reborn</h3>
+    <p>Domes and bell towers rising above the rooftops of Panama's fortified second capital.</p>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!-- @dsCard group="Brand" viewport="700x190" name="Iconography" subtitle="Heroicons — outline for UI, solid for inline accents, 1.5px stroke" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<script src="../assets/heroicons.js"></script>
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); color: var(--text-heading); }
+  .wrap { padding: 20px 24px; }
+  .label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin: 0 0 12px; }
+  .row { display: flex; gap: 22px; align-items: center; color: var(--gray-700); }
+  .row [data-hicon] { font-size: 28px; }
+  .row.brand { color: var(--color-brand); }
+  .sub { margin-top: 16px; }
+  .sub .row [data-hicon] { font-size: 24px; }
+  .foot { margin-top: 16px; font-size: 12px; color: var(--text-secondary); }
+  code { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="label">24 / outline — navigation &amp; features</p>
+    <div class="row">
+      <i data-hicon="academic-cap"></i>
+      <i data-hicon="book-open"></i>
+      <i data-hicon="user-group"></i>
+      <i data-hicon="map"></i>
+      <i data-hicon="globe-americas"></i>
+      <i data-hicon="sparkles"></i>
+      <i data-hicon="calendar-days"></i>
+      <i data-hicon="shopping-bag"></i>
+      <i data-hicon="bars-3"></i>
+      <i data-hicon="x-mark"></i>
+    </div>
+    <div class="sub">
+      <p class="label">20 / solid — inline &amp; brand-tinted</p>
+      <div class="row brand">
+        <i data-hicon="check-circle-solid"></i>
+        <i data-hicon="chevron-down-solid"></i>
+        <i data-hicon="speaker-wave-solid"></i>
+        <i data-hicon="heart-solid"></i>
+        <i data-hicon="building-office-2-solid"></i>
+        <i data-hicon="plus-solid"></i>
+        <i data-hicon="star-solid"></i>
+      </div>
+    </div>
+    <p class="foot">Set: <code>heroicons</code> · outline for interface controls, solid for inline accents &amp; checklists.</p>
+  </div>
+</body>
+</html>

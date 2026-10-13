@@ -1,0 +1,81 @@
+name: Bug report
+description: Report a bug found in production or local testing
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Fill in what you can — fields are optional unless marked required.
+        If this bug is currently breaking the public-facing UI in production, see the "stop the line"
+        section in [agent-friendly-criteria.md](../blob/main/docs/pilot/agent-friendly-criteria.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the actual behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: How can someone else trigger this? Include URLs, payloads, or commands.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      multiple: true
+      options:
+        - Backend / API
+        - Frontend / public site
+        - Frontend / admin CMS
+        - Database / migrations
+        - CI / build / deploy
+        - Edu pipeline
+        - Tours / bookings / payments
+        - Blog / articles
+        - Auth / educators
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: sentry
+    attributes:
+      label: Sentry link (if applicable)
+      placeholder: https://sentry.io/...
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical — production down or data loss
+        - High — feature broken for many users, no workaround
+        - Medium — feature broken with workaround, or affects few users
+        - Low — cosmetic or edge case
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, related issues, anything else useful.

@@ -1,0 +1,9 @@
+{% for b in bookings %}
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ b.tour.name_es if language == "es" else b.tour.name }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ b.tour_date.isoformat() }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ b.time_slot }}{% if b.preferred_time %} ({{ b.preferred_time }}){% endif %}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ b.total_participants }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${{ b.grand_total }}</td>
+        </tr>
+{% endfor %}

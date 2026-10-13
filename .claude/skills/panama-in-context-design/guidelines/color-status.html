@@ -1,0 +1,32 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Status colors" subtitle="Success, error, warning — forms & toasts" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); }
+  .wrap { padding: 20px 24px; display: flex; gap: 14px; }
+  .card { flex: 1; border-radius: var(--radius-lg); padding: 14px; border: 1px solid var(--border); }
+  .card .dot { width: 12px; height: 12px; border-radius: var(--radius-full); display: inline-block; margin-right: 8px; vertical-align: middle; }
+  .card .name { font-size: 13px; font-weight: 600; color: var(--text-heading); vertical-align: middle; }
+  .card code { display: block; margin-top: 8px; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" style="background:var(--success-50)">
+      <span class="dot" style="background:var(--success-600)"></span><span class="name">Success</span>
+      <code>--success-600 · #059669</code>
+    </div>
+    <div class="card" style="background:var(--error-50)">
+      <span class="dot" style="background:var(--error-600)"></span><span class="name">Error</span>
+      <code>--error-600 · #dc2626</code>
+    </div>
+    <div class="card" style="background:var(--warning-50)">
+      <span class="dot" style="background:var(--warning-500)"></span><span class="name">Warning</span>
+      <code>--warning-500 · #f59e0b</code>
+    </div>
+  </div>
+</body>
+</html>

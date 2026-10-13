@@ -1,0 +1,27 @@
+<html><body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #1095d3;">¡Pago Confirmado!</h2>
+    <p>Hola {{ order.customer_name }},</p>
+    <p>Hemos recibido su pago para el pedido <strong>#{{ order.reference }}</strong>.</p>
+    <p>Sus reservas están confirmadas:</p>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #1095d3; color: white;">
+            <th style="padding: 8px;">Tour</th>
+            <th style="padding: 8px;">Fecha</th>
+            <th style="padding: 8px;">Hora</th>
+            <th style="padding: 8px;">Personas</th>
+            <th style="padding: 8px;">Total</th>
+        </tr>
+{% include 'partials/booking_rows.html' %}
+    </table>
+
+    <p style="font-size: 18px; margin-top: 16px;"><strong>Total Pagado: ${{ order.grand_total }}</strong></p>
+
+    <p>Nos pondremos en contacto con usted antes de su tour para confirmar los detalles.</p>
+
+    <p style="color: #666; font-size: 12px; margin-top: 24px;">
+        ¿Preguntas? Contáctenos en diego@panamaincontext.com
+    </p>
+</div>
+</body></html>

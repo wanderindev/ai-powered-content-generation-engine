@@ -1,0 +1,1301 @@
+{
+  "errorBoundary": {
+    "title": "Algo salió mal",
+    "message": "Ocurrió un error inesperado. Por favor, intenta recargar la página.",
+    "reload": "Recargar página",
+    "home": "Volver al inicio"
+  },
+  "home": {
+    "hero": {
+      "title": "Panama in Context",
+      "subtitle": "Donde cada lugar cuenta una historia. Experiencias guiadas por expertos que transforman las visitas en viajes inmersivos a través de la rica historia y la vibrante cultura de Panamá.",
+      "cta_schools": "Para escuelas",
+      "cta_tourists": "Para turistas"
+    },
+    "hero_promo": {
+      "badge": "Semana Santa 2026 — 2 al 4 de abril",
+      "title": "La Ruta de las Siete Iglesias",
+      "subtitle": "Esta Semana Santa, recorra la arquitectura, el arte y la historia de las siete iglesias más significativas del Casco Antiguo. Una experiencia guiada por expertos que no olvidará.",
+      "cta_primary": "Más Información",
+      "cta_secondary": "Reservar Ahora"
+    },
+    "schools": {
+      "eyebrow": "Para educadores",
+      "title": "Transformar las excursiones en experiencias de aprendizaje",
+      "subtitle": "Vaya más allá de la excursión escolar habitual. Nuestras excursiones guiadas por expertos dan vida a la historia de Panamá, creando experiencias educativas memorables que los estudiantes recordarán mucho tiempo después de regresar a las aulas.",
+      "features": {
+        "expert": {
+          "title": "Experiencias dirigidas por expertos",
+          "desc": "Un guía profesional, experto en historia panameña, acompaña a los estudiantes por los lugares más significativos de Panamá con narraciones interesantes y adecuadas a su edad."
+        },
+        "curriculum": {
+          "title": "Contenido alineado con el plan de estudios",
+          "desc": "Cada excursión incluye materiales educativos que se conectan con su plan de estudios actual."
+        },
+        "adaptable": {
+          "title": "Adaptable a todos los grados",
+          "desc": "El contenido se adapta a los diferentes niveles de grado, lo que garantiza una participación significativa para todos los estudiantes."
+        }
+      },
+      "cta_learn": "Más información",
+      "cta_contact": "Contáctenos"
+    },
+    "mailing_educators": {
+      "title": "Manténgase conectado con la historia de Panamá",
+      "subtitle": "Regístrese gratis para acceder a nuestros materiales educativos, incluyendo infografías históricas, recursos para el aula y más.",
+      "success": "¡Gracias! Revise su correo para confirmar su registro. Redirigiendo...",
+      "error": "Algo salió mal. Inténtelo nuevamente más tarde.",
+      "placeholder": "Ingrese su correo electrónico",
+      "button": "Regístrese",
+      "submitting": "Registrando...",
+      "email_label": "Correo electrónico"
+    },
+    "tourists": {
+      "eyebrow": "Para viajeros",
+      "title": "Experimente Panamá más allá de la superficie",
+      "subtitle": "Descubra el verdadero Panamá a través de los ojos de un experto local. Nuestras visitas guiadas privadas revelan las fascinantes historias, las joyas ocultas y la riqueza cultural que hacen que este país sea verdaderamente único.",
+      "features": {
+        "private": {
+          "title": "Experiencias guiadas privadas",
+          "desc": "Disfrute de una atención personalizada con tours privados dirigidos por un guía experto que da vida a cada destino."
+        },
+        "context": {
+          "title": "Contexto cultural profundo",
+          "desc": "Vaya más allá del turismo superficial. Comprenda las historias, las tradiciones y el significado que hay detrás de lo que ve."
+        },
+        "personalized": {
+          "title": "Itinerarios personalizados",
+          "desc": "Tours adaptados a sus intereses, ritmo y horario. Ya sea que disponga de unas pocas horas o de varios días."
+        }
+      },
+      "cta_explore": "Explore los Tours",
+      "cta_plan": "Planifique su visita"
+    },
+    "guide": {
+      "eyebrow": "Tu guía",
+      "title": "Conoce a Diego Raúl Feliu",
+      "bio_1": "Diego Raúl Feliu es licenciado en Turismo Histórico y cuenta con más de una década de experiencia dando vida al rico patrimonio de Panamá. Nacido y criado en la ciudad de Panamá, es miembro de la Asociación Panameña de Antropología e Historia y ha dedicado su carrera a hacer que el complejo pasado de la nación sea accesible y atractivo para visitantes de todas las edades.",
+      "bio_2": "Ya sea guiando a grupos escolares por las ruinas de Panamá Viejo o acompañando a turistas por las coloridas calles del Casco Antiguo, Diego combina sus profundos conocimientos con un don natural para contar historias que transforma cada recorrido en un viaje inolvidable.",
+      "cta": "Contáctenos"
+    },
+    "blog": {
+      "eyebrow": "Del blog",
+      "title": "Historias del pasado de Panamá",
+      "subtitle": "Profundice en los eventos, personas y lugares que dieron forma a la rica historia de Panamá.",
+      "seriesHeader": "Lea nuestra última serie de artículos sobre:",
+      "cta": "Ver todos los artículos",
+      "posts": {
+        "post_1": {
+          "title": "Los tres Panamá: comprender la historia colonial del país",
+          "desc": "Desde Panamá Viejo hasta el Casco Antiguo y la moderna Ciudad de Panamá: descubre cómo tres centros urbanos distintos cuentan la historia de 500 años de Panamá.",
+          "category": "Historia"
+        },
+        "post_2": {
+          "title": "El Canal de Panamá: maravilla de la ingeniería e impacto global",
+          "desc": "Cómo el «Gran Canal» transformó el comercio mundial y forjó la identidad nacional de Panamá. Una inmersión profunda en la construcción y el legado del canal.",
+          "category": "Canal"
+        },
+        "post_3": {
+          "title": "Enseñar historia a través de excursiones: una guía para educadores",
+          "desc": "Estrategias prácticas para dar vida a los sitios históricos para los estudiantes. Cómo prepararse, involucrarse y hacer un seguimiento para lograr el máximo impacto en el aprendizaje.",
+          "category": "Educación"
+        }
+      },
+      "author": {
+        "name": "Diego Raúl Feliu",
+        "role": "Guía experto"
+      }
+    },
+    "mailing_blog": {
+      "title": "No se pierda ninguna historia",
+      "subtitle": "Suscríbase para recibir notificaciones cuando publiquemos nuevos artículos sobre la historia y la cultura de Panamá.",
+      "success": "¡Gracias! Revisa tu correo electrónico para confirmar tu suscripción.",
+      "error": "Algo salió mal. Inténtelo de nuevo más tarde.",
+      "placeholder": "Ingrese su correo electrónico",
+      "button": "Suscríbase",
+      "submitting": "Suscribiéndome...",
+      "email_label": "Correo electrónico"
+    },
+    "cta": {
+      "title": "¿Listo para descubrir Panamá?",
+      "subtitle": "Ya sea que esté planeando una excursión escolar o buscando una experiencia de viaje auténtica, estamos aquí para ayudarle a explorar la rica historia y cultura de Panamá.",
+      "cta_contact": "Contáctenos",
+      "cta_schools": "Para escuelas",
+      "cta_tourists": "Para turistas"
+    }
+  },
+  "nav": {
+    "home": "Inicio",
+    "excursions": "Excursiones académicas",
+    "tours": "Tours",
+    "blog": "Blog",
+    "contact": "Contacto",
+    "edu_materials": "Materiales Educativos",
+    "open_menu": "Abrir menú principal",
+    "close_menu": "Cerrar menú"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados.",
+    "about": "Acerca de nosotros",
+    "legal": "Legal",
+    "social": "Social",
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad"
+  },
+  "hero": {
+    "title": "Vive Panamá como nunca antes",
+    "subtitle": "Excursiones educativas inmersivas y visitas guiadas diseñadas para conectarte con la historia, la cultura y la naturaleza del istmo.",
+    "cta_schools": "Para escuelas",
+    "cta_tourists": "Para turistas"
+  },
+  "excursions": {
+    "eyebrow": "Explora nuestros destinos",
+    "title": "Excursiones destacadas",
+    "subtitle": "Explora nuestras experiencias educativas más solicitadas.",
+    "hero": {
+      "title": "El aprendizaje cobra vida",
+      "subtitle": "Excursiones académicas alineadas con los estándares del plan de estudios. Transformamos el aprendizaje a través de experiencias históricas inmersivas.",
+      "cta_methodology": "Nuestra metodología",
+      "cta_featured": "Excursiones destacadas"
+    },
+    "value_prop": {
+      "eyebrow": "¿Por qué elegirnos?",
+      "title": "Educación más allá del aula",
+      "description": "Resolvemos los retos de las excursiones tradicionales (audio deficiente, falta de contexto y dificultades de gestión) proporcionando una experiencia académica completa respaldada por la tecnología.",
+      "quote": "Diego se encargó de guiar a nuestros alumnos de quinto grado en una excursión escolar a Casco Viejo. No solo es un gran conocedor del tema, sino que también mantuvo su atención con anécdotas e información interesante que no se encuentra en los libros de texto. Con el equipo de audio, pudo manejar fácilmente a los 85 niños de diez años que participaban en la excursión.",
+      "author": "Montgomery J",
+      "columns_intro": "Las excursiones tradicionales suelen carecer de contexto, convirtiéndose en simples visitas turísticas. Nuestro enfoque garantiza que cada excursión tenga objetivos de aprendizaje claros, lo que las convierte en una valiosa extensión de su plan de estudios.",
+      "columns_outro": "Nos enfocamos en la experiencia educativa, proporcionándote todas las herramientas académicas que necesitas para que tu viaje sea un éxito.",
+      "features": {
+        "audio": {
+          "title": "Tecnología de audio.",
+          "desc": "Todos los estudiantes escuchan durante toda la visita gracias a unos ligeros receptores Bluetooth, lo que garantiza una participación del 100 % y facilita la gestión del grupo."
+        },
+        "engagement": {
+          "title": "Mayor retención.",
+          "desc": "Nuestra metodología de exposición múltiple mejora significativamente la retención de información histórica y las habilidades de pensamiento crítico en comparación con las visitas estándar."
+        },
+        "curriculum": {
+          "title": "Alineado con el plan de estudios.",
+          "desc": "Contenido adaptado a su nivel académico específico y a los estándares del plan de estudios."
+        }
+      }
+    },
+    "methodology": {
+      "title": "Nuestra metodología de aprendizaje",
+      "description": "Un proceso de tres pasos diseñado para maximizar la retención y el compromiso.",
+      "steps": {
+        "context": {
+          "title": "1. Antes de la visita: contexto",
+          "desc": "Ofrecemos una sesión virtual en Zoom para preparar el terreno. Proporcionamos información contextual, una lista de vocabulario y «preguntas de investigación» para despertar la curiosidad antes del viaje."
+        },
+        "immersion": {
+          "title": "2. La excursión: inmersión",
+          "desc": "Una visita guiada inmersiva in situ con tecnología de audio de alta calidad. Los estudiantes escuchan con claridad, lo que les permite profundizar en el contenido histórico."
+        },
+        "reflection": {
+          "title": "3. Después de la visita: reflexión",
+          "desc": "Proporcionamos una guía de estudio adaptada al nivel académico para el aula con el fin de sintetizar el aprendizaje y reforzar los conocimientos adquiridos."
+        }
+      }
+    },
+    "resources": {
+      "title": "Recursos para maestros",
+      "description": "Te proporcionamos todo lo necesario para que la excursión sea un éxito educativo.",
+      "cta_pdf": "Descargar PDF",
+      "cta_video": "Ver ahora",
+      "items": {
+        "guide": {
+          "title": "Descargar guía de estudio de muestra",
+          "desc": "Vea cómo nuestros materiales posteriores a la visita refuerzan los conceptos tratados durante la excursión."
+        },
+        "infographic": {
+          "title": "Descargar infografía de muestra",
+          "desc": "Ayudas visuales que ayudan a los estudiantes a contextualizar la línea de tiempo y las figuras clave del sitio histórico."
+        },
+        "video": {
+          "title": "Ver muestra de zoom",
+          "desc": "Un fragmento de nuestra sesión virtual previa a la visita, en la que preparamos a la clase para la excursión."
+        }
+      }
+    },
+    "plan_trip": {
+      "title": "Planifique su excursión",
+      "description": "¿Listo para dar vida a la historia? Contáctenos para programar una visita o solicitar una propuesta personalizada para su escuela.",
+      "cta_primary": "Comience",
+      "cta_secondary": "Más información"
+    },
+    "casco_plazas": {
+      "title": "Casco Antiguo: Plazas e iglesias",
+      "desc": "Explora el Casco Antiguo, reconocido por la UNESCO, un museo viviente donde la arquitectura colonial narra la historia de la evolución de la nación. Visita magníficas plazas e iglesias históricas que representan el recorrido de Panamá desde colonia española hasta república independiente.",
+      "details": {
+        "description_1": "Los estudiantes se adentran en el museo viviente de Panamá mientras exploran el Casco Antiguo, reconocido por la UNESCO, donde las calles empedradas y la arquitectura colonial cuentan la historia de la evolución de una nación. Este recorrido a pie inmersivo guía a los estudiantes a través de las magníficas plazas y las iglesias históricas del distrito, cada una de las cuales representa un capítulo crucial en el viaje de Panamá desde colonia española hasta república independiente.",
+        "description_2": "3 horas de exploración guiada disponible en español e inglés.",
+        "highlights_title": "Aspectos destacados",
+        "highlights": [
+          {
+            "category": "Plazas principales",
+            "items": "Plaza Mayor, Plaza Bolívar, Plaza de Francia, Plaza Herrera"
+          },
+          {
+            "category": "Iglesias históricas",
+            "items": "Catedral Metropolitana, Iglesia de La Merced, Iglesia de San José, Iglesia de San Francisco, Iglesia de Santo Domingo, Oratorio San Felipe Neri"
+          },
+          {
+            "category": "Monumentos culturales",
+            "items": "Teatro Nacional, Palacio Bolívar, Muralla Antigua"
+          }
+        ],
+        "adaptations_title": "Adaptaciones según el nivel de grado",
+        "adaptations": [
+          {
+            "grade": "3.º - 6.º Grado",
+            "desc": "Enfoque en las características arquitectónicas, la secuencia histórica básica y la importancia estratégica de Panamá."
+          },
+          {
+            "grade": "7.º - 8.º Grado",
+            "desc": "Examen de los movimientos independentistas, la visión de Bolívar y el Congreso Anfictiónico."
+          },
+          {
+            "grade": "9.º - 12.º Grado",
+            "desc": "Análisis de las complejas fuerzas geopolíticas detrás de la independencia de Panamá en 1903 y evaluación de narrativas históricas contrapuestas de fuentes panameñas, colombianas y estadounidenses."
+          }
+        ]
+      }
+    },
+    "casco_museums": {
+      "title": "Casco Antiguo: Circuito de Museos",
+      "desc": "Los estudiantes siguen activamente la evolución de Panamá, desde colonia española hasta república moderna, a través de una exploración guiada del museo adaptada a su plan de estudios.",
+      "details": {
+        "description_1": "Los estudiantes siguen activamente la evolución de Panamá, desde colonia española hasta república moderna, a través de una exploración guiada del museo adaptada a su plan de estudios.",
+        "description_2": "3 horas de exploración guiada disponible en español e inglés.",
+        "highlights_title": "Selecciona 3 museos",
+        "highlights": [
+          {
+            "category": "Museo del Canal Interoceánico",
+            "items": "Maravilla de la ingeniería que transformó el transporte marítimo mundial"
+          },
+          {
+            "category": "Museo de Historia",
+            "items": "Transición del período colonial al republicano en el Palacio Municipal"
+          },
+          {
+            "category": "Museo de la Mola",
+            "items": "Arte indígena y expresión cultural"
+          },
+          {
+            "category": "Museo de La Merced",
+            "items": "Patrimonio religioso colonial"
+          },
+          {
+            "category": "Palacio Bolívar",
+            "items": "Documentos históricos, regalos diplomáticos y la Biblioteca Roberto F. Chiari"
+          }
+        ],
+        "adaptations_title": "Adaptaciones según el nivel de grado",
+        "adaptations": [
+          {
+            "grade": "3.º - 6.º Grado",
+            "desc": "Interacción con exposiciones interactivas sobre el diverso patrimonio cultural de Panamá y aprendizaje sobre la independencia de Panamá."
+          },
+          {
+            "grade": "7.º - 8.º Grado",
+            "desc": "Evaluación crítica de cómo la ubicación estratégica de Panamá determinó su desarrollo histórico."
+          },
+          {
+            "grade": "9.º - 12.º Grado",
+            "desc": "Exploración de cómo la posición única de Panamá creó relaciones políticas y económicas complejas con las potencias mundiales, particularmente España, Colombia y Estados Unidos."
+          }
+        ]
+      }
+    },
+    "panama_viejo": {
+      "title": "Complejo Arqueológico de Panamá Viejo",
+      "desc": "Adéntrate en las calles excavadas del primer asentamiento europeo en la costa del Pacífico, fundado en 1519. Explora las ruinas de este antiguo y próspero centro colonial destruido por el pirata Henry Morgan en 1671.",
+      "details": {
+        "description_1": "Los estudiantes caminan directamente sobre las calles excavadas de la capital original de Panamá, fundada en 1519 como el primer asentamiento europeo en la costa pacífica de América. Este sitio arqueológico inmersivo permite a los estudiantes explorar físicamente las ruinas de lo que alguna vez fue un próspero centro colonial destruido por el pirata Henry Morgan en 1671. Los estudiantes suben a la torre restaurada de la catedral para disfrutar de vistas panorámicas mientras aprenden cómo los arqueólogos reconstruyen narrativas históricas a partir de pruebas físicas.",
+        "description_2": "3 horas de exploración guiada disponible en español e inglés.",
+        "highlights_title": "Aspectos destacados",
+        "highlights": [
+          {
+            "category": "Ruinas de la Catedral",
+            "items": "Ruinas de la catedral y campanario (con subida opcional)"
+          },
+          {
+            "category": "Edificios públicos",
+            "items": "Cimientos del ayuntamiento (cabildo)"
+          },
+          {
+            "category": "Vida cotidiana",
+            "items": "Antiguas cisternas coloniales de agua y el convento de las Monjas de la Divina Concepción"
+          },
+          {
+            "category": "Estructuras civiles",
+            "items": "Zona del mercado y barrios residenciales"
+          },
+          {
+            "category": "Museo",
+            "items": "Museo de la Plaza Mayor con artefactos auténticos"
+          }
+        ],
+        "adaptations_title": "Adaptaciones según el nivel de grado",
+        "adaptations": [
+          {
+            "grade": "3.º - 6.º Grado",
+            "desc": "Enfoque en conceptos arqueológicos básicos y la vida colonial."
+          },
+          {
+            "grade": "7.º - 8.º Grado",
+            "desc": "Examen de las redes comerciales y el impacto de la piratería en los patrones de asentamiento."
+          },
+          {
+            "grade": "9.º - 12.º Grado",
+            "desc": "Exploración de cómo Panamá Viejo funcionaba como punto de partida para la conquista del Imperio Inca por Francisco Pizarro, analizando la logística de la expedición y las cuestiones éticas relacionadas con la colonización."
+          }
+        ]
+      }
+    },
+    "biomuseo": {
+      "title": "Museo de la Biodiversidad",
+      "desc": "En el interior de la única obra maestra arquitectónica de Frank Gehry en Latinoamérica, descubre cómo Panamá cambió literalmente la biología de la Tierra al unir dos continentes.",
+      "details": {
+        "description_1": "En el interior de la única obra maestra arquitectónica de Frank Gehry en Latinoamérica, los estudiantes descubren cómo Panamá cambió literalmente la biología de la Tierra al unir dos continentes y dividir un vasto océano. A través de exposiciones dinámicas e interactivas, los estudiantes investigan cómo este estrecho istmo desencadenó uno de los acontecimientos más significativos para la biodiversidad en la historia de la Tierra: el Gran Intercambio Biótico Americano.",
+        "description_2": "Exploración guiada de 2 horas disponible en español e inglés.",
+        "highlights_title": "Aspectos destacados",
+        "highlights": [
+          {
+            "category": "Panamarama",
+            "items": "Envuelve a los estudiantes con 10 pantallas que muestran los diversos ecosistemas de Panamá"
+          },
+          {
+            "category": "Construyendo el Puente",
+            "items": "Examina formaciones geológicas reales que muestran cómo la actividad volcánica creó el istmo"
+          },
+          {
+            "category": "Mundos en Colisión",
+            "items": "Demuestra la migración de especies entre continentes con modelos a tamaño real"
+          },
+          {
+            "category": "El Camino Humano",
+            "items": "Rastrea 15,000 años de impacto humano en el medio ambiente de Panamá"
+          },
+          {
+            "category": "Océanos Divididos",
+            "items": "Utiliza acuarios gemelos para mostrar cómo especies marinas idénticas evolucionaron de forma diferente al separarse"
+          }
+        ],
+        "adaptations_title": "Adaptaciones según el nivel de grado",
+        "adaptations": [
+          {
+            "grade": "3.º - 6.º Grado",
+            "desc": "Enfoque en la biodiversidad observable y conceptos ecológicos básicos."
+          },
+          {
+            "grade": "7.º - 8.º Grado",
+            "desc": "Exploración de la adaptación de las especies, la geología y los sistemas biológicos complejos."
+          },
+          {
+            "grade": "9.º - 12.º Grado",
+            "desc": "Examen de la investigación actual sobre los impactos del cambio climático en la biodiversidad de Panamá. Análisis de datos que muestran cómo la formación del istmo alteró las corrientes oceánicas globales y los patrones climáticos."
+          }
+        ]
+      }
+    },
+    "miraflores": {
+      "title": "Centro de Visitantes de Miraflores e IMAX",
+      "desc": "Sea testigo de la maravilla de la ingeniería que es el Canal de Panamá mientras enormes barcos navegan por las esclusas. Perfecto para que los alumnos de 4.º a 6.º grado observen la ingeniería en acción.",
+      "details": {
+        "description_1": "Perfecta para alumnos de 4.º a 6.º grado, esta excursión transforma los conceptos abstractos de la ingeniería y el comercio mundial en fenómenos tangibles y observables, mientras barcos que pesan miles de toneladas navegan por las legendarias esclusas del Canal de Panamá. Los estudiantes presencian el «ballet de Miraflores» mientras se abren y cierran enormes compuertas, el agua se llena y se vacía, y unas «mulas» eléctricas guían a los barcos a través de operaciones de precisión que demuestran los principios básicos de la ciencia física.",
+        "description_2": "2 horas de exploración guiada disponible en español e inglés.",
+        "highlights_title": "Aspectos destacados",
+        "highlights": [
+          {
+            "category": "Herramientas de ingeniería",
+            "items": "Compara herramientas de construcción del canal con sus equivalentes modernos"
+          },
+          {
+            "category": "Identificación de barcos",
+            "items": "Identifica los barcos que pasan por la bandera del país, el tipo de carga y las dimensiones"
+          },
+          {
+            "category": "Plataforma de observación",
+            "items": "Observa los tránsitos de barcos desde la plataforma de observación"
+          },
+          {
+            "category": "Experiencia IMAX",
+            "items": "Experiencia IMAX «Una tierra dividida, un mundo unido»"
+          }
+        ],
+        "adaptations_title": "Niveles de grado recomendados",
+        "adaptations": [
+          {
+            "grade": "4.º - 6.º Grado",
+            "desc": "Los materiales educativos incorporan ciencia, historia y economía global en formatos apropiados para la edad."
+          }
+        ]
+      }
+    },
+    "religious": {
+      "title": "La jornada interreligiosa de Panamá",
+      "desc": "Explora la notable diversidad religiosa de Panamá y obtén una comprensión profunda de cómo las diferentes comunidades religiosas han enriquecido a la sociedad.",
+      "details": {
+        "description_1": "En esta expedición académica única, los estudiantes exploran la notable diversidad religiosa de Panamá, al tiempo que adquieren un profundo conocimiento de cómo las diferentes comunidades religiosas han enriquecido nuestra sociedad a lo largo de los siglos. Los estudiantes visitan templos representativos de diversas religiones que se practican en Panamá y aprenden sobre la historia, las creencias y las contribuciones culturales de estas comunidades a través de la interacción directa con líderes religiosos.",
+        "description_2": "4 horas de exploración guiada disponible en español e inglés.",
+        "highlights_title": "Aspectos destacados",
+        "highlights": [
+          {
+            "category": "Religiones abrahámicas",
+            "items": "Catedral Ortodoxa Griega, Sinagoga Kol Shearith, Mezquita Jama Masjid, Templo Continental Bahái"
+          },
+          {
+            "category": "Religiones orientales",
+            "items": "Templo Hindú de Panamá, Centro Cultural de Soka Gakkai Internacional"
+          }
+        ],
+        "adaptations_title": "Adaptaciones según el nivel de grado",
+        "adaptations": [
+          {
+            "grade": "9.º - 12.º Grado",
+            "desc": "Analiza similitudes y diferencias entre sistemas de creencias, examina cómo las comunidades religiosas inmigrantes se adaptaron y evalúa cómo las diferentes perspectivas religiosas abordan los desafíos modernos."
+          }
+        ]
+      }
+    }
+  },
+  "tours": {
+    "hero": {
+      "title": "Descubra las historias detrás de Panamá",
+      "subtitle": "Visitas guiadas privadas a cargo de expertos en historia. Vamos más allá de lo superficial para revelar el rico contexto que ha dado forma a nuestra identidad cultural, ayudándole a comprender verdaderamente Panamá, no solo a verlo.",
+      "cta_primary": "Explore nuestros tours",
+      "cta_secondary": "Contáctenos"
+    },
+    "audience": {
+      "eyebrow": "Experiencias privadas dirigidas por expertos",
+      "title": "A la medida para cada ocasión",
+      "description": "Tanto si eres un viajero curioso, un organizador de bodas que coordina las actividades de los invitados o recibes a visitantes VIP, creamos experiencias privadas que dejan un recuerdo imborrable.",
+      "features": {
+        "travelers": {
+          "title": "Viajeros individuales y familias.",
+          "desc": "Atención personalizada con flexibilidad para explorar a su propio ritmo y profundizar en los temas que despierten tu interés."
+        },
+        "wedding": {
+          "title": "Organizadores de bodas y eventos.",
+          "desc": "Actividades grupales memorables para los invitados a una boda de destino: una forma única de mostrar el patrimonio de Panamá."
+        },
+        "corporate": {
+          "title": "Visitantes corporativos y diplomáticos.",
+          "desc": "Visitas guiadas profesionales para asistentes a conferencias e invitados de embajadas, que ofrecen un contexto cultural significativo."
+        }
+      },
+      "closing": "Cada recorrido está dirigido por un guía experto que da vida a la historia de Panamá a través de sus fascinantes relatos y su profundo conocimiento de la zona."
+    },
+    "highlights": {
+      "title": "Más que turismo",
+      "subtitle": "Descubra qué hace que nuestras experiencias guiadas sean únicas.",
+      "features": {
+        "context": {
+          "title": "Contexto histórico profundo",
+          "desc": "No nos limitamos a recitar fechas. Explicamos las fuerzas geopolíticas, sociales y económicas que dieron forma a la identidad de Panamá."
+        },
+        "private": {
+          "title": "Privado y personalizado",
+          "desc": "No hay grupos mixtos. Su tour es exclusivo para su grupo, lo que permite una conversación significativa y flexibilidad."
+        },
+        "guides": {
+          "title": "Guía experto",
+          "desc": "Nuestro guía es especialista en turismo histórico y da vida al pasado con información local que no encontrarás en ninguna guía turística."
+        }
+      }
+    },
+    "grid": {
+      "eyebrow": "Nuestros tours",
+      "title": "¿A dónde le gustaría ir?"
+    },
+    "canal": {
+      "title": "Canal de Panamá: Esclusas de Miraflores",
+      "desc": "Sea testigo del legendario Canal de Panamá en acción mientras enormes barcos navegan por las históricas esclusas de Miraflores, una hazaña de ingeniería que cambió para siempre el comercio mundial.",
+      "details": {
+        "title": "La experiencia del Canal de Panamá",
+        "description_1": "Póngase en la encrucijada del comercio mundial y sea testigo de uno de los mayores logros de la ingeniería humana en acción. En las esclusas de Miraflores, observará con asombro cómo enormes buques de carga y cruceros suben y bajan por las cámaras de las esclusas, en una danza de agua y acero que desafía la gravedad y que ha conectado los océanos durante más de un siglo.",
+        "description_2": "Aproximadamente 3 horas, incluyendo la película IMAX y la visita a las esclusas. Disponible en inglés y español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "Tránsitos de barcos en vivo",
+            "desc": "Experimente la emoción de ver los buques navegar por las esclusas en tiempo real. Su guía le explicará el intrincado proceso mientras los barcos suben o bajan 8 metros utilizando únicamente agua por gravedad del Lago Gatún."
+          },
+          {
+            "title": "La historia detrás del canal",
+            "desc": "Descubra la dramática historia, desde el intento francés que terminó en tragedia hasta el triunfo estadounidense que transformó el comercio mundial. Aprenda cómo Panamá finalmente obtuvo la soberanía sobre esta vía estratégica."
+          },
+          {
+            "title": "Maravillas de la ingeniería",
+            "desc": "Comprenda cómo funcionan las esclusas originales de 1914 junto con las enormes esclusas Neopanamax inauguradas en 2016, que admiten barcos tres veces más grandes que las originales."
+          },
+          {
+            "title": "Experiencia en el Teatro IMAX",
+            "desc": "Sumérjase en la historia del canal a través de una impresionante película 3D de 45 minutos narrada por Morgan Freeman, que da vida a la historia y el funcionamiento de esta maravilla de la ingeniería."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto bilingüe",
+          "Entrada al centro de visitantes y al teatro IMAX",
+          "Acceso a la plataforma de observación",
+          "Refrescos durante el recorrido",
+          "Transporte privado opcional desde su hotel"
+        ]
+      }
+    },
+    "casco_plazas": {
+      "title": "Casco Antiguo: Plazas e iglesias",
+      "desc": "Explore el distrito declarado Patrimonio de la Humanidad por la UNESCO, donde las plazas coloniales y las iglesias históricas revelan la trayectoria de Panamá desde colonia española hasta república independiente.",
+      "details": {
+        "title": "Plazas e iglesias del casco antiguo",
+        "description_1": "Adéntrese en un museo viviente donde cada plaza cuenta una historia y cada iglesia guarda siglos de secretos. El Casco Antiguo, corazón histórico de Panamá y Patrimonio de la Humanidad de la UNESCO, se despliega ante ti mientras tu guía le revela las fascinantes historias que se esconden tras su arquitectura colonial, desde la grandiosidad de la Catedral Metropolitana hasta el legendario Altar de Oro de la Iglesia de San José.",
+        "description_2": "Recorrido a pie de aproximadamente 3 horas. Disponible en inglés y español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "Plaza de la Independencia",
+            "desc": "Párese donde Panamá declaró su independencia no una, sino dos veces: primero de España en 1821 y luego de Colombia en 1903. Su guía dará vida a estos momentos clave con la impresionante Catedral Metropolitana de fondo."
+          },
+          {
+            "title": "El Altar de Oro",
+            "desc": "Maravíllese con el legendario altar de la Iglesia de San José, que se dice fue salvado del pirata Henry Morgan gracias a un ingenioso disfraz de pintura negra. Descubra la verdad detrás de esta historia perdurable."
+          },
+          {
+            "title": "Plaza Bolívar",
+            "desc": "Visite la elegante plaza dedicada al Libertador, rodeada de arquitectura neoclásica y el histórico Hotel Colombia donde alguna vez se reunieron jefes de Estado."
+          },
+          {
+            "title": "Joyas arquitectónicas ocultas",
+            "desc": "Explore las ruinas del Arco Chato, las mansiones de influencia francesa y los rincones tranquilos donde los estilos colonial, republicano y art déco se mezclan en una armonía inesperada."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto bilingüe",
+          "Entradas a las iglesias",
+          "Agua embotellada",
+          "Ritmo flexible para fotografías",
+          "Transporte privado opcional desde su hotel"
+        ]
+      }
+    },
+    "casco_museums": {
+      "title": "Casco Antiguo: Circuito de Museos",
+      "desc": "Siga la evolución de Panamá a través de visitas guiadas a museos, desde el arte indígena hasta la ambición ingenieril que conectó dos océanos.",
+      "details": {
+        "title": "La experiencia del circuito de museos",
+        "description_1": "Descubra la extraordinaria historia de Panamá a través de sus mejores museos, todos ellos ubicados en el histórico Casco Antiguo. Este recorrido seleccionado le llevará desde los tesoros precolombinos hasta el audaz sueño de conectar dos océanos, revelando cómo un pequeño istmo se convirtió en uno de los cruces más estratégicos del mundo.",
+        "description_2": "Aproximadamente 4 horas, incluyendo visitas a museos. Disponible en inglés y español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "Museo del Canal de Panamá",
+            "desc": "Ubicado en la antigua sede de la Compañía Francesa del Canal, explore la épica saga de la construcción del canal: desde la tragedia francesa hasta el triunfo estadounidense y la eventual soberanía de Panamá sobre esta maravilla de la ingeniería."
+          },
+          {
+            "title": "Museo de Historia",
+            "desc": "Recorra la transformación de Panamá desde colonia española hasta nación independiente, con artefactos y documentos que dan vida a cinco siglos de historia."
+          },
+          {
+            "title": "Iglesia y Campana de La Merced",
+            "desc": "Visite una de las iglesias más históricas de Panamá y vea la campana original que fue rescatada de Panamá Viejo después del ataque pirata de 1671."
+          },
+          {
+            "title": "Patrimonio indígena",
+            "desc": "Aprecie la artesanía de los pueblos indígenas de Panamá a través de exquisitas molas, artesanías tradicionales y piezas arqueológicas que preceden al contacto europeo."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto bilingüe",
+          "Todas las entradas a los museos",
+          "Agua embotellada",
+          "Ritmo cómodo con paradas para descansar",
+          "Transporte privado opcional desde su hotel"
+        ]
+      }
+    },
+    "panama_viejo": {
+      "title": "Panamá Viejo: Sitio Arqueológico",
+      "desc": "Recorra las calles excavadas de la capital original de Panamá, fundada en 1519 y destruida por piratas en 1671. Suba a la torre de la catedral para disfrutar de unas vistas panorámicas.",
+      "details": {
+        "title": "Donde comenzó Panamá",
+        "description_1": "Recorra las inquietantes ruinas de la primera ciudad europea en la costa pacífica de América. Fundada en 1519 y destruida por el infame pirata Henry Morgan en 1671, Panamá Viejo se erige como un poderoso testimonio de la ambición colonial, la resistencia indígena y los dramáticos acontecimientos que dieron forma al Nuevo Mundo.",
+        "description_2": "Aproximadamente 2.5 horas, incluyendo la visita al museo y la subida a la torre. Disponible en inglés y español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "La torre de la catedral",
+            "desc": "Suba a la icónica torre del campanario, el monumento más fotografiado de Panamá, para disfrutar de vistas panorámicas impresionantes que abarcan desde las ruinas antiguas hasta el horizonte moderno, capturando 500 años de historia en una sola mirada."
+          },
+          {
+            "title": "El ataque pirata de 1671",
+            "desc": "Párese donde tuvo lugar la incursión más dramática de la historia mientras su guía relata el devastador ataque de Henry Morgan y la desesperada decisión de quemar la ciudad en lugar de entregar sus tesoros."
+          },
+          {
+            "title": "Descubrimientos arqueológicos",
+            "desc": "Explore calles, conventos y plazas excavados mientras aprende sobre el trabajo arqueológico en curso que continúa revelando secretos de la vida colonial y de los pueblos indígenas que vivieron aquí antes."
+          },
+          {
+            "title": "El museo del sitio",
+            "desc": "Vea artefactos recuperados de las ruinas, maquetas que muestran la ciudad en su apogeo y exhibiciones que dan vida a la vida cotidiana de esta próspera capital colonial."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto bilingüe",
+          "Entradas al sitio y al museo",
+          "Acceso a la torre",
+          "Agua embotellada",
+          "Transporte privado opcional desde su hotel"
+        ]
+      }
+    },
+    "mi_pueblito": {
+      "title": "Mi Pueblito: Patrimonio Cultural",
+      "desc": "Experimente las diversas tradiciones culturales de Panamá en este museo viviente que muestra la arquitectura y las costumbres de las tres raíces fundamentales del país.",
+      "details": {
+        "title": "Las tres raíces de Panamá",
+        "description_1": "Recorra el ADN cultural de Panamá en este singular museo al aire libre situado en las laderas del cerro Ancón. Mi Pueblito reúne las tres identidades fundamentales de la nación —las tradiciones campesinas del interior, el legado afrocaribeño de los constructores del canal y la herencia indígena que las precede a todas— en una experiencia accesible a pie que revela cómo estas raíces tan diversas se entrelazaron para crear el Panamá moderno.",
+        "description_2": "Aproximadamente 2.5 horas de exploración guiada. Disponible en inglés y español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "El Museo de la Pollera",
+            "desc": "Descubra el icónico traje nacional de Panamá, considerado uno de los más hermosos e intrincados del mundo. Su guía decodifica el simbolismo del encaje hecho a mano, los brillantes tocados de tembleques y por qué una sola Pollera de Gala puede tardar un año en confeccionarse."
+          },
+          {
+            "title": "Pueblo campesino",
+            "desc": "Recorra réplicas de las tradicionales casas de quincha de la Península de Azuero. Conozca la Junta de Embarre, la tradición comunitaria de construcción de casas donde pueblos enteros se reunían para pisar barro y paja mientras celebraban con música y seco."
+          },
+          {
+            "title": "Barrio afrocaribeño",
+            "desc": "Adéntrese en la colorida arquitectura de madera de la era de la Zona del Canal, incluida la Casa Müller en forma de barco. Comprenda el sistema de segregación Gold Roll vs. Silver Roll y cómo los trabajadores antillanos transformaron el panorama cultural de Panamá."
+          },
+          {
+            "title": "Encuentro con artesanos indígenas",
+            "desc": "Conozca a artesanos Guna y Emberá que elaboran molas tradicionales y tallas de tagua. Estas no son simples souvenirs: las molas son mapas cosmológicos, y la talla de tagua es un arte centenario transmitido de generación en generación."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto bilingüe",
+          "Entrada al sitio",
+          "Acceso al Museo de la Pollera",
+          "Agua embotellada",
+          "Transporte privado opcional desde su hotel"
+        ]
+      }
+    },
+    "biomuseo": {
+      "title": "Biomuseo: Museo de la Biodiversidad",
+      "desc": "Dentro de la obra maestra arquitectónica de Frank Gehry, descubra cómo la aparición de Panamá cambió la biología de la Tierra al conectar dos continentes.",
+      "details": {
+        "title": "Donde chocan los continentes",
+        "description_1": "Entre en la única obra de Frank Gehry en Latinoamérica, una explosión de color en la costa de la ciudad de Panamá, y descubre cómo un pequeño puente terrestre cambió el curso de la vida en la Tierra. El Biomuseo cuenta la extraordinaria historia de cómo la aparición de Panamá del mar hace tres millones de años desencadenó el Gran Intercambio Biótico Americano, transformando para siempre la biología de dos continentes.",
+        "description_2": "Aproximadamente 2 horas, incluyendo todas las galerías. Disponible en inglés y español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "La visión arquitectónica de Gehry",
+            "desc": "Experimente el único edificio que Frank Gehry diseñó en Latinoamérica, donde los vibrantes doseles de metal plegado evocan la biodiversidad tropical que alberga. Su guía explica cómo la arquitectura misma cuenta la historia de la abundancia natural de Panamá."
+          },
+          {
+            "title": "El puente de la vida",
+            "desc": "Comprenda cómo el surgimiento de Panamá creó una superautopista biológica. Cuando América del Norte y del Sur se conectaron, las especies migraron en ambas direcciones: los armadillos se dirigieron al norte mientras que los grandes felinos se movieron al sur, remodelando los ecosistemas de dos continentes."
+          },
+          {
+            "title": "Océano dividido, vida transformada",
+            "desc": "Explore cómo el istmo dividió un gran océano en el Atlántico y el Pacífico, creando nuevas corrientes, cambiando climas y aislando especies marinas que antes nadaban libremente entre los mares."
+          },
+          {
+            "title": "Los tesoros vivientes de Panamá",
+            "desc": "Desde el acuario que muestra ambos ecosistemas oceánicos hasta las galerías que celebran la increíble biodiversidad de Panamá, descubra por qué esta pequeña nación alberga más especies que Estados Unidos y Canadá juntos."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto bilingüe",
+          "Entrada al museo",
+          "Acceso a todas las galerías permanentes",
+          "Agua embotellada",
+          "Transporte privado opcional desde su hotel"
+        ]
+      }
+    },
+    "cta": {
+      "title": "¿Listo para vivir la experiencia de Panamá?",
+      "description": "Convierta su visita en un viaje inolvidable. Contáctenos para planear su tour privado o crear un itinerario personalizado para su grupo.",
+      "button": "Comience a planificar"
+    },
+    "siete_iglesias": {
+      "title": "La Ruta de las Siete Iglesias",
+      "desc": "Un recorrido especializado por los siete templos más significativos del Casco Antiguo durante la Semana Santa.",
+      "details": {
+        "title": "La Ruta de las Siete Iglesias",
+        "description_short": "Recorrido por las siete iglesias más significativas del Casco Antiguo de Panamá.",
+        "overview_title": "Recorrido por la Arquitectura, el Arte y la Historia",
+        "description_1": "Más allá de su significado espiritual, las iglesias del Casco Antiguo de la Ciudad de Panamá son los testigos definitivos de la resiliencia de la ciudad. Este recorrido especializado le llevará a través de los siete templos más significativos del distrito, explorando la transición del estilo barroco al neoclásico, las leyendas de tesoros en la era de los piratas y los triunfos arquitectónicos que definieron el renacimiento de la ciudad en 1673.",
+        "description_2": "Con Panama In Context, usted no solo visita edificios; decodifica la iconografía, el arte y la historia social de las órdenes religiosas — Jesuitas, Franciscanos, Mercedarios — que dieron forma al Istmo.",
+        "route_title": "La Ruta: Las Siete Iglesias",
+        "churches": [
+          {
+            "name": "Iglesia de Nuestra Señora de la Merced — La Puerta a la Historia",
+            "desc": "Comenzamos en la única iglesia cuya fachada barroca original fue trasladada piedra por piedra desde las ruinas de Panamá Viejo tras el ataque pirata de 1671. Incluye una visita al Museo de la Orden de la Merced, que alberga documentos coloniales y artefactos religiosos de siglos de antigüedad."
+          },
+          {
+            "name": "Iglesia de San José — La Leyenda del Altar",
+            "desc": "Hogar del icónico Altar de Oro. Nos sumergiremos en la fascinante historia de cómo los monjes engañaron a Henry Morgan pintando el altar para ocultar su oro. Exploraremos lo que sabemos, lo que no sabemos con certeza y las teorías propuestas para reconciliar la leyenda con los registros históricos y los elementos artísticos visibles en el altar."
+          },
+          {
+            "name": "Iglesia de la Compañía de Jesús — Las Ruinas del Conocimiento",
+            "desc": "Estas majestuosas ruinas representan el legado jesuita en Panamá y el sitio de la primera universidad del Istmo. Incluye un análisis exterior de la cantería y el impacto del incendio de 1781 y los terremotos posteriores."
+          },
+          {
+            "name": "Iglesia de Santo Domingo y el Arco Chato",
+            "desc": "Conocido por su famoso \"Arco Chato\", este sitio jugó un papel sorprendente en la historia del siglo XX: se utilizó como prueba de que Panamá no era una zona de alto riesgo sísmico, ayudando a asegurar el apoyo político y financiero para la construcción del Canal de Panamá."
+          },
+          {
+            "name": "Catedral Basílica Metropolitana — El Corazón de la Ciudad",
+            "desc": "Una de las catedrales más grandes de Centroamérica. Exploraremos sus 108 años de construcción, la mezcla de estilos en sus torres y su más reciente restauración para la visita del Papa Francisco."
+          },
+          {
+            "name": "Oratorio de San Felipe Neri — La Joya Escondida",
+            "desc": "A menudo pasado por alto por los turistas, este es uno de los espacios más bellos y pacíficos de la ciudad. Incluye análisis de las delicadas pinturas religiosas, el patio único que refleja el estilo de vida monástico colonial, y un enorme nacimiento (Belén) que se puede visitar."
+          },
+          {
+            "name": "Iglesia de San Francisco de Asís — El Final Panorámico",
+            "desc": "Situada frente a la Plaza Bolívar, esta iglesia es una clase maestra de arquitectura ecléctica. Concluiremos ascendiendo al Campanario, que ofrece la vista de 360 grados más icónica del Casco Antiguo y del horizonte moderno de la ciudad."
+          }
+        ],
+        "why_title": "¿Por qué elegir este recorrido?",
+        "why_items": [
+          {
+            "title": "Análisis Experto",
+            "desc": "A diferencia de los recorridos a pie estándar, nos enfocamos en el \"porqué\" detrás de la arquitectura y el poder político de la Iglesia en el Imperio Español."
+          },
+          {
+            "title": "Acceso Total",
+            "desc": "Su recorrido incluye la entrada coordinada a los seis interiores restaurados y a los museos especializados dentro de ellos, además de las ruinas de la Iglesia de la Compañía de Jesús."
+          }
+        ],
+        "facts_title": "Datos Rápidos",
+        "facts": [
+          "Duración: Aproximadamente 3 horas",
+          "Actividad física: Caminata moderada (recomendamos zapatillas o zapatos cerrados)",
+          "Incluye: Guía experto, entradas a las 6 iglesias/museos y acceso al Campanario",
+          "Código de vestimenta: Se requiere vestimenta respetuosa para los interiores de las iglesias (hombros y rodillas cubiertos)",
+          "Punto de encuentro: Afuera de la Iglesia de la Merced, Casco Antiguo",
+          "No incluye transporte — el punto de encuentro es en Casco Antiguo"
+        ]
+      },
+      "hero": {
+        "badge": "Semana Santa 2026",
+        "subtitle": "Un viaje detallado a través de la arquitectura, el arte y la historia de las iglesias católicas del Casco Antiguo",
+        "dates": "2 - 4 de abril, 2026",
+        "duration": "~3 horas",
+        "type": "Grupo abierto",
+        "cta": "Reservar Ahora"
+      },
+      "booking": {
+        "title": "Reserva Tu Espacio",
+        "subtitle": "Selecciona la fecha, horario y número de participantes",
+        "step_date": "Selecciona Fecha",
+        "step_time": "Selecciona Horario",
+        "step_participants": "Participantes",
+        "senior_female": "Jubiladas (Mujeres 55+)",
+        "senior_male": "Jubilados (Hombres 60+)",
+        "adult": "Adultos y jóvenes (10+)",
+        "child_5_10": "Niños (5-10 años)",
+        "child_under_5": "Niños (menores de 5)",
+        "free": "Gratis",
+        "senior_discount": "Descuento de jubilado",
+        "total_participants": "Total: {{count}} participantes",
+        "meeting_point": "Punto de encuentro: Afuera de la Iglesia de la Merced, Casco Antiguo",
+        "dress_code": "Código de vestimenta: Se requiere vestimenta respetuosa para ingresar a las iglesias. Hombros y rodillas deben estar cubiertos.",
+        "reserve_button": "Agregar al Carrito",
+        "added_to_cart": "¡Agregado al carrito!",
+        "add_another": "Reservar otro horario",
+        "go_to_checkout": "Ir al Checkout",
+        "senior_discount_note": "{{pct}}% descuento de jubilado"
+      }
+    }
+  },
+  "contact": {
+    "title": "Contáctenos",
+    "bio": "Hola, soy Diego Raúl Feliu. Licenciado en turismo histórico y con un profundo conocimiento de la historia de Panamá, he dedicado mi carrera a ayudar a visitantes y estudiantes a comprender verdaderamente nuestro país. Tanto si está planeando una excursión escolar como un tour privado, estoy aquí para ayudarle a crear una experiencia significativa.",
+    "email_sr": "Correo electrónico",
+    "form": {
+      "interest_label": "Me interesa",
+      "interest_field_trips": "Excursiones académicas",
+      "interest_tours": "Tours privados",
+      "select_interest_hint": "Seleccione su interés para continuar.",
+      "first_name": "Nombre",
+      "last_name": "Apellido",
+      "email": "Correo electrónico",
+      "school_name": "Nombre de la escuela",
+      "grade_levels": "Niveles de grado",
+      "grades": {
+        "3_4": "3.º y 4.º grado",
+        "5_6": "5.º y 6.º grado",
+        "7_8": "7.º y 8.º grado",
+        "9_10": "9.º y 10.º grado",
+        "11_12": "11.º y 12.º grado"
+      },
+      "field_trips_interested": "¿Qué excursiones le interesan?",
+      "field_trips": {
+        "casco_plazas": "Casco Antiguo: Plazas e iglesias",
+        "casco_museums": "Casco Antiguo: Circuito de Museos",
+        "panama_viejo": "Sitio Arqueológico de Panamá Viejo",
+        "biomuseo": "Museo de la Biodiversidad (Biomuseo)",
+        "miraflores": "Centro de Visitantes de Miraflores e IMAX",
+        "religious": "Viaje interreligioso"
+      },
+      "country": "País de residencia",
+      "date_from": "Fecha de llegada",
+      "date_to": "Fecha de salida",
+      "group_size": "Tamaño del grupo",
+      "adults": "Adultos",
+      "children_under_5": "Niños menores de 5 años",
+      "children_5_17": "Niños de 5 a 17 años",
+      "tours_interested": "¿Qué tours le interesan?",
+      "tours_list": {
+        "canal": "Canal de Panamá: Esclusas de Miraflores",
+        "casco_plazas": "Casco Antiguo: Plazas e iglesias",
+        "casco_museums": "Casco Antiguo: Circuito de Museos",
+        "panama_viejo": "Panamá Viejo: Sitio Arqueológico",
+        "biomuseo": "Biomuseo: Museo de la Biodiversidad",
+        "mi_pueblito": "Mi Pueblito: Patrimonio Cultural"
+      },
+      "hotel_address": "Hotel o dirección",
+      "hotel_address_placeholder": "Dónde te alojarás en Panamá",
+      "needs_transport": "Necesito transporte del aeropuerto al hotel.",
+      "message": "Mensaje",
+      "submit": "Enviar mensaje",
+      "submitting": "Enviando...",
+      "success_message": "¡Gracias! Tu mensaje se ha enviado correctamente. Nos pondremos en contacto contigo en breve.",
+      "error_message": "Lo sentimos, se ha producido un error al enviar tu mensaje. Inténtalo de nuevo o contáctanos a través de WhatsApp."
+    },
+    "confirmation": {
+      "title": "¡Gracias!",
+      "message": "Tu mensaje se ha enviado correctamente. Nos pondremos en contacto contigo en breve.",
+      "redirect": "Serás redirigido en {{seconds}} segundos a",
+      "home": "Inicio"
+    }
+  },
+  "blog": {
+    "title": "Nuestro Blog",
+    "subtitle": "Explore a profundidad la fascinante historia de Panamá a través de nuestros artículos y series.",
+    "error": "Error al cargar los artículos. Por favor, inténtelo de nuevo más tarde."
+  },
+  "confirm_subscription": {
+    "title": "Confirma tu suscripción",
+    "loading": "Confirmando tu suscripción...",
+    "language_label": "Idioma preferido para los correos:",
+    "success_title": "¡Estás suscrito!",
+    "success_message": "Gracias por confirmar. Recibirás nuestras actualizaciones en tu idioma preferido.",
+    "error_title": "Enlace inválido",
+    "error_message": "Este enlace de confirmación es inválido o ha expirado.",
+    "back_home": "Volver al inicio"
+  },
+  "unsubscribe": {
+    "title": "Cancelar suscripción",
+    "message": "¿Estás seguro de que quieres cancelar tu suscripción?",
+    "email_label": "Correo electrónico:",
+    "confirm_button": "Sí, cancelar suscripción",
+    "cancel_button": "Cancelar",
+    "success_title": "Suscripción cancelada",
+    "success_message": "Te has dado de baja correctamente. ¡Lamentamos verte partir!",
+    "resubscribe": "¿Cambiaste de opinión? Suscríbete de nuevo",
+    "error_title": "Error",
+    "error_message": "No pudimos encontrar este correo electrónico en nuestra lista."
+  },
+  "booking": {
+    "modal": {
+      "title": "Reserva Tu Tour",
+      "select_date": "Selecciona Fecha",
+      "select_time": "Selecciona Hora",
+      "select_exact_time": "Selecciona hora exacta",
+      "morning": "Mañana",
+      "afternoon": "Tarde",
+      "preferred_time": "Hora de inicio preferida (opcional)",
+      "preferred_time_placeholder": "ej., 9:00 AM",
+      "your_group": "Tu Grupo",
+      "group_note": "La residencia afecta el precio de las entradas en las atracciones",
+      "column_residents": "Panameños / Residentes",
+      "column_tourists": "Turistas / Visitantes",
+      "seniors_female": "Jubiladas (Mujeres 55+)",
+      "seniors_male": "Jubilados (Hombres 60+)",
+      "adults": "Adultos (18+)",
+      "children_10_17": "Niños (10-17)",
+      "children_5_10": "Niños (5-10)",
+      "children_under_5": "Niños (menores de 5)",
+      "total_participants": "Total: {{count}} participantes (máx 7)",
+      "resident_info": "Residentes = Ciudadanos panameños o residentes legales",
+      "transportation": "Transporte",
+      "need_transport": "Necesito transporte",
+      "direction": "Dirección",
+      "to_only": "Hotel → Atracción solamente",
+      "from_only": "Atracción → Hotel solamente",
+      "both_ways": "Ida y vuelta",
+      "round_trip_only": "Los grupos de 5 o más son solo ida y vuelta.",
+      "hotel": "Hotel",
+      "hotel_placeholder": "Escribe para buscar hoteles...",
+      "hotel_not_found": "Hotel no encontrado en nuestra lista. El transporte se cotizará por separado después de reservar.",
+      "price_breakdown": "Desglose de Precios",
+      "guide_service": "Servicio de Guía",
+      "per_person": "por persona",
+      "participants": "participantes",
+      "senior_discount": "Descuento de jubilado",
+      "tickets": "Entradas a Atracciones",
+      "tickets_resident": "(Residente)",
+      "tickets_tourist": "(Turista)",
+      "transport": "Transporte",
+      "total": "Total",
+      "add_to_cart": "Agregar al Carrito",
+      "update_cart": "Actualizar Carrito",
+      "group_too_large": "Para grupos de más de 15 personas, contáctenos para una cotización personalizada.",
+      "contact_for_quote": "Contáctenos para Cotizar",
+      "select_hotel_for_transport": "Seleccione un hotel para obtener el precio del transporte",
+      "close": "Cerrar"
+    },
+    "availability": {
+      "unavailable": "No disponible",
+      "limited": "Disponibilidad limitada"
+    }
+  },
+  "cart": {
+    "title": "Carrito de Compras",
+    "empty": "Tu carrito está vacío",
+    "subtotal": "Subtotal",
+    "checkout": "Pagar",
+    "continue_shopping": "Seguir Comprando",
+    "edit": "Editar",
+    "remove": "Eliminar",
+    "remove_confirm": "¿Eliminar este tour de tu carrito?",
+    "participants_count": "{{count}} participante",
+    "participants_count_plural": "{{count}} participantes",
+    "close_panel": "Cerrar panel",
+    "or": "o",
+    "view_bag_sr": "artículos en el carrito, ver bolsa"
+  },
+  "checkout": {
+    "title": "Pago",
+    "contact_info": "Información de Contacto",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "phone": "Teléfono",
+    "hotel": "Hotel (opcional)",
+    "hotel_note": "Para fines de contacto",
+    "payment_method": "Método de Pago",
+    "paypal": "PayPal",
+    "paypal_desc": "Factura enviada a su correo",
+    "credit_card": "Tarjeta de Crédito",
+    "credit_card_desc": "Enlace de pago enviado a su correo",
+    "order_summary": "Resumen del Pedido",
+    "place_order": "Realizar Pedido",
+    "terms_agreement": "Al realizar su pedido, acepta nuestros términos.",
+    "processing": "Procesando...",
+    "invalid_email": "Por favor ingrese un correo electrónico válido",
+    "invalid_phone": "Por favor ingrese un número de teléfono válido",
+    "yappy": "Yappy",
+    "yappy_desc": "Pago por Yappy de Banco General"
+  },
+  "order": {
+    "confirmation": {
+      "title": "¡Pedido Recibido!",
+      "thank_you": "Gracias por reservar con Panama In Context.",
+      "reference": "Referencia del Pedido",
+      "what_next": "¿Qué sigue?",
+      "step_1": "Recibirá un enlace de pago por correo electrónico en {{hours}} horas",
+      "step_2": "Complete su pago para confirmar su reserva",
+      "step_3": "Le enviaremos una confirmación con los detalles del tour",
+      "payment_valid": "Enlace de pago válido por",
+      "hours": "horas",
+      "reservation_held": "Reserva mantenida hasta",
+      "your_bookings": "Sus Reservas",
+      "subtotal": "Subtotal",
+      "manage_booking": "Administrar su reserva",
+      "questions": "¿Preguntas? Contáctenos en",
+      "return_home": "Volver al Inicio"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "pending_payment": "Pago Pendiente",
+      "payment_link_sent": "Enlace de Pago Enviado",
+      "paid": "Pagado",
+      "confirmed": "Confirmado",
+      "cancelled": "Cancelado",
+      "expired": "Expirado"
+    }
+  },
+  "booking_manage": {
+    "title": "Detalles de su Reserva",
+    "status": "Estado",
+    "actions": "Acciones",
+    "cancel": "Cancelar Reserva",
+    "renew_payment": "Solicitar Nuevo Enlace de Pago",
+    "link_expired": "Enlace Expirado",
+    "link_expired_desc": "Este enlace ha expirado o ya no es válido.",
+    "request_new": "Si necesita acceder a su reserva, ingrese su correo electrónico para recibir un nuevo enlace.",
+    "send_new_link": "Enviar Nuevo Enlace"
+  },
+  "booking_cancel": {
+    "title": "Cancelar Su Reserva",
+    "confirm_question": "¿Está seguro de que desea cancelar esta reserva?",
+    "yes_cancel": "Sí, Cancelar Reserva",
+    "no_keep": "No, Mantener Reserva",
+    "success_title": "Reserva Cancelada",
+    "success_message": "Su reserva ha sido cancelada exitosamente.",
+    "sorry_message": "¡Lamentamos que se vaya! Si cambia de opinión, siempre puede reservar de nuevo en nuestro sitio web.",
+    "browse_tours": "Explorar Tours"
+  },
+  "booking_renew": {
+    "title": "Nuevo Enlace de Pago Solicitado",
+    "message": "Hemos recibido su solicitud de un nuevo enlace de pago.",
+    "eta": "Nuestro equipo ha sido notificado y le enviará un nuevo enlace de pago por correo electrónico lo antes posible.",
+    "not_received": "Si no lo recibe, contáctenos en"
+  },
+  "admin": {
+    "login": {
+      "title": "Acceso Administrador",
+      "description": "Ingrese su correo de administrador para recibir un enlace de acceso.",
+      "request_access": "Solicitar Acceso",
+      "check_email": "Revise su correo para el enlace de acceso.",
+      "link_valid": "El enlace es válido por 24 horas."
+    },
+    "orders": {
+      "title": "Pedidos Pendientes",
+      "refresh": "Actualizar",
+      "filter": "Filtrar",
+      "mark_payment_sent": "Marcar Pago Enviado",
+      "mark_paid": "Marcar como Pagado",
+      "created": "Creado",
+      "payment_sent": "Enlace de pago enviado",
+      "expires": "Enlace expira",
+      "bookings": "Reservas"
+    },
+    "mark_paid": {
+      "title": "Marcar como Pagado",
+      "order": "Pedido",
+      "customer": "Cliente",
+      "amount": "Monto",
+      "notes": "Notas (opcional)",
+      "notes_placeholder": "ej., \"Pagado vía Cuanto - Ref #12345\"",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar Pago Recibido"
+    }
+  },
+  "edu_materials": {
+    "title": "Materiales Educativos",
+    "tabs": {
+      "media_library": "Biblioteca de Medios",
+      "classroom_assets": "Recursos para el Aula",
+      "podcast": "Podcast"
+    },
+    "coming_soon": "Próximamente",
+    "nav": {
+      "media_library": "Biblioteca de Medios",
+      "educational_content": "Contenido Educativo",
+      "presentations": "Presentaciones",
+      "infographics": "Infografías",
+      "audio_guides": "Guías de Audio",
+      "activities": "Actividades",
+      "historical_trivia": "Trivia Histórica",
+      "back_to_website": "Volver al sitio web"
+    },
+    "placeholder": {
+      "heading": "Próximamente",
+      "text": "Esta sección estará disponible pronto. Estamos preparando nuevos materiales para el aula."
+    },
+    "deliverables": {
+      "intro": "Video de preparación y guía de estudio para cada excursión y nivel escolar.",
+      "grade_band": "Grados {{band}}",
+      "download_guide": "Descargar guía (PDF)",
+      "minutes": "{{count}} min",
+      "loading": "Cargando materiales...",
+      "error": "No se pudieron cargar los materiales. Intente de nuevo.",
+      "empty_heading": "Próximamente",
+      "empty_text": "Aún no hemos publicado materiales de excursión. Vuelva pronto."
+    },
+    "media_library": {
+      "intro_heading": "Biblioteca de Imágenes Históricas",
+      "intro_text": "Explore nuestra colección curada de imágenes de dominio público de Wikimedia Commons y la Biblioteca del Congreso, altamente relevantes para la historia panameña. Haga clic en cualquier miniatura para ver detalles de licencia y atribución. Puede descargar las imágenes directamente para uso en su aula, proyectos de investigación o materiales educativos.",
+      "search_placeholder": "Buscar imágenes...",
+      "total_images": "{{count}} imágenes disponibles",
+      "results_count": "{{count}} resultados",
+      "no_results": "No se encontraron imágenes",
+      "no_results_hint": "Intente con otros términos de búsqueda",
+      "download": "Descargar",
+      "all_tags": "Todas las Etiquetas",
+      "loading": "Cargando...",
+      "loading_image": "Cargando imagen...",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "no_preview": "Sin vista previa",
+      "download_aria": "Descargar {{title}}",
+      "detail": {
+        "title": "Detalles de la Imagen",
+        "attribution": "Atribución",
+        "license": "Licencia",
+        "dimensions": "Dimensiones",
+        "source": "Fuente",
+        "tags": "Etiquetas",
+        "description": "Descripción",
+        "view_source": "Ver fuente original",
+        "download_full": "Descargar resolución completa"
+      }
+    },
+    "access": {
+      "loading": "Verificando acceso...",
+      "login_title": "Acceso para Educadores",
+      "login_text": "Ingrese su correo registrado para acceder a los materiales educativos.",
+      "login_submit": "Acceder",
+      "email_placeholder": "su.correo@escuela.edu",
+      "no_account": "¿No tiene cuenta?",
+      "register_link": "Regístrese gratis",
+      "not_registered": "Este correo no está registrado. Por favor cree una cuenta.",
+      "already_registered": "Este correo ya está registrado. Úselo para iniciar sesión.",
+      "register_title": "Crear Cuenta",
+      "register_text": "Regístrese gratis para acceder a nuestros materiales educativos.",
+      "register_submit": "Crear Cuenta",
+      "email_label": "Correo electrónico",
+      "name_label": "Nombre (opcional)",
+      "name_placeholder": "Su nombre",
+      "institution_label": "Institución (opcional)",
+      "institution_placeholder": "Escuela o universidad",
+      "mailing_list_label": "También suscribirme al boletín de Panama In Context",
+      "sending": "Enviando...",
+      "check_email_title": "Revise Su Correo",
+      "check_email_text": "Hemos enviado un enlace de confirmación a:",
+      "back_to_login": "Volver al inicio de sesión",
+      "enter_code_title": "Verifique Su Identidad",
+      "enter_code_text": "Hemos enviado un código de 6 dígitos a:",
+      "verify": "Verificar",
+      "verifying": "Verificando...",
+      "error": "Algo salió mal. Por favor intente de nuevo.",
+      "verify_unavailable": "No pudimos verificar su acceso en este momento. Verifique su conexión e intente de nuevo.",
+      "confirming": "Confirmando su acceso...",
+      "confirmed_title": "¡Acceso Activado!",
+      "error_title": "Error de Confirmación",
+      "go_to_materials": "Ir a Materiales Educativos"
+    }
+  },
+  "terms": {
+    "title": "Términos y Condiciones",
+    "effective_date": "Fecha de vigencia: 8 de marzo de 2026",
+    "sections": {
+      "acceptance": {
+        "title": "1. Aceptación de los Términos",
+        "body": "Al acceder y utilizar el sitio web de Panama In Context (panamaincontext.com), incluyendo nuestro blog, materiales educativos y servicios de reserva de tours, usted acepta quedar vinculado por estos Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, por favor no utilice nuestro sitio web ni nuestros servicios."
+      },
+      "intellectual_property": {
+        "title": "2. Propiedad Intelectual",
+        "body": "Todo el contenido de este sitio web — incluyendo, entre otros, artículos del blog, presentaciones, infografías, videos, material de audio, guías de estudio e imágenes — es propiedad de Panama In Context y Diego Feliu, salvo que se indique lo contrario. No se permite reproducir, redistribuir, republicar ni utilizar de cualquier otra forma ninguno de estos contenidos sin el consentimiento expreso por escrito de Diego Feliu.\n\nEl contenido de fuentes de terceros (como imágenes de la Biblioteca del Congreso de EE.UU.) se utiliza bajo sus respectivas licencias, las cuales se indican junto a cada elemento."
+      },
+      "edu_materials_disclaimer": {
+        "title": "3. Aviso sobre Materiales Educativos",
+        "body": "Nuestros artículos del blog, guías de estudio, presentaciones, infografías y otros materiales educativos se proporcionan de forma gratuita con fines informativos y educativos. Aunque hacemos todo lo posible por verificar todos los datos contenidos en nuestros materiales educativos, Panama In Context y Diego Feliu no son responsables de pérdidas, daños o consecuencias derivadas de información inexacta o incompleta.\n\nCada persona que utilice estos materiales es responsable de realizar su propia verificación de datos antes de basarse en la información para fines académicos, profesionales o de cualquier otro tipo."
+      },
+      "tour_bookings": {
+        "title": "4. Reservas y Pagos de Tours",
+        "body": "Las reservas de tours guiados y excursiones académicas no se confirman hasta que se haya recibido el pago completo. Los precios son los publicados en el sitio web al momento de la reserva. Panama In Context se reserva el derecho de actualizar los precios en cualquier momento, aunque las reservas confirmadas se respetarán al precio pagado."
+      },
+      "cancellation_refunds": {
+        "title": "5. Cancelaciones y Reembolsos",
+        "body": "Los clientes tienen derecho a un reembolso completo si la reserva se cancela al menos 7 días antes de la fecha programada. Cualquier cargo bancario o de procesamiento de pago asociado con el reembolso será deducido del monto reembolsado. Las cancelaciones realizadas con menos de 7 días de anticipación no son elegibles para reembolso."
+      },
+      "force_majeure": {
+        "title": "6. Fuerza Mayor",
+        "body": "Los tours y excursiones pueden ser reprogramados o cancelados debido a circunstancias fuera de nuestro control, incluyendo, entre otras, condiciones climáticas severas, desastres naturales, disturbios civiles, restricciones gubernamentales o emergencias de salud pública. En tales casos, se ofrecerá a los clientes un reembolso completo o la opción de reprogramar sin costo adicional."
+      },
+      "photo_video": {
+        "title": "7. Fotografía y Video Durante los Tours",
+        "body": "Panama In Context puede tomar fotografías y videos durante las excursiones y tours guiados con fines promocionales y educativos. Al participar en nuestros tours, usted consiente el uso de dichas imágenes y grabaciones, a menos que nos notifique por escrito antes del tour que desea no participar."
+      },
+      "liability": {
+        "title": "8. Limitación de Responsabilidad",
+        "body": "Los participantes en tours y excursiones lo hacen bajo su propio riesgo. Panama In Context y Diego Feliu no son responsables de lesiones, enfermedades, pérdida de objetos personales u otros daños que puedan ocurrir durante los tours o excursiones. Los participantes son responsables de su propia seguridad y pertenencias personales en todo momento."
+      },
+      "school_excursions": {
+        "title": "9. Excursiones Escolares y Menores",
+        "body": "Las reservas de excursiones académicas son realizadas por instituciones educativas, no por estudiantes individuales ni menores de edad. La escuela o institución es responsable de garantizar la supervisión adecuada de los estudiantes durante las excursiones. Los padres o tutores legales son responsables de cualquier necesidad médica o especial, la cual debe ser comunicada antes de la excursión."
+      },
+      "children": {
+        "title": "10. Uso del Sitio Web por Menores",
+        "body": "Este sitio web no está dirigido a menores de 13 años. No recopilamos intencionalmente información personal de menores. Si cree que un menor nos ha proporcionado información personal, contáctenos para que podamos eliminarla de inmediato."
+      },
+      "governing_law": {
+        "title": "11. Ley Aplicable",
+        "body": "Estos Términos y Condiciones se rigen e interpretan de acuerdo con las leyes de la República de Panamá. Cualquier disputa que surja de o esté relacionada con estos términos o nuestros servicios estará sujeta a la jurisdicción de los tribunales de la República de Panamá."
+      },
+      "changes": {
+        "title": "12. Cambios a Estos Términos",
+        "body": "Panama In Context se reserva el derecho de actualizar o modificar estos Términos y Condiciones en cualquier momento. Los cambios se publicarán en esta página con una fecha de vigencia actualizada. El uso continuado del sitio web después de la publicación de cambios constituye la aceptación de los términos revisados."
+      },
+      "contact": {
+        "title": "13. Contacto",
+        "body": "Si tiene alguna pregunta sobre estos Términos y Condiciones, contáctenos a través de nuestro formulario de contacto en panamaincontext.com/contacto o escriba a Diego Feliu a diego@panamaincontext.com."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Política de Privacidad",
+    "effective_date": "Fecha de vigencia: 30 de mayo de 2026",
+    "sections": {
+      "info_we_collect": {
+        "title": "1. Información que Recopilamos",
+        "body": "Panama In Context recopila información personal limitada, únicamente cuando usted la proporciona voluntariamente. No establecemos cookies con fines de seguimiento. La información que podemos recopilar incluye:\n\n• Nombre y correo electrónico cuando envía nuestro formulario de contacto\n• Correo electrónico cuando se suscribe a nuestra lista de correo\n• Correo electrónico cuando se registra para acceder a nuestros materiales educativos"
+      },
+      "analytics": {
+        "title": "2. Analíticas",
+        "body": "Utilizamos Google Analytics y Meta Pixel para recopilar datos de uso anonimizados sobre cómo los visitantes interactúan con nuestro sitio web. Estos datos nos ayudan a comprender los recorridos de los usuarios y mejorar nuestros productos y servicios. Los datos analíticos recopilados son anonimizados y no identifican personalmente a los visitantes individuales. Incluyen información como páginas visitadas, tiempo en el sitio y región geográfica general."
+      },
+      "contact_form": {
+        "title": "3. Datos del Formulario de Contacto",
+        "body": "Cuando envía nuestro formulario de contacto, recopilamos su nombre, correo electrónico y el contenido del mensaje. Esta información se utiliza únicamente para responder a su consulta y, si corresponde, para brindar los servicios que solicitó. No compartimos esta información con terceros."
+      },
+      "mailing_list": {
+        "title": "4. Lista de Correo",
+        "body": "Si se suscribe a nuestra lista de correo, recopilamos su dirección de correo electrónico para enviarle actualizaciones sobre el contenido de nuestro blog, materiales educativos y servicios. Puede darse de baja en cualquier momento utilizando el enlace proporcionado en cada correo electrónico."
+      },
+      "educator_access": {
+        "title": "5. Acceso para Educadores",
+        "body": "Los educadores que se registran para acceder a nuestros materiales educativos proporcionan su correo electrónico con fines de verificación. Este correo se utiliza para administrar el acceso a nuestros materiales y para enviar actualizaciones ocasionales sobre nuevo contenido educativo. Puede solicitar la eliminación de su correo electrónico en cualquier momento."
+      },
+      "third_party": {
+        "title": "6. Servicios de Terceros",
+        "body": "Utilizamos los siguientes servicios de terceros que pueden procesar datos:\n\n• Google Analytics — para analíticas anonimizadas de uso del sitio web\n• Meta Pixel — para analíticas anonimizadas de uso del sitio web\n• Procesadores de pago — para procesar pagos de reservas de tours (los datos de pago son manejados directamente por el procesador y nunca se almacenan en nuestros servidores)\n• Sentry — para el monitoreo de errores de la aplicación. Sentry recibe únicamente datos técnicos limitados sobre los errores (como mensajes de error, tipo de navegador y la página donde ocurrió un error). No recibe los mensajes de su formulario de contacto, los detalles de sus reservas ni la información de la lista de correo."
+      },
+      "data_retention": {
+        "title": "7. Retención de Datos",
+        "body": "Conservamos los datos personales durante los siguientes períodos:\n\n• Consultas del formulario de contacto: 6 meses, o 3 meses después de que se hayan proporcionado los servicios relacionados con la consulta, lo que sea posterior\n• Correos de lista de correo: hasta que se dé de baja\n• Correos de acceso educativo: hasta que solicite su eliminación\n• Datos analíticos: regidos por las políticas de retención de Google Analytics y Meta Pixel"
+      },
+      "children": {
+        "title": "8. Privacidad de Menores",
+        "body": "Nuestro sitio web ofrece contenido educativo para escuelas, pero no recopilamos intencionalmente información personal de menores de 13 años. Los materiales educativos se acceden a través de cuentas de educadores, no de cuentas individuales de estudiantes. Si cree que un menor nos ha proporcionado información personal, contáctenos para que podamos eliminarla de inmediato."
+      },
+      "your_rights": {
+        "title": "9. Sus Derechos",
+        "body": "Usted tiene derecho a:\n\n• Solicitar acceso a los datos personales que tenemos sobre usted\n• Solicitar la corrección de datos inexactos\n• Solicitar la eliminación de sus datos personales\n• Darse de baja de nuestra lista de correo en cualquier momento\n• Rechazar el seguimiento analítico utilizando la configuración de No Rastrear de su navegador o una extensión del navegador\n\nPara ejercer cualquiera de estos derechos, contáctenos a través de nuestro formulario de contacto o a diego@panamaincontext.com."
+      },
+      "changes": {
+        "title": "10. Cambios a Esta Política",
+        "body": "Panama In Context se reserva el derecho de actualizar esta Política de Privacidad en cualquier momento. Los cambios se publicarán en esta página con una fecha de vigencia actualizada. El uso continuado del sitio web después de la publicación de cambios constituye la aceptación de la política revisada."
+      },
+      "contact": {
+        "title": "11. Contacto",
+        "body": "Si tiene alguna pregunta sobre esta Política de Privacidad, contáctenos a través de nuestro formulario de contacto en panamaincontext.com/contacto o escriba a Diego Feliu a diego@panamaincontext.com."
+      }
+    }
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "message": "La página que busca no existe o es posible que haya sido movida.",
+    "backHome": "Volver al inicio"
+  }
+}

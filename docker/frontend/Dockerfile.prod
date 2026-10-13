@@ -1,0 +1,62 @@
+# Production Dockerfile for Panama In Context Frontend
+# Multi-stage build for optimal image size
+
+# Stage 1: Build the React application
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY frontend/ .
+
+# Build argument for API URL (baked into the build)
+ARG VITE_API_URL=https://api.panamaincontext.com
+ENV VITE_API_URL=$VITE_API_URL
+
+# Sentry DSN (baked into the bundle, which is public by design — it ships in
+# the JS bundle regardless). Defaulted to the prod project so deploys need no
+# extra env setup; override via --build-arg for staging/forks, or leave the
+# bundle unset (Sentry init no-ops) by passing --build-arg VITE_SENTRY_DSN=.
+ARG VITE_SENTRY_DSN=https://<key>@<org>.ingest.us.sentry.io/<frontend-project-id>
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+
+# Analytics (GA + Meta Pixel). Enabled and given the prod IDs only here, so every
+# non-prod build (dev/CI/staging) leaves the flag off and never reports (#112).
+# Override via --build-arg for staging/forks, or pass VITE_ANALYTICS_ENABLED=false
+# to ship a build with analytics disabled.
+ARG VITE_ANALYTICS_ENABLED=true
+ENV VITE_ANALYTICS_ENABLED=$VITE_ANALYTICS_ENABLED
+ARG VITE_GA_ID=G-DRR3ZDXWHK
+ENV VITE_GA_ID=$VITE_GA_ID
+ARG VITE_META_PIXEL_ID=1062950551173065
+ENV VITE_META_PIXEL_ID=$VITE_META_PIXEL_ID
+
+# Build the application (VITE_BUILD_HASH busts browser cache for translation files)
+RUN VITE_BUILD_HASH=$(date +%s) npm run build
+
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx config
+COPY docker/frontend/nginx.prod.conf /etc/nginx/conf.d/default.conf
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Create directory for certbot challenges
+RUN mkdir -p /var/www/certbot/.well-known/acme-challenge
+
+# Expose ports
+EXPOSE 80 443
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

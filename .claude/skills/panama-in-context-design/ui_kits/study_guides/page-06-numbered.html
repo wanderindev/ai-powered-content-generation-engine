@@ -1,0 +1,37 @@
+<!-- @dsCard group="Study Guides" viewport="816x1056" name="Numbered steps" subtitle="Ordered list with brand number badges" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="guide.css" />
+<script src="../../assets/heroicons.js"></script>
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="page">
+  <div class="page-pad">
+    <p class="g-eyebrow">Walking the Old Quarter</p>
+    <h2 class="g-title">Six stops, in order</h2>
+    <div class="g-rule"></div>
+    <ol class="g-numbers" style="margin-top:32px">
+      <li><span class="n">1</span><div><b>Iglesia de la Merced</b>Its stone façade was carried piece by piece from Panamá Viejo after 1671.</div></li>
+      <li><span class="n">2</span><div><b>Metropolitan Cathedral</b>Two centuries in the making, fronting the Plaza de la Independencia.</div></li>
+      <li><span class="n">3</span><div><b>Church of San José</b>Home to the celebrated Golden Altar, saved from Morgan's raid.</div></li>
+      <li><span class="n">4</span><div><b>Plaza Bolívar</b>A quiet square honoring the liberator Simón Bolívar.</div></li>
+      <li><span class="n">5</span><div><b>Santo Domingo &amp; the Flat Arch</b>The Arco Chato, long a symbol of Panama's stability.</div></li>
+      <li><span class="n">6</span><div><b>San Francisco bell tower</b>Rooftop domes marking the quarter's northern edge.</div></li>
+    </ol>
+    <div class="g-foot"><span class="brand">Panama In Context · The Three Panamas</span><span class="num">6</span></div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){ var s=document.querySelector('.scaler'); if(!s) return;
+    var k=Math.min((innerWidth-40)/816,(innerHeight-40)/1056); s.style.transform='scale('+k+')'; }
+  addEventListener('resize',fit); addEventListener('load',fit); fit();
+})();
+</script>
+</body>
+</html>

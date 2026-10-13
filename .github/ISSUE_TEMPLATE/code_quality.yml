@@ -1,0 +1,73 @@
+name: Code quality
+description: Refactor, technical debt, code smell, or quality improvement
+title: "[Quality] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for refactors, tech debt, and quality improvements that don't change user-visible
+        behavior. Apply exactly one of `code-quality:critical`, `code-quality:moderate`, or
+        `code-quality:nice-to-have` after filing. Add `agent-friendly` if it meets the
+        [criteria](../blob/main/docs/pilot/agent-friendly-criteria.md).
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: File path(s) or module(s) most affected.
+      placeholder: backend/app/services/edu_pipeline.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current state
+      description: What does the code look like today? Why is it a problem?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired state
+      description: What should it look like after the change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Risk, maintenance cost, performance, readability, etc. Helps with prioritization.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity (pick the matching label after filing)
+      options:
+        - "critical — real risk to security, data, or prod stability"
+        - "moderate — meaningful tech debt, worth doing"
+        - "nice-to-have — cosmetic or low-impact"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: agent-friendly
+    attributes:
+      label: Is this agent-friendly?
+      description: Per docs/pilot/agent-friendly-criteria.md. If "Yes", also apply the `agent-friendly` label.
+      options:
+        - "Yes — meets all criteria"
+        - "No — fails one or more criteria"
+        - "Borderline — needs human review"
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context

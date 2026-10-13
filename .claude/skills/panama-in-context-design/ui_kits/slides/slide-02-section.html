@@ -1,0 +1,36 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Section divider" subtitle="Chapter break — large numeral + section title on a dark photo" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-section">
+  <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+  <div class="photo-layer"><img src="../../assets/images/panama-viejo-skyline.jpg" alt=""></div>
+  <div class="content">
+    <div class="num">01</div>
+    <h2>The Colonial Foundation</h2>
+    <p class="sub">From the Pacific's first European city to the pirate raid that ended it.</p>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

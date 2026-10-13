@@ -1,0 +1,42 @@
+<!-- @dsCard group="Study Guides" viewport="816x1056" name="Closing page" subtitle="Review questions, thank-you and contact" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="guide.css" />
+<script src="../../assets/heroicons.js"></script>
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="page p-closing">
+  <div class="photo-layer"><img src="../../assets/images/plaza-herrera.jpg" alt=""></div>
+  <div class="inner">
+    <img class="logo" src="../../assets/logo_512x512.png" alt="Panama In Context">
+    <h2>Review &amp; Reflect</h2>
+    <p class="sub">Use these questions to check your understanding before the next module.</p>
+    <div class="review">
+      <p class="lbl">Review Questions</p>
+      <ol>
+        <li>Why was Panamá Viejo founded on the Pacific coast in 1519?</li>
+        <li>How did the silver route make the city both wealthy and vulnerable?</li>
+        <li>What did the survivors do differently when they rebuilt in 1673?</li>
+        <li>Name the three "Panamas" and what each one represents today.</li>
+      </ol>
+    </div>
+    <div class="contact">
+      <span><span class="ic"><i data-hicon="globe-americas" style="font-size:20px"></i></span>panamaincontext.com</span>
+      <span><span class="ic"><i data-hicon="envelope" style="font-size:20px"></i></span>hello@panamaincontext.com</span>
+    </div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){ var s=document.querySelector('.scaler'); if(!s) return;
+    var k=Math.min((innerWidth-40)/816,(innerHeight-40)/1056); s.style.transform='scale('+k+')'; }
+  addEventListener('resize',fit); addEventListener('load',fit); fit();
+})();
+</script>
+</body>
+</html>

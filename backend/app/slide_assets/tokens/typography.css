@@ -1,0 +1,77 @@
+/* ============================================================
+   Panama In Context — Typography tokens
+   The product ships no webfont: it uses the native system
+   sans stack (Tailwind 4 default). Headings are semibold with
+   tight tracking; body copy is generously leaded.
+   ============================================================ */
+
+:root {
+  /* --- Families ------------------------------------------- */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Display/body are the same family — distinction is weight + size */
+  --font-display: var(--font-sans);
+  --font-body:    var(--font-sans);
+
+  /* --- Type scale (Tailwind rem scale) -------------------- */
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.875rem;  /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg:   1.125rem;  /* 18px */
+  --text-xl:   1.25rem;   /* 20px */
+  --text-2xl:  1.5rem;    /* 24px */
+  --text-3xl:  1.875rem;  /* 30px */
+  --text-4xl:  2.25rem;   /* 36px */
+  --text-5xl:  3rem;      /* 48px */
+  --text-6xl:  3.75rem;   /* 60px */
+  --text-7xl:  4.5rem;    /* 72px */
+
+  /* --- Weights -------------------------------------------- */
+  --weight-normal:   400;
+  --weight-medium:   500;
+  --weight-semibold: 600; /* default heading weight */
+  --weight-bold:     700;
+
+  /* --- Line heights --------------------------------------- */
+  --leading-none:    1;
+  --leading-tight:   1.25;
+  --leading-snug:    1.375;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.625; /* article body */
+  --leading-7:       1.75;  /* spaced body / list items */
+
+  /* --- Letter spacing ------------------------------------- */
+  --tracking-tight:  -0.025em; /* headings */
+  --tracking-normal: 0;
+  --tracking-wide:   0.05em;   /* small caps eyebrows when used */
+
+  /* ========================================================
+     Semantic roles
+     ======================================================== */
+
+  /* Eyebrow: small, semibold, brand-colored kicker above titles */
+  --eyebrow-size:   var(--text-base);
+  --eyebrow-weight: var(--weight-semibold);
+  --eyebrow-color:  var(--color-brand);
+
+  /* Display (hero h1) */
+  --display-size:   var(--text-5xl);
+  --display-weight: var(--weight-semibold);
+  --display-tracking: var(--tracking-tight);
+
+  /* Section title (h2) */
+  --title-size:   var(--text-4xl);
+  --title-weight: var(--weight-semibold);
+  --title-tracking: var(--tracking-tight);
+
+  /* Body */
+  --body-size:    var(--text-lg);
+  --body-leading: var(--leading-7);
+
+  /* UI label / button */
+  --label-size:   var(--text-sm);
+  --label-weight: var(--weight-semibold);
+}

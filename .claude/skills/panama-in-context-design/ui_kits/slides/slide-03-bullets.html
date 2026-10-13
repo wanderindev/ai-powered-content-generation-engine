@@ -1,0 +1,43 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Bullet points" subtitle="Title + brand-marked bullet list for key ideas" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-bullets">
+  <div class="slide-pad">
+    <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+    <div class="head">
+      <p class="s-eyebrow">Why It Matters</p>
+      <h2 class="s-title">What made Panamá Viejo fall</h2>
+      <div class="s-rule"></div>
+    </div>
+    <ul>
+      <li><span class="mk"><i data-hicon="check-circle-solid" style="font-size:30px"></i></span><div><b>Strategic wealth.</b> The city was the Pacific terminus of Spain's silver route — a prime target for raiders.</div></li>
+      <li><span class="mk"><i data-hicon="check-circle-solid" style="font-size:30px"></i></span><div><b>The 1671 raid.</b> The privateer Henry Morgan marched overland and overwhelmed the city's defenses.</div></li>
+      <li><span class="mk"><i data-hicon="check-circle-solid" style="font-size:30px"></i></span><div><b>Fire and flight.</b> The capital burned; survivors carried its stones to a new, fortified site.</div></li>
+      <li><span class="mk"><i data-hicon="check-circle-solid" style="font-size:30px"></i></span><div><b>A second city.</b> In 1673, Casco Antiguo rose on a defensible peninsula two miles west.</div></li>
+    </ul>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

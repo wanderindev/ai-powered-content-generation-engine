@@ -1,0 +1,48 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Map" subtitle="Location list + map panel with pins & a callout (drop your own map)" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-map">
+  <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+  <div class="copy">
+    <p class="s-eyebrow">Casco Antiguo Walking Tour</p>
+    <h2 class="s-title">Six stops in the Old Quarter</h2>
+    <ol>
+      <li><span class="n">1</span>Iglesia de la Merced</li>
+      <li><span class="n">2</span>Metropolitan Cathedral</li>
+      <li><span class="n">3</span>Church of San José</li>
+      <li><span class="n">4</span>Plaza Bolívar</li>
+      <li><span class="n">5</span>Santo Domingo &amp; the Flat Arch</li>
+      <li><span class="n">6</span>San Francisco bell tower</li>
+    </ol>
+  </div>
+  <div class="mapwrap">
+    <div class="mapfield"><span class="hint">Replace with your map of Panamá City</span></div>
+    <div class="pin" style="left:56%;top:44%"><div class="call">Plaza Mayor</div><div class="glyph"><i data-hicon="map-pin" style="font-size:46px"></i></div></div>
+    <div class="pin" style="left:40%;top:60%"><div class="glyph"><i data-hicon="map-pin" style="font-size:34px"></i></div></div>
+    <div class="pin" style="left:67%;top:64%"><div class="glyph"><i data-hicon="map-pin" style="font-size:34px"></i></div></div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

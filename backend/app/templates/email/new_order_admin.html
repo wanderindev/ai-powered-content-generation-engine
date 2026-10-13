@@ -1,0 +1,25 @@
+<html><body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2>New Order Received</h2>
+    <p><strong>Reference:</strong> {{ order.reference }}</p>
+    <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+    <p><strong>Email:</strong> {{ order.customer_email }}</p>
+    <p><strong>Phone:</strong> {{ order.customer_phone }}</p>
+    <p><strong>Hotel:</strong> {{ order.customer_hotel or 'N/A' }}</p>
+    <p><strong>Language:</strong> {{ order.customer_language }}</p>
+    <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+    <p><strong>Total:</strong> ${{ order.grand_total }}</p>
+
+    <h3>Bookings</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #333; color: white;">
+            <th style="padding: 8px;">Tour</th>
+            <th style="padding: 8px;">Date</th>
+            <th style="padding: 8px;">Time</th>
+            <th style="padding: 8px;">Guests</th>
+            <th style="padding: 8px;">Total</th>
+        </tr>
+{% include 'partials/booking_rows.html' %}
+    </table>
+</div>
+</body></html>

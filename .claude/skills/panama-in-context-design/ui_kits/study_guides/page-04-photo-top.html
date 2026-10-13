@@ -1,0 +1,34 @@
+<!-- @dsCard group="Study Guides" viewport="816x1056" name="Photo top + text" subtitle="Banner photo with title and short-form text below" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="guide.css" />
+<script src="../../assets/heroicons.js"></script>
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="page p-photo">
+  <div class="page-pad" style="padding:0;display:flex;flex-direction:column;height:100%">
+    <div class="banner"><img src="../../assets/images/catedral-interior.jpg" alt=""><span class="chip">Casco Antiguo</span></div>
+    <div class="below">
+      <p class="g-eyebrow">UNESCO World Heritage</p>
+      <h2 class="g-title">A city rebuilt behind walls</h2>
+      <div class="g-rule"></div>
+      <p class="g-body" style="margin-top:22px">After 1673, Panama's capital rose again on a rocky peninsula ringed by defensive walls. Its narrow, cobblestoned streets blended Spanish colonial, French, and early republican architecture into the quarter we now call Casco Antiguo.</p>
+      <p class="g-body">Today its plazas, churches, and the famous Golden Altar of San José make it an open-air classroom for Panama's colonial and independence history.</p>
+    </div>
+    <div class="g-foot"><span class="brand">Panama In Context · The Three Panamas</span><span class="num">4</span></div>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){ var s=document.querySelector('.scaler'); if(!s) return;
+    var k=Math.min((innerWidth-40)/816,(innerHeight-40)/1056); s.style.transform='scale('+k+')'; }
+  addEventListener('resize',fit); addEventListener('load',fit); fit();
+})();
+</script>
+</body>
+</html>

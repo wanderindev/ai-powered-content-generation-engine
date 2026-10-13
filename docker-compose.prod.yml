@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  backend:
+    image: registry.digitalocean.com/wanderindev/pic-backend:latest
+    container_name: pic-backend
+    restart: unless-stopped
+    expose:
+      - "8000"
+    # Secrets live in /home/wanderindev/pic/.env on the droplet (chmod 600,
+    # gitignored, never tracked). Mirrors the TRD project's pattern.
+    # See .env.example for the full list of required variables.
+    env_file:
+      - .env
+    volumes:
+      - backend_static:/app/static
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: registry.digitalocean.com/wanderindev/pic-frontend:latest
+    container_name: pic-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - /opt/letsencrypt/etc:/etc/letsencrypt:ro
+      - /opt/letsencrypt/www:/var/www/certbot
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: pic-certbot
+    restart: unless-stopped
+    volumes:
+      - /opt/letsencrypt/etc:/etc/letsencrypt
+      - /opt/letsencrypt/www:/var/www/certbot
+      - /var/run/docker.sock:/var/run/docker.sock
+    # apk-install docker CLI so --deploy-hook can HUP pic-frontend to reload nginx
+    # after each successful renewal (otherwise nginx keeps the old cert in memory).
+    entrypoint: "/bin/sh -c 'apk add --no-cache docker-cli >/dev/null 2>&1 || true; trap exit TERM; while :; do certbot renew --deploy-hook \"docker kill -s HUP pic-frontend\"; sleep 12h & wait $${!}; done;'"
+
+  cert-watcher:
+    image: registry.digitalocean.com/wanderindev/pic-cert-watcher:latest
+    container_name: pic-cert-watcher
+    restart: unless-stopped
+    # Sentry DSN is a public identifier per Sentry's threat model (DSNs are
+    # designed to ship in browser bundles); kept inline so this service has
+    # no dependency on .env. Real secrets live in backend's env_file above.
+    # Points at the dedicated `pic-cert-watcher` Sentry project (#10) so its
+    # cron check-ins and TLS-probe events have their own failure domain,
+    # separate from the backend's `pic-python-fastapi` project.
+    environment:
+      - SENTRY_DSN=https://<key>@<org>.ingest.us.sentry.io/<backend-project-id>
+      - ENVIRONMENT=production
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: pic-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/wanderindev/.docker/config.json:/config.json:ro
+    # loyalty-app (atelier-loyalty-app repo) runs from ~/loyalty on this host
+    # but shares this Watchtower; its image lives on ghcr.io (creds are in the
+    # same mounted config.json).
+    command: --interval 300 pic-backend pic-frontend trd-backend trd-frontend pic-cert-watcher loyalty-app
+
+volumes:
+  backend_static:
+
+networks:
+  default:
+    external: true
+    name: shared-web

@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primary brand color: #1095d3 */
+  --color-indigo-50: #e8f6fc;
+  --color-indigo-100: #d1edf9;
+  --color-indigo-200: #a3dbf3;
+  --color-indigo-300: #75c9ed;
+  --color-indigo-400: #47b7e7;
+  --color-indigo-500: #1095d3;
+  --color-indigo-600: #1095d3;
+  --color-indigo-700: #0d78aa;
+  --color-indigo-800: #0a5a80;
+  --color-indigo-900: #073c55;
+  --color-indigo-950: #041e2b;
+}
+
+/* Article content typography */
+.article-content {
+  @apply text-gray-700 leading-relaxed;
+}
+
+.article-content h1 {
+  @apply text-3xl font-bold text-gray-900 mt-10 mb-5;
+}
+
+.article-content h2 {
+  @apply text-2xl font-semibold text-gray-900 mt-10 mb-4;
+}
+
+.article-content h3 {
+  @apply text-xl font-semibold text-gray-900 mt-8 mb-3;
+}
+
+.article-content h4 {
+  @apply text-lg font-semibold text-gray-900 mt-6 mb-2;
+}
+
+.article-content p {
+  @apply mb-6 leading-7;
+}
+
+.article-content ul {
+  @apply list-disc pl-6 mb-6 space-y-2;
+}
+
+.article-content ol {
+  @apply list-decimal pl-6 mb-6 space-y-2;
+}
+
+.article-content li {
+  @apply leading-7;
+}
+
+.article-content blockquote {
+  @apply border-l-4 border-indigo-500 pl-4 py-2 my-6 italic text-gray-600 bg-gray-50;
+}
+
+.article-content a {
+  @apply text-indigo-600 hover:text-indigo-500 underline;
+}
+
+.article-content strong {
+  @apply font-semibold text-gray-900;
+}
+
+.article-content em {
+  @apply italic;
+}
+
+.article-content hr {
+  @apply my-8 border-gray-200;
+}
+
+.article-content img {
+  @apply rounded-lg my-6 max-w-full h-auto;
+}
+
+.article-content img[data-size="small"] {
+  max-width: 300px;
+}
+
+.article-content img[data-size="medium"] {
+  max-width: 500px;
+}
+
+.article-content img[data-size="large"] {
+  max-width: 100%;
+}
+
+.article-content pre {
+  @apply bg-gray-100 rounded-lg p-4 overflow-x-auto my-6 text-sm;
+}
+
+.article-content code {
+  @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm;
+}
+
+.article-content pre code {
+  @apply bg-transparent p-0;
+}
+
+/* Special styling for "About this Article" and "Continue reading" sections */
+.article-series-section {
+  @apply bg-indigo-50 rounded-lg p-6 my-8;
+}
+
+.article-series-section h2 {
+  @apply text-xl font-semibold text-indigo-900 mt-0 mb-4;
+}
+
+.article-series-section p {
+  @apply text-indigo-800 mb-4;
+}
+
+.article-series-section ul {
+  @apply mb-0;
+}
+
+.article-series-section li {
+  @apply text-indigo-800;
+}
+
+.article-series-section a {
+  @apply text-indigo-700 hover:text-indigo-600;
+}
+
+/* Image node view in editor */
+.image-node-view {
+  position: relative;
+  display: inline-block;
+  margin: 0.5rem 0;
+}
+
+.image-node-view.selected img {
+  outline: 2px solid #1095d3;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+.image-size-bar {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  top: -32px;
+  left: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.image-size-btn {
+  width: 28px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all 0.1s;
+}
+
+.image-size-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.image-size-btn.active {
+  background: #1095d3;
+  color: white;
+}

@@ -1,0 +1,84 @@
+/* ============================================================
+   Panama In Context — Color tokens
+   Brand blue (#1095d3) is mapped onto the Tailwind "indigo"
+   name in the product (tailwind @theme), so indigo-600 == brand.
+   Neutrals are the stock Tailwind gray scale.
+   ============================================================ */
+
+:root {
+  /* --- Brand (sky-blue) scale ----------------------------- */
+  --brand-50:  #e8f6fc;
+  --brand-100: #d1edf9;
+  --brand-200: #a3dbf3;
+  --brand-300: #75c9ed;
+  --brand-400: #47b7e7;
+  --brand-500: #1095d3; /* matches product config (500 == 600) */
+  --brand-600: #1095d3; /* canonical primary used across the UI */
+  --brand-700: #0d78aa; /* hover / pressed */
+  --brand-800: #0a5a80;
+  --brand-900: #073c55;
+  --brand-950: #041e2b;
+
+  /* --- Neutral (gray) scale, Tailwind default ------------- */
+  --gray-50:  #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --gray-950: #030712;
+
+  --white: #ffffff;
+  --black: #000000;
+
+  /* --- Status (forms, toasts) ----------------------------- */
+  --success-50:  #ecfdf5;
+  --success-600: #059669;
+  --success-700: #047857;
+  --error-50:    #fef2f2;
+  --error-600:   #dc2626;
+  --error-700:   #b91c1c;
+  --warning-50:  #fffbeb;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+
+  /* ========================================================
+     Semantic aliases — reach for these in components
+     ======================================================== */
+
+  /* Brand intent */
+  --color-brand:         var(--brand-600);
+  --color-brand-hover:   var(--brand-700);
+  --color-brand-soft:    var(--brand-50);   /* chip / highlight bg */
+  --color-brand-ring:    var(--brand-600);
+
+  /* Text */
+  --text-heading:   var(--gray-900); /* headings, strong */
+  --text-body:      var(--gray-700); /* paragraph copy */
+  --text-secondary: var(--gray-600); /* supporting copy */
+  --text-muted:     var(--gray-500); /* meta, captions */
+  --text-faint:     var(--gray-400); /* disabled, placeholder */
+  --text-on-brand:  var(--white);
+  --text-on-dark:   var(--gray-300); /* body over dark hero */
+  --text-link:      var(--brand-600);
+  --text-link-hover:var(--brand-500);
+
+  /* Surfaces */
+  --surface:        var(--white);   /* default page / card */
+  --surface-muted:  var(--gray-50);  /* sidebars, modal aside */
+  --surface-subtle: var(--gray-100); /* neutral chips, wells */
+  --surface-dark:   var(--gray-900); /* hero, footers-on-dark */
+  --surface-scrim:  rgb(17 24 39 / 0.40); /* image overlay */
+
+  /* Borders & rings */
+  --border:         var(--gray-200); /* hairline section divider */
+  --border-strong:  var(--gray-300); /* input outline */
+  --border-faint:   rgb(17 24 39 / 0.10); /* ring-gray-900/10 on imagery */
+
+  /* Focus */
+  --focus-ring:     var(--brand-600);
+}

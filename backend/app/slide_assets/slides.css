@@ -1,0 +1,175 @@
+/* ============================================================
+   Panama In Context — Slide template styles
+   16:9 canvas authored at 1280×720. Inherits brand tokens from
+   ../../styles.css. Used by the deck (index.html) and by each
+   standalone @dsCard slide file.
+   ============================================================ */
+
+:root {
+  --slide-w: 1280px;
+  --slide-h: 720px;
+  --slide-pad: 72px;
+
+  /* Slide type scale (tuned for the 1280×720 canvas) */
+  --s-eyebrow: 18px;
+  --s-title:   46px;
+  --s-display: 64px;
+  --s-body:    24px;
+  --s-bullet:  25px;
+  --s-caption: 18px;
+  --s-numeral: 130px;
+}
+
+/* ---- Slide frame ---------------------------------------- */
+.slide {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.slide * { box-sizing: border-box; }
+
+.slide-pad { padding: var(--slide-pad); height: 100%; display: flex; flex-direction: column; }
+
+/* ---- Shared atoms --------------------------------------- */
+.s-eyebrow {
+  margin: 0;
+  font-size: var(--s-eyebrow);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+.s-eyebrow.on-dark { color: var(--brand-300); }
+
+.s-title {
+  margin: 14px 0 0;
+  font-size: var(--s-title);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.08;
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+.s-title.on-dark { color: #fff; }
+
+.s-body {
+  font-size: var(--s-body);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+.s-body.on-dark { color: var(--text-on-dark); }
+
+.s-rule { width: 64px; height: 4px; border-radius: 2px; background: var(--color-brand); margin: 22px 0 0; }
+
+/* Brand chrome: corner logo + page number */
+.s-logo { position: absolute; height: 30px; width: auto; }
+.s-logo.tr { top: var(--slide-pad); right: var(--slide-pad); }
+.s-pageno {
+  position: absolute; bottom: 30px; right: var(--slide-pad);
+  font-size: 14px; color: var(--text-faint); font-variant-numeric: tabular-nums;
+}
+.s-foot {
+  position: absolute; bottom: 30px; left: var(--slide-pad);
+  font-size: 14px; color: var(--text-muted);
+}
+
+/* Photo treatment */
+.s-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.s-ring { position: absolute; inset: 0; border-radius: var(--radius-2xl); box-shadow: var(--ring-inset-imagery); }
+.s-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(17,24,39,0.82), rgba(17,24,39,0.25) 55%, rgba(17,24,39,0.15)); }
+
+/* ---- Title slide ---------------------------------------- */
+.t-title { background: var(--surface-dark); }
+.t-title .photo-layer { position: absolute; inset: 0; }
+.t-title .photo-layer img { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+.t-title .content { position: absolute; left: var(--slide-pad); right: var(--slide-pad); bottom: 86px; }
+.t-title .kicker { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+.t-title .kicker img { height: 40px; }
+.t-title h1 { margin: 16px 0 0; font-size: var(--s-display); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); line-height: 1.04; color: #fff; max-width: 18ch; text-wrap: balance; }
+.t-title .sub { margin: 22px 0 0; font-size: var(--s-body); line-height: var(--leading-normal); color: var(--text-on-dark); max-width: 46ch; }
+.t-title .byline { margin-top: 34px; display: flex; align-items: center; gap: 12px; color: #fff; font-size: 18px; }
+.t-title .byline .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand-400); }
+
+/* ---- Section divider ------------------------------------ */
+.t-section { background: var(--brand-900); }
+.t-section .photo-layer { position: absolute; inset: 0; }
+.t-section .photo-layer img { width: 100%; height: 100%; object-fit: cover; opacity: 0.22; }
+.t-section .content { position: absolute; left: var(--slide-pad); bottom: 96px; right: var(--slide-pad); }
+.t-section .num { font-size: var(--s-numeral); font-weight: var(--weight-bold); line-height: 0.9; color: var(--brand-400); letter-spacing: -0.04em; }
+.t-section h2 { margin: 10px 0 0; font-size: 52px; font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); color: #fff; text-wrap: balance; max-width: 22ch; }
+.t-section .sub { margin: 18px 0 0; font-size: 22px; color: var(--brand-100); max-width: 50ch; }
+
+/* ---- Bullets -------------------------------------------- */
+.t-bullets .head { max-width: 80%; }
+.t-bullets ul { list-style: none; margin: 40px 0 0; padding: 0; display: flex; flex-direction: column; gap: 24px; }
+.t-bullets li { display: flex; align-items: flex-start; gap: 18px; font-size: var(--s-bullet); line-height: 1.4; color: var(--text-body); }
+.t-bullets li .mk { flex: none; margin-top: 2px; color: var(--color-brand); }
+.t-bullets li b { color: var(--text-heading); font-weight: var(--weight-semibold); }
+
+/* ---- Two column ----------------------------------------- */
+.t-split { padding: 0; display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+.t-split.img-right { grid-template-columns: 1fr 1fr; }
+.t-split .media { position: relative; overflow: hidden; }
+.t-split .copy { padding: var(--slide-pad); display: flex; flex-direction: column; justify-content: center; }
+.t-split .copy .s-body { margin-top: 22px; }
+.t-split .copy ul { list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.t-split .copy li { display: flex; gap: 14px; font-size: 22px; color: var(--text-body); align-items: flex-start; }
+.t-split .copy li .mk { flex: none; margin-top: 2px; color: var(--color-brand); }
+
+/* ---- Full-bleed image ----------------------------------- */
+.t-image { background: var(--surface-dark); }
+.t-image .media { position: absolute; inset: 0; }
+.t-image .caption { position: absolute; left: var(--slide-pad); bottom: 64px; max-width: 60%; }
+.t-image .caption .chip { display: inline-block; background: var(--color-brand); color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 7px 14px; border-radius: var(--radius-full); }
+.t-image .caption h3 { margin: 16px 0 0; font-size: 38px; font-weight: var(--weight-semibold); color: #fff; letter-spacing: var(--tracking-tight); text-wrap: balance; }
+.t-image .caption p { margin: 10px 0 0; font-size: 20px; color: var(--text-on-dark); max-width: 48ch; }
+
+/* ---- Timeline ------------------------------------------- */
+.t-timeline .track { position: relative; margin-top: 70px; flex: 1; display: flex; align-items: center; }
+.t-timeline .line { position: absolute; left: 0; right: 0; top: 50%; height: 3px; background: var(--border-strong); }
+.t-timeline .line .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(to right, var(--brand-300), var(--color-brand)); }
+.t-timeline .steps { position: relative; width: 100%; display: flex; justify-content: space-between; }
+.t-timeline .step { width: 18%; position: relative; display: flex; flex-direction: column; align-items: center; }
+.t-timeline .node { width: 18px; height: 18px; border-radius: 50%; background: var(--color-brand); border: 4px solid var(--surface); box-shadow: 0 0 0 2px var(--color-brand); z-index: 2; }
+.t-timeline .yr { font-size: 30px; font-weight: var(--weight-bold); color: var(--text-heading); letter-spacing: -0.02em; }
+.t-timeline .lbl { font-size: 17px; line-height: 1.35; color: var(--text-secondary); text-align: center; max-width: 20ch; }
+.t-timeline .above { position: absolute; bottom: calc(50% + 26px); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.t-timeline .below { position: absolute; top: calc(50% + 26px); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+/* ---- Map ------------------------------------------------ */
+.t-map { padding: 0; display: grid; grid-template-columns: 0.92fr 1.08fr; height: 100%; }
+.t-map .copy { padding: var(--slide-pad); display: flex; flex-direction: column; justify-content: center; }
+.t-map .copy ol { list-style: none; margin: 30px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.t-map .copy li { display: flex; align-items: center; gap: 16px; font-size: 22px; color: var(--text-body); }
+.t-map .copy li .n { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--color-brand); color: #fff; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.t-map .mapwrap { position: relative; background: var(--surface-muted); border-left: 1px solid var(--border); }
+.t-map .mapfield { position: absolute; inset: 28px; border-radius: var(--radius-lg); background:
+    repeating-linear-gradient(0deg, rgba(16,149,211,0.06) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(90deg, rgba(16,149,211,0.06) 0 1px, transparent 1px 56px),
+    var(--brand-50);
+  border: 1px dashed var(--brand-200); display: flex; align-items: center; justify-content: center; }
+.t-map .mapfield .hint { font-size: 15px; color: var(--brand-700); opacity: 0.7; }
+.t-map .pin { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; }
+.t-map .pin .glyph { color: var(--color-brand); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+.t-map .pin .call { margin-bottom: 6px; background: var(--surface); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 7px 12px; font-size: 14px; font-weight: 600; color: var(--text-heading); white-space: nowrap; }
+
+/* ---- Closing -------------------------------------------- */
+.t-closing { background: var(--surface-dark); }
+.t-closing .photo-layer { position: absolute; inset: 0; }
+.t-closing .photo-layer img { width: 100%; height: 100%; object-fit: cover; opacity: 0.28; }
+.t-closing .content { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: var(--slide-pad); }
+.t-closing img.logo { height: 56px; margin-bottom: 30px; }
+.t-closing h2 { margin: 0; font-size: 56px; font-weight: var(--weight-semibold); color: #fff; letter-spacing: var(--tracking-tight); }
+.t-closing .sub { margin: 18px 0 0; font-size: 22px; color: var(--text-on-dark); max-width: 44ch; }
+.t-closing .contact { margin-top: 34px; display: flex; gap: 30px; align-items: center; color: #fff; font-size: 18px; }
+.t-closing .contact span { display: inline-flex; align-items: center; gap: 9px; }
+.t-closing .contact .ic { color: var(--brand-300); display: inline-flex; }
+
+/* ---- Standalone scaler (deck handles its own scaling) --- */
+.standalone { margin: 0; background: #1f2530; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.standalone .scaler { width: var(--slide-w); height: var(--slide-h); flex: none; transform-origin: center center; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.5); }

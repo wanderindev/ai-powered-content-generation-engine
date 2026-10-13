@@ -1,0 +1,8 @@
+<html><body style="font-family: Arial, sans-serif;">
+<h2>Order Cancelled</h2>
+<p><strong>Order:</strong> {{ order.reference }}</p>
+<p><strong>Customer:</strong> {{ order.customer_name }} ({{ order.customer_email }})</p>
+<p><strong>Cancelled by:</strong> {{ cancelled_by }}</p>
+<p><strong>Reason:</strong> {{ reason or 'Not provided' }}</p>
+<p><strong>Amount:</strong> ${{ order.grand_total }}</p>
+</body></html>

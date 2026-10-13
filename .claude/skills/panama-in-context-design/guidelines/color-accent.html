@@ -1,0 +1,30 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Accent orange (social)" subtitle="Terracotta orange — Instagram headings, CTA pills, chips" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--surface); color: var(--text-heading); }
+  .wrap { padding: 20px 24px; }
+  .row { display: flex; gap: 0; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .sw { flex: 1; height: 64px; display: flex; align-items: flex-end; padding: 6px; box-sizing: border-box; }
+  .sw span { font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .meta { margin-top: 12px; font-size: 12px; color: var(--text-secondary); }
+  .meta b { color: var(--text-heading); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row">
+      <div class="sw" style="background:var(--accent-50)"><span style="color:#b8410f">50</span></div>
+      <div class="sw" style="background:var(--accent-100)"><span style="color:#b8410f">100</span></div>
+      <div class="sw" style="background:var(--accent-300)"><span style="color:#fff">300</span></div>
+      <div class="sw" style="background:var(--accent-500)"><span style="color:#fff">500</span></div>
+      <div class="sw" style="background:var(--accent-600);outline:2px solid var(--accent-700);outline-offset:-2px"><span style="color:#fff">600 ●</span></div>
+      <div class="sw" style="background:var(--accent-700)"><span style="color:#fff">700</span></div>
+    </div>
+    <p class="meta"><b>Secondary accent</b> — reserve for social &amp; campaign art (Instagram "Sabías que" headings, CTA pills, label chips). Not used in the website or product UI, where brand blue leads.</p>
+  </div>
+</body>
+</html>

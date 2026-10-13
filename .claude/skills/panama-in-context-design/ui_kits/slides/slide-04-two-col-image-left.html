@@ -1,0 +1,41 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Two column — image left" subtitle="Photo on the left, heading + copy + sub-points on the right" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="slides.css" />
+<script src="../../assets/heroicons.js"></script>
+
+</head>
+<body class="standalone">
+  <div class="scaler">
+<div class="slide t-split">
+  <img class="s-logo tr" src="../../assets/logo_512x512.png" alt="" style="height:40px">
+  <div class="media"><img class="s-photo" src="../../assets/images/panama-viejo-torre-2x3.jpg" alt=""></div>
+  <div class="copy">
+    <p class="s-eyebrow">Archaeological Site</p>
+    <h2 class="s-title">Panamá Viejo</h2>
+    <p class="s-body">Founded in 1519 as the first European settlement on the Pacific coast of the Americas, and destroyed by pirates in 1671.</p>
+    <ul>
+      <li><span class="mk"><i data-hicon="map-pin" style="font-size:26px"></i></span>Cathedral ruins and the climbable bell tower</li>
+      <li><span class="mk"><i data-hicon="map-pin" style="font-size:26px"></i></span>Convent foundations and colonial cisterns</li>
+      <li><span class="mk"><i data-hicon="map-pin" style="font-size:26px"></i></span>The Plaza Mayor site museum</li>
+    </ul>
+  </div>
+</div>
+  </div>
+  <script>
+(function(){
+  function fit(){
+    var s = document.querySelector('.scaler');
+    if(!s) return;
+    var pad = 48;
+    var k = Math.min((innerWidth-pad)/1280, (innerHeight-pad)/720);
+    s.style.transform = 'scale(' + k + ')';
+  }
+  addEventListener('resize', fit); addEventListener('load', fit); fit();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,770 @@
+{
+    "nav": {
+        "home": "Inicio",
+        "excursions": "Excursiones Académicas",
+        "tours": "Tours Guiados",
+        "blog": "Blog",
+        "contact": "Contacto"
+    },
+    "footer": {
+        "rights": "Todos los derechos reservados.",
+        "about": "Nosotros",
+        "legal": "Legal",
+        "social": "Redes"
+    },
+    "hero": {
+        "title": "Viva Panamá Como Nunca Antes",
+        "subtitle": "Excursiones educativas inmersivas y tours curados diseñados para conectarlo con la historia, cultura y naturaleza del istmo.",
+        "cta_schools": "Para Escuelas",
+        "cta_tourists": "Para Turistas"
+    },
+    "excursions": {
+        "eyebrow": "Explore Nuestros Destinos",
+        "title": "Excursiones Destacadas",
+        "subtitle": "Explore nuestras experiencias educativas más solicitadas.",
+        "hero": {
+            "title": "El Aprendizaje Cobra Vida",
+            "subtitle": "Excursiones académicas alineadas con los estándares curriculares. Transformamos el aprendizaje a través de experiencias históricas inmersivas.",
+            "cta_methodology": "Nuestra Metodología",
+            "cta_featured": "Excursiones Destacadas"
+        },
+        "value_prop": {
+            "eyebrow": "¿Por Qué Elegirnos?",
+            "title": "Educación Más Allá del Aula",
+            "description": "Resolvemos los desafíos de las excursiones tradicionales (mala acústica, falta de contexto y dificultades en el manejo del grupo) ofreciendo una experiencia académica completa apoyada en tecnología.",
+            "quote": "Diego estuvo a cargo de guiar a nuestros estudiantes de quinto grado en una excursión escolar al Casco Viejo. No solo es muy conocedor del tema, sino que también mantuvo su atención con anécdotas e información interesante que no se encuentra en los libros de texto. Con el equipo de audio, pudo manejar fácilmente a los 85 niños de diez años durante la excursión.",
+            "author": "Montgomery J",
+            "columns_intro": "Las excursiones tradicionales a menudo carecen de contexto y se convierten en simples paseos turísticos. Nuestro enfoque asegura objetivos de aprendizaje claros, haciendo de la visita una valiosa extensión de su plan de estudios.",
+            "columns_outro": "Nos enfocamos en la experiencia educativa, brindándole todas las herramientas académicas que necesita para una excursión exitosa.",
+            "features": {
+                "audio": {
+                    "title": "Tecnología de Audio.",
+                    "desc": "Cada estudiante escucha toda la visita mediante receptores Bluetooth ligeros, asegurando un 100% de participación y facilitando el manejo del grupo."
+                },
+                "engagement": {
+                    "title": "Mayor Retención.",
+                    "desc": "Nuestra metodología de exposición múltiple mejora significativamente la retención de información histórica y el pensamiento crítico."
+                },
+                "curriculum": {
+                    "title": "Alineado al Currículo.",
+                    "desc": "Contenido adaptado a su nivel de grado específico y estándares curriculares."
+                }
+            }
+        },
+        "methodology": {
+            "title": "Nuestra Metodología de Aprendizaje",
+            "description": "Un proceso de tres pasos diseñado para maximizar la retención y el compromiso.",
+            "steps": {
+                "context": {
+                    "title": "1. Pre-Visita: Contexto",
+                    "desc": "Ofrecemos una sesión virtual por Zoom para preparar el terreno. Brindamos contexto, vocabulario y preguntas de indagación para despertar la curiosidad antes de la visita."
+                },
+                "immersion": {
+                    "title": "2. La Excursión: Inmersión",
+                    "desc": "Una visita guiada inmersiva con tecnología de audio premium. Los estudiantes escuchan claramente, permitiendo una mayor conexión con el contenido histórico."
+                },
+                "reflection": {
+                    "title": "3. Post-Visita: Reflexión",
+                    "desc": "Proporcionamos una guía de estudio adaptada al nivel de grado para sintetizar el aprendizaje en el aula y reforzar los nuevos conocimientos."
+                }
+            }
+        },
+        "resources": {
+            "title": "Recursos para Educadores",
+            "description": "Proporcionamos todo lo que necesita para que la excursión sea un éxito educativo.",
+            "cta_pdf": "Descargar PDF",
+            "cta_video": "Ver ahora",
+            "items": {
+                "guide": {
+                    "title": "Descargar Guía de Estudio de Muestra",
+                    "desc": "Vea cómo nuestros materiales post-visita refuerzan los conceptos cubiertos durante la excursión."
+                },
+                "infographic": {
+                    "title": "Descargar Infografía de Muestra",
+                    "desc": "Ayudas visuales que ayudan a los estudiantes a contextualizar la línea de tiempo y las figuras clave del sitio histórico."
+                },
+                "video": {
+                    "title": "Ver Zoom de Muestra",
+                    "desc": "Un fragmento de nuestra sesión virtual pre-visita donde preparamos a la clase para la excursión."
+                }
+            }
+        },
+        "plan_trip": {
+            "title": "Planifique su Excursión",
+            "description": "¿Listo para dar vida a la historia? Contáctenos para programar una visita o solicitar una propuesta personalizada para su escuela.",
+            "cta_primary": "Empezar",
+            "cta_secondary": "Aprender más"
+        },
+        "casco_plazas": {
+            "title": "Casco Antiguo: Plazas e Iglesias",
+            "desc": "Explore el Casco Antiguo, un museo viviente reconocido por la UNESCO donde la arquitectura colonial narra la evolución de la nación. Visite magníficas plazas e iglesias históricas que representan el viaje de Panamá de colonia a república independiente.",
+            "details": {
+                "description_1": "Los estudiantes entran en el museo viviente de Panamá explorando el Casco Antiguo, reconocido por la UNESCO, donde calles adoquinadas y arquitectura colonial cuentan la evolución del país. Este recorrido inmersivo guía a los estudiantes por magníficas plazas e iglesias históricas, cada una representando capítulos cruciales en el tránsito de Panamá de colonia española a república independiente.",
+                "description_2": "3 horas de exploración guiada disponible en Español e Inglés",
+                "highlights_title": "Puntos Destacados",
+                "adaptations_title": "Adaptaciones Curriculares",
+                "highlights": [
+                    {
+                        "category": "Principales Plazas",
+                        "items": "Plaza Mayor, Plaza Bolívar, Plaza de Francia, Plaza Herrera"
+                    },
+                    {
+                        "category": "Iglesias Históricas",
+                        "items": "Catedral Metropolitana, Iglesia de La Merced, Iglesia de San José, Iglesia de San Francisco, Iglesia de Santo Domingo, Oratorio San Felipe Neri"
+                    },
+                    {
+                        "category": "Sitios Culturales",
+                        "items": "Teatro Nacional, Palacio Bolívar, Antiguo Muro Marino"
+                    }
+                ],
+                "adaptations": [
+                    {
+                        "grade": "3º - 6º Grado",
+                        "desc": "Enfoque en características arquitectura, secuencia histórica básica, y la importancia estratégica de Panamá."
+                    },
+                    {
+                        "grade": "7º - 8º Grado",
+                        "desc": "Examinar los movimientos independentistas, la visión de Bolívar y el Congreso Anfictiónico."
+                    },
+                    {
+                        "grade": "9º - 12º Grado",
+                        "desc": "Examinar las fuerzas geopolíticas detrás de la independencia de Panamá de 1903 y realizar un análisis comparativo de narrativas históricas panameñas, colombianas y estadounidenses."
+                    }
+                ]
+            }
+        },
+        "casco_museums": {
+            "title": "Casco Antiguo: Circuito de Museos",
+            "desc": "Exploración guiada por museos seleccionados que siguen la evolución histórica panameña desde colonia española hasta república moderna.",
+            "details": {
+                "description_1": "Exploración guiada por museos seleccionados que siguen la evolución histórica panameña desde colonia española hasta república moderna, adaptada a su currículo.",
+                "description_2": "3 horas de exploración guiada disponible en Español e Inglés",
+                "highlights_title": "Seleccione 3 Museos",
+                "highlights": [
+                    {
+                        "category": "Museo del Canal Interoceánico",
+                        "items": "Maravilla de ingeniería que transformó el transporte marítimo global"
+                    },
+                    {
+                        "category": "Museo de Historia",
+                        "items": "Transición del período colonial al republicano en el Palacio Municipal"
+                    },
+                    {
+                        "category": "Museo de la Mola",
+                        "items": "Arte indígena y expresión cultural"
+                    },
+                    {
+                        "category": "Museo de La Merced",
+                        "items": "Patrimonio religioso colonial"
+                    },
+                    {
+                        "category": "Palacio Bolívar",
+                        "items": "Documentos históricos, regalos diplomáticos, y la Biblioteca Roberto F. Chiari"
+                    }
+                ],
+                "adaptations_title": "Adaptaciones Curriculares",
+                "adaptations": [
+                    {
+                        "grade": "3º - 6º Grado",
+                        "desc": "Participar con exhibiciones interactivas sobre nuestro diverso patrimonio cultural y aprender sobre la independencia de Panamá."
+                    },
+                    {
+                        "grade": "7º - 8º Grado",
+                        "desc": "Evaluar críticamente cómo la ubicación estratégica de Panamá moldeó su desarrollo histórico."
+                    },
+                    {
+                        "grade": "9º - 12º Grado",
+                        "desc": "Explorar cómo la posición única de Panamá creó relaciones políticas y económicas complejas con potencias globales, particularmente España, Colombia, y Estados Unidos."
+                    }
+                ]
+            }
+        },
+        "panama_viejo": {
+            "title": "Complejo Arqueológico de Panamá Viejo",
+            "desc": "Camine sobre las calles excavadas del primer asentamiento europeo en la costa del Pacífico, fundado en 1519. Explore las ruinas de este próspero centro colonial destruido por el pirata Henry Morgan en 1671.",
+            "details": {
+                "description_1": "Los estudiantes caminan directamente sobre las calles excavadas de la capital original de Panamá, fundada en 1519 como el primer asentamiento europeo en la costa del Pacífico de las Américas. Este sitio arqueológico inmersivo permite a los estudiantes explorar físicamente las ruinas de este próspero centro colonial, destruido por el pirata Henry Morgan en 1671. Los estudiantes suben a la Torre de la Catedral restaurada para vistas panorámicas mientras aprenden cómo los arqueólogos reconstruyen narrativas históricas a partir de evidencia física.",
+                "description_2": "3 horas de exploración guiada disponible en Español e Inglés",
+                "highlights_title": "Lugares destacados",
+                "highlights": [
+                    {
+                        "category": "Ruinas de la Catedral",
+                        "items": "Ruinas de la catedral y torre del campanario (con ascenso opcional)"
+                    },
+                    {
+                        "category": "Edificios Públicos",
+                        "items": "Fundaciones del edificio del cabildo (ayuntamiento)"
+                    },
+                    {
+                        "category": "Vida Cotidiana",
+                        "items": "Antiguo complejo de cisternas y restos del convento de las Monjas de la Divina Concepción"
+                    },
+                    {
+                        "category": "Estructuras Civiles",
+                        "items": "Área del mercado y barrios residenciales"
+                    },
+                    {
+                        "category": "Museo",
+                        "items": "Museo de la Plaza Mayor con artefactos auténticos"
+                    }
+                ],
+                "adaptations_title": "Adaptaciones Curriculares",
+                "adaptations": [
+                    {
+                        "grade": "3º - 6º Grado",
+                        "desc": "Enfoque en conceptos arqueológicos básicos y vida colonial."
+                    },
+                    {
+                        "grade": "7º - 8º Grado",
+                        "desc": "Examinar redes comerciales y el impacto de la piratería en patrones de asentamiento."
+                    },
+                    {
+                        "grade": "9º - 12º Grado",
+                        "desc": "Explorar cómo Panamá Viejo funcionó como área de preparación para la conquista del Imperio Inca por Francisco Pizarro, analizando la logística de la expedición y preguntas éticas sobre la colonización."
+                    }
+                ]
+            }
+        },
+        "biomuseo": {
+            "title": "Museo de la Biodiversidad",
+            "desc": "Dentro de la única obra maestra arquitectónica latinoamericana de Frank Gehry, descubra cómo Panamá cambió literalmente la biología de la Tierra al unir dos continentes.",
+            "details": {
+                "description_1": "Dentro de la única obra maestra arquitectónica latinoamericana de Frank Gehry, los estudiantes descubren cómo Panamá literalmente cambió la biología de la Tierra al unir dos continentes y dividir un vasto océano. A través de exhibiciones dinámicas e interactivas, los estudiantes investigan cómo este estrecho istmo desencadenó uno de los eventos de biodiversidad más significativos en la historia de la Tierra: el Gran Intercambio Biótico Americano.",
+                "description_2": "2-3 horas de exploración guiada disponible en Español e Inglés",
+                "highlights_title": "Destacados",
+                "highlights": [
+                    {
+                        "category": "Panamarama",
+                        "items": "Rodea a los estudiantes con 10 pantallas mostrando los diversos ecosistemas de Panamá"
+                    },
+                    {
+                        "category": "El Puente Surge",
+                        "items": "Examen de formaciones geológicas reales mostrando cómo la actividad volcánica creó el istmo"
+                    },
+                    {
+                        "category": "El Gran Intercambio",
+                        "items": "Demuestra la migración de especies entre continentes con modelos de tamaño real"
+                    },
+                    {
+                        "category": "La Huella Humana",
+                        "items": "Rastrea 15,000 años de impacto humano en el medio ambiente de Panamá"
+                    },
+                    {
+                        "category": "Océanos Divididos",
+                        "items": "Usa acuarios gemelos para mostrar cómo especies marinas idénticas evolucionaron diferentemente cuando se separaron"
+                    }
+                ],
+                "adaptations_title": "Adaptaciones Curriculares",
+                "adaptations": [
+                    {
+                        "grade": "3º - 6º Grado",
+                        "desc": "Enfoque en biodiversidad observable y conceptos ecológicos básicos."
+                    },
+                    {
+                        "grade": "7º - 8º Grado",
+                        "desc": "Explorar adaptación de especies, geología, y sistemas biológicos complejos."
+                    },
+                    {
+                        "grade": "9º - 12º Grado",
+                        "desc": "Examinar investigación actual sobre impactos del cambio climático en la biodiversidad de Panamá. Analizar datos mostrando cómo la creación del istmo alteró corrientes oceánicas globales y patrones climáticos."
+                    }
+                ]
+            }
+        },
+        "miraflores": {
+            "title": "Centro de Visitantes Miraflores e IMAX",
+            "desc": "Sea testigo de la maravilla de la ingeniería del Canal de Panamá mientras enormes barcos navegan las esclusas. Perfecta para estudiantes de 4° a 6° grado.",
+            "details": {
+                "description_1": "Perfecta para estudiantes de 4° a 6° grado, esta excursión transforma conceptos abstractos de ingeniería y comercio global en fenómenos tangibles y observables mientras barcos que pesan miles de toneladas navegan las legendarias esclusas del Canal de Panamá. Los estudiantes presencian el \"Ballet de Miraflores\" mientras compuertas masivas se abren y cierran, el agua se llena y vacía, y \"mulas\" eléctricas guían embarcaciones a través de operaciones de precisión que demuestran principios fundamentales de ciencias físicas.",
+                "description_2": "2 horas de exploración guiada disponible en Español e Inglés",
+                "highlights_title": "Destacados",
+                "highlights": [
+                    {
+                        "category": "Herramientas de Ingeniería",
+                        "items": "Comparar herramientas de construcción del canal con contrapartes modernas"
+                    },
+                    {
+                        "category": "Identificación de Barcos",
+                        "items": "Identificar barcos por bandera de país, tipo de carga y dimensiones"
+                    },
+                    {
+                        "category": "Plataforma de Observación",
+                        "items": "Observar tránsitos de barcos desde la plataforma de observación"
+                    },
+                    {
+                        "category": "Experiencia IMAX",
+                        "items": "\"A Land Divided, A World United\" experiencia IMAX"
+                    }
+                ],
+                "adaptations_title": "Niveles Recomendados",
+                "adaptations": [
+                    {
+                        "grade": "4º - 6º Grado",
+                        "desc": "Los materiales educativos incorporan ciencias, historia y economía global en formatos apropiados para la edad."
+                    }
+                ]
+            }
+        },
+        "religious": {
+            "title": "Jornada Inter-Religiosa de Panamá",
+            "desc": "Explore la notable diversidad religiosa de Panamá y obtenga una comprensión profunda de cómo diferentes comunidades de fe han enriquecido la sociedad.",
+            "details": {
+                "description_1": "En esta expedición académica única, los estudiantes exploran la notable diversidad religiosa de Panamá mientras obtienen una comprensión profunda de cómo diferentes comunidades de fe han enriquecido nuestra sociedad a lo largo de los siglos. Los estudiantes visitan templos representativos de varias religiones practicadas en Panamá, aprendiendo sobre la historia, creencias y contribuciones culturales de estas comunidades a través de interacción directa con líderes religiosos.",
+                "description_2": "3 horas de exploración guiada disponible en Español e Inglés",
+                "highlights_title": "Destacados",
+                "highlights": [
+                    {
+                        "category": "Religiones Abrahámicas",
+                        "items": "Catedral Ortodoxa Griega, Sinagoga Kol Shearith, Mezquita Jama Masjid, Templo Bahai Continental"
+                    },
+                    {
+                        "category": "Religiones Orientales",
+                        "items": "Templo Hindú de Panamá, Centro Cultural Internacional Soka Gakkai"
+                    }
+                ],
+                "adaptations_title": "Adaptaciones Curriculares",
+                "adaptations": [
+                    {
+                        "grade": "9º - 12º Grado",
+                        "desc": "Analizar similitudes y diferencias en sistemas de creencias, examinar cómo las comunidades inmigrantes se adaptaron y evaluar cómo diferentes perspectivas religiosas abordan desafíos modernos."
+                    }
+                ]
+            }
+        }
+    },
+    "tours": {
+        "hero": {
+            "title": "Descubra las Historias Detrás de Panamá",
+            "subtitle": "Tours privados guiados por expertos en historia. Vamos más allá de la superficie para revelar el rico contexto que forjó nuestra identidad cultural, para que logre entender a fondo Panamá, más allá de lo que se ve a simple vista.",
+            "cta_primary": "Explore Nuestros Tours",
+            "cta_secondary": "Contáctenos"
+        },
+        "audience": {
+            "eyebrow": "Experiencias Privadas con Expertos",
+            "title": "Diseñados para Cada Ocasión",
+            "description": "Ya sea un viajero curioso, un planificador de bodas coordinando actividades para invitados, o anfitrión de visitantes VIP, creamos experiencias privadas que dejan impresiones duraderas.",
+            "features": {
+                "travelers": {
+                    "title": "Viajeros Independientes y Familias.",
+                    "desc": "Atención personalizada con flexibilidad para explorar a su propio ritmo y profundizar en los temas que despiertan su interés."
+                },
+                "wedding": {
+                    "title": "Planificadores de Bodas y Eventos.",
+                    "desc": "Actividades grupales memorables para invitados a bodas de destino—una forma única de mostrar el patrimonio de Panamá."
+                },
+                "corporate": {
+                    "title": "Visitantes Corporativos y Misiones Diplomáticas.",
+                    "desc": "Tours profesionales para asistentes a conferencias e invitados de embajadas, ofreciendo un contexto cultural significativo."
+                }
+            },
+            "closing": "Cada tour es dirigido por un guía experto que da vida a la historia de Panamá a través de narrativas cautivadoras y profundo conocimiento local."
+        },
+        "highlights": {
+            "title": "Más que Turismo",
+            "subtitle": "Descubra qué hace únicas nuestras experiencias guiadas.",
+            "features": {
+                "context": {
+                    "title": "Contexto Histórico Profundo",
+                    "desc": "No nos limitamos a recitar fechas. Explicamos las fuerzas geopolíticas, sociales y económicas que moldearon la identidad de Panamá."
+                },
+                "private": {
+                    "title": "Privado y Personalizado",
+                    "desc": "Sin grupos compartidos. Su tour es exclusivamente para su grupo, permitiendo conversación significativa y flexibilidad."
+                },
+                "guides": {
+                    "title": "Guías Expertos",
+                    "desc": "Nuestros guías son especialistas en turismo histórico que dan vida al pasado con relatos locales que no encontrará en ninguna guía turística."
+                }
+            }
+        },
+        "grid": {
+            "eyebrow": "Nuestros Tours",
+            "title": "¿Qué Destino Le Gustaría Explorar?"
+        },
+        "canal": {
+            "title": "Canal de Panamá: Esclusas de Miraflores",
+            "desc": "Sea testigo del legendario Canal de Panamá en acción mientras enormes barcos navegan las históricas Esclusas de Miraflores—una hazaña de ingeniería que cambió el comercio global para siempre.",
+            "details": {
+                "title": "La Experiencia del Canal de Panamá",
+                "description_1": "Ubíquese en el cruce del comercio mundial y sea testigo de uno de los mayores logros de ingeniería de la humanidad en pleno funcionamiento. En las Esclusas de Miraflores, observará maravillado cómo enormes barcos de carga y cruceros ascienden y descienden a través de las cámaras de las esclusas—una danza de agua y acero que desafía la gravedad y que ha conectado océanos por más de un siglo.",
+                "description_2": "Aproximadamente 3 horas incluyendo película IMAX y observación de esclusas. Disponible en inglés y español.",
+                "highlights_title": "Aspectos Destacados",
+                "highlights": [
+                    {
+                        "title": "Tránsitos de Barcos en Vivo",
+                        "desc": "Experimente la emoción de ver los buques navegar las esclusas en tiempo real. Su guía explicará el intrincado proceso mientras los barcos son elevados o descendidos 8 metros usando únicamente agua por gravedad del Lago Gatún."
+                    },
+                    {
+                        "title": "La Historia Detrás del Canal",
+                        "desc": "Descubra la dramática historia—desde el intento francés que terminó en tragedia hasta el triunfo estadounidense que reconfiguró el comercio global. Conozca cómo Panamá finalmente obtuvo la soberanía sobre esta vía estratégica."
+                    },
+                    {
+                        "title": "Maravillas de Ingeniería",
+                        "desc": "Comprenda cómo las esclusas originales de 1914 funcionan junto a las enormes nuevas esclusas Neopanamax inauguradas en 2016, que acomodan barcos tres veces más grandes que las originales."
+                    },
+                    {
+                        "title": "Experiencia en Teatro IMAX",
+                        "desc": "Sumérjase en la historia del canal a través de una impresionante película 3D de 45 minutos narrada por Morgan Freeman, que trae a la vida la historia y operación de esta maravilla de la ingeniería."
+                    }
+                ],
+                "includes_title": "Qué Incluye",
+                "includes": [
+                    "Guía experto bilingüe",
+                    "Entrada al centro de visitantes y teatro IMAX",
+                    "Acceso a la plataforma de observación",
+                    "Refrigerios durante el tour",
+                    "Transporte privado opcional desde su hotel"
+                ]
+            }
+        },
+        "casco_plazas": {
+            "title": "Casco Antiguo: Plazas e Iglesias",
+            "desc": "Explore el distrito Patrimonio de la Humanidad donde plazas coloniales e iglesias históricas revelan el viaje de Panamá de colonia española a república independiente.",
+            "details": {
+                "title": "Plazas e Iglesias del Casco Antiguo",
+                "description_1": "Adéntrese en un museo viviente donde cada plaza cuenta una historia y cada iglesia guarda siglos de secretos. El Casco Antiguo—el corazón histórico de Panamá y Patrimonio de la Humanidad por la UNESCO—se despliega ante usted mientras su guía revela las fascinantes historias detrás de su arquitectura colonial, desde la grandeza de la Catedral Metropolitana hasta el legendario Altar de Oro de la Iglesia de San José.",
+                "description_2": "Aproximadamente 3 horas de recorrido a pie. Disponible en inglés y español.",
+                "highlights_title": "Aspectos Destacados",
+                "highlights": [
+                    {
+                        "title": "Plaza de la Independencia",
+                        "desc": "Pise el mismo suelo donde Panamá declaró su independencia no una, sino dos veces—primero de España en 1821, luego de Colombia en 1903. Su guía trae estos momentos cruciales a la vida con el impresionante telón de fondo de la Catedral Metropolitana."
+                    },
+                    {
+                        "title": "El Altar de Oro",
+                        "desc": "Maravíllese ante el legendario altar de la Iglesia de San José, que según la leyenda fue salvado del pirata Henry Morgan mediante un ingenioso camuflaje de pintura negra. Descubra la verdad detrás de esta perdurable historia."
+                    },
+                    {
+                        "title": "Plaza Bolívar",
+                        "desc": "Visite la elegante plaza dedicada al Libertador, rodeada de arquitectura neoclásica y el histórico Hotel Colombia donde alguna vez se reunieron jefes de estado."
+                    },
+                    {
+                        "title": "Joyas Arquitectónicas Ocultas",
+                        "desc": "Explore las ruinas del Arco Chato, mansiones de influencia francesa y rincones tranquilos donde los estilos colonial, republicano y art déco se fusionan en armonía inesperada."
+                    }
+                ],
+                "includes_title": "Qué Incluye",
+                "includes": [
+                    "Guía experto bilingüe",
+                    "Entradas a las iglesias",
+                    "Agua embotellada",
+                    "Ritmo flexible para fotografía",
+                    "Transporte privado opcional desde su hotel"
+                ]
+            }
+        },
+        "casco_museums": {
+            "title": "Casco Antiguo: Circuito de Museos",
+            "desc": "Trace la evolución de Panamá a través de visitas curadas a museos—desde el arte indígena hasta la ambición ingenieril que conectó dos océanos.",
+            "details": {
+                "title": "La Experiencia del Circuito de Museos",
+                "description_1": "Descubra la extraordinaria historia de Panamá a través de sus mejores museos, todos ubicados dentro del histórico Casco Antiguo. Este recorrido curado lo lleva desde tesoros precolombinos hasta el audaz sueño de conectar dos océanos, revelando cómo un pequeño istmo se convirtió en una de las encrucijadas más estratégicas del mundo.",
+                "description_2": "Aproximadamente 4 horas incluyendo visitas a museos. Disponible en inglés y español.",
+                "highlights_title": "Aspectos Destacados",
+                "highlights": [
+                    {
+                        "title": "Museo del Canal de Panamá",
+                        "desc": "Ubicado en la sede original de la Compañía Francesa del Canal, explore la odisea de la construcción del canal—desde la tragedia francesa hasta el triunfo estadounidense y la eventual soberanía de Panamá sobre esta maravilla de la ingeniería."
+                    },
+                    {
+                        "title": "Museo de Historia",
+                        "desc": "Recorra la transformación de Panamá de colonia española a nación independiente, con artefactos y documentos que traen cinco siglos de historia a la vida."
+                    },
+                    {
+                        "title": "Iglesia de La Merced y Su Campana",
+                        "desc": "Visite una de las iglesias más históricas de Panamá y vea la campana original que fue rescatada de Panamá Viejo después del ataque pirata de 1671."
+                    },
+                    {
+                        "title": "Patrimonio Indígena",
+                        "desc": "Aprecie el arte de los pueblos indígenas de Panamá a través de exquisitas molas, artesanías tradicionales y piezas arqueológicas que anteceden el contacto europeo."
+                    }
+                ],
+                "includes_title": "Qué Incluye",
+                "includes": [
+                    "Guía experto bilingüe",
+                    "Todas las entradas a museos",
+                    "Agua embotellada",
+                    "Ritmo cómodo con pausas de descanso",
+                    "Transporte privado opcional desde su hotel"
+                ]
+            }
+        },
+        "panama_viejo": {
+            "title": "Panamá Viejo: Sitio Arqueológico",
+            "desc": "Camine por las calles excavadas de la capital original de Panamá, fundada en 1519 y destruida por piratas en 1671. Suba a la torre de la catedral para vistas panorámicas.",
+            "details": {
+                "title": "Donde Comenzó Panamá",
+                "description_1": "Recorra las solemnes ruinas de la primera ciudad europea en la costa del Pacífico de las Américas. Fundada en 1519 y destruida por el infame pirata Henry Morgan en 1671, Panamá Viejo se erige como un poderoso testimonio de la ambición colonial, la resistencia indígena y los dramáticos eventos que moldearon el Nuevo Mundo.",
+                "description_2": "Aproximadamente 2.5 horas incluyendo museo y subida a la torre. Disponible en inglés y español.",
+                "highlights_title": "Aspectos Destacados",
+                "highlights": [
+                    {
+                        "title": "La Torre de la Catedral",
+                        "desc": "Suba la icónica torre del campanario—el monumento más fotografiado de Panamá—para disfrutar de impresionantes vistas panorámicas que se extienden desde las antiguas ruinas hasta el horizonte moderno, capturando perfectamente 500 años de historia en una sola mirada."
+                    },
+                    {
+                        "title": "El Ataque Pirata de 1671",
+                        "desc": "Ubíquese donde se desarrolló el asalto más dramático de la historia mientras su guía relata el devastador ataque de Henry Morgan y la desesperada decisión de quemar la ciudad antes que entregar sus tesoros."
+                    },
+                    {
+                        "title": "Descubrimientos Arqueológicos",
+                        "desc": "Explore calles excavadas, conventos y plazas mientras aprende sobre el trabajo arqueológico en curso que continúa revelando secretos de la vida colonial y de los pueblos indígenas que vivieron aquí antes."
+                    },
+                    {
+                        "title": "El Museo del Sitio",
+                        "desc": "Observe artefactos recuperados de las ruinas, maquetas que muestran la ciudad en su apogeo y exhibiciones que traen a la vida la cotidianidad de esta próspera capital colonial."
+                    }
+                ],
+                "includes_title": "Qué Incluye",
+                "includes": [
+                    "Guía experto bilingüe",
+                    "Entradas al sitio y museo",
+                    "Acceso a la torre",
+                    "Agua embotellada",
+                    "Transporte privado opcional desde su hotel"
+                ]
+            }
+        },
+        "mi_pueblito": {
+            "title": "Mi Pueblito: Patrimonio Cultural",
+            "desc": "Experimente las diversas tradiciones culturales de Panamá en este museo viviente que muestra la arquitectura y costumbres de las tres raíces fundacionales del país.",
+            "details": {
+                "title": "Las Tres Raíces de Panamá",
+                "description_1": "Viaje al corazón del ADN cultural de Panamá en este singular museo al aire libre en las laderas del Cerro Ancón. Mi Pueblito reúne las tres identidades fundacionales de la nación—las tradiciones Campesinas del Interior, el legado Afroantillano de los constructores del Canal, y la herencia Indígena que los precede a todos—en una experiencia que revela cómo estas diversas raíces se entrelazaron para crear el Panamá moderno.",
+                "description_2": "Aproximadamente 2.5 horas de exploración guiada. Disponible en inglés y español.",
+                "highlights_title": "Aspectos Destacados",
+                "highlights": [
+                    {
+                        "title": "El Museo de la Pollera",
+                        "desc": "Descubra el icónico traje nacional de Panamá—considerado uno de los más bellos e intrincados del mundo. Su guía decodifica el simbolismo del encaje artesanal, los relucientes tembleques, y por qué una sola Pollera de Gala puede tomar un año en crearse."
+                    },
+                    {
+                        "title": "El Pueblo Campesino",
+                        "desc": "Camine por réplicas de las tradicionales casas de quincha de la Península de Azuero. Conozca la Junta de Embarre—la tradición comunitaria de construcción donde pueblos enteros se reunían a pisar el barro y la paja mientras celebraban con música y seco."
+                    },
+                    {
+                        "title": "El Barrio Afroantillano",
+                        "desc": "Adéntrese en la colorida arquitectura de madera de la era del Canal, incluyendo la Casa Müller en forma de barco. Comprenda el sistema de segregación Gold Roll vs. Silver Roll y cómo los trabajadores antillanos transformaron el panorama cultural de Panamá."
+                    },
+                    {
+                        "title": "Encuentro con Artesanos Indígenas",
+                        "desc": "Conozca artesanos Guna y Emberá elaborando molas tradicionales y tallas de tagua. No son meros recuerdos—las molas son mapas cosmológicos, y el tallado de tagua es un arte centenario transmitido por generaciones."
+                    }
+                ],
+                "includes_title": "Qué Incluye",
+                "includes": [
+                    "Guía experto bilingüe",
+                    "Entrada al sitio",
+                    "Acceso al Museo de la Pollera",
+                    "Agua embotellada",
+                    "Transporte privado opcional desde su hotel"
+                ]
+            }
+        },
+        "biomuseo": {
+            "title": "Biomuseo: Museo de la Biodiversidad",
+            "desc": "Dentro de la obra maestra arquitectónica de Frank Gehry, descubra cómo el surgimiento de Panamá cambió la biología de la Tierra al conectar dos continentes.",
+            "details": {
+                "title": "Donde Colisionan los Continentes",
+                "description_1": "Entre a la única obra de Frank Gehry en Latinoamérica—un estallido de color en el malecón de la Ciudad de Panamá—y descubra cómo un pequeño puente terrestre cambió el curso de la vida en la Tierra. El Biomuseo cuenta la extraordinaria historia de cómo el surgimiento de Panamá del mar hace tres millones de años desencadenó el Gran Intercambio Biótico Americano, transformando para siempre la biología de dos continentes.",
+                "description_2": "Aproximadamente 2.5 horas incluyendo todas las galerías. Disponible en inglés y español.",
+                "highlights_title": "Aspectos Destacados",
+                "highlights": [
+                    {
+                        "title": "La Visión Arquitectónica de Gehry",
+                        "desc": "Experimente el único edificio que Frank Gehry diseñó en Latinoamérica, donde vibrantes marquesinas de metal plegado evocan la biodiversidad tropical en su interior. Su guía explica cómo la arquitectura misma cuenta la historia de la abundancia natural de Panamá."
+                    },
+                    {
+                        "title": "El Puente de Vida",
+                        "desc": "Comprenda cómo el surgimiento de Panamá creó una superautopista biológica. Cuando Norte y Sudamérica se conectaron, las especies migraron en ambas direcciones—los armadillos fueron hacia el norte mientras los grandes felinos se movieron hacia el sur, reconfigurando ecosistemas en dos continentes."
+                    },
+                    {
+                        "title": "Océano Dividido, Vida Transformada",
+                        "desc": "Explore cómo el istmo dividió un gran océano en el Atlántico y el Pacífico, creando nuevas corrientes, cambiando climas y aislando especies marinas que antes nadaban libremente entre los mares."
+                    },
+                    {
+                        "title": "Los Tesoros Vivientes de Panamá",
+                        "desc": "Desde el acuario que muestra ambos ecosistemas oceánicos hasta galerías que celebran la increíble biodiversidad de Panamá, descubra por qué esta pequeña nación alberga más especies que Estados Unidos y Canadá juntos."
+                    }
+                ],
+                "includes_title": "Qué Incluye",
+                "includes": [
+                    "Guía experto bilingüe",
+                    "Entrada al museo",
+                    "Acceso a todas las galerías permanentes",
+                    "Agua embotellada",
+                    "Transporte privado opcional desde su hotel"
+                ]
+            }
+        },
+        "cta": {
+            "title": "¿Listo para Experimentar Panamá?",
+            "description": "Transforme su visita en un viaje significativo. Contáctenos para planificar su tour privado o crear un itinerario personalizado para su grupo.",
+            "button": "Empezar a Planificar"
+        }
+    },
+    "home": {
+        "hero": {
+            "title": "Panama In Context",
+            "subtitle": "Donde cada sitio cuenta una historia. Experiencias guiadas por expertos que transforman visitas en viajes memorables a través de la rica historia y vibrante cultura de Panamá.",
+            "cta_schools": "Para Escuelas",
+            "cta_tourists": "Para Turistas"
+        },
+        "schools": {
+            "eyebrow": "Para Educadores",
+            "title": "Transformando Excursiones en Experiencias de Aprendizaje",
+            "subtitle": "Vaya más allá de la excursión estándar. Nuestras excursiones guiadas por expertos dan vida a la historia de Panamá, creando experiencias educativas memorables que los estudiantes atesorarán mucho después de regresar al aula.",
+            "features": {
+                "expert": {
+                    "title": "Experiencias Guiadas por Expertos",
+                    "desc": "Guía profesional, experto en historia panameña, lleva a los estudiantes a través de los sitios más significativos de Panamá con narrativas cautivadoras y apropiadas para cada edad."
+                },
+                "curriculum": {
+                    "title": "Contenido Alineado al Currículo",
+                    "desc": "Cada excursión incluye materiales educativos que conectan con su currículo existente."
+                },
+                "adaptable": {
+                    "title": "Adaptable para Todos los Grados",
+                    "desc": "El contenido se adapta a diferentes niveles de grado, asegurando una experiencia enriquecedora para cada estudiante."
+                }
+            },
+            "cta_learn": "Más Información",
+            "cta_contact": "Contáctenos"
+        },
+        "mailing_educators": {
+            "title": "Manténgase Conectado con la Historia de Panamá",
+            "subtitle": "Suscríbase para recibir una infografía mensual que explora eventos históricos clave y recursos educativos que puede usar en su aula.",
+            "success": "¡Gracias por suscribirse! Recibirá su primera infografía pronto.",
+            "error": "Algo salió mal. Por favor intente nuevamente más tarde.",
+            "placeholder": "Ingrese su correo electrónico",
+            "button": "Suscribirse",
+            "submitting": "Suscribiendo..."
+        },
+        "tourists": {
+            "eyebrow": "Para Viajeros",
+            "title": "Experimente Panamá Más Allá de la Superficie",
+            "subtitle": "Descubra el verdadero Panamá a través de los ojos de un experto local. Nuestros tours privados guiados revelan las historias fascinantes, joyas ocultas y riqueza cultural que hacen de este país algo verdaderamente único.",
+            "features": {
+                "private": {
+                    "title": "Experiencias Privadas Guiadas",
+                    "desc": "Disfrute de atención personalizada con tours privados dirigidos por un guía experto que da vida a cada destino."
+                },
+                "context": {
+                    "title": "Contexto Cultural Profundo",
+                    "desc": "Vaya más allá del turismo superficial. Comprenda las historias, tradiciones y significado detrás de lo que ve."
+                },
+                "personalized": {
+                    "title": "Itinerarios Personalizados",
+                    "desc": "Tours adaptados a sus intereses, ritmo y horario. Ya sea que tenga unas horas o varios días."
+                }
+            },
+            "cta_explore": "Explorar Tours",
+            "cta_plan": "Planifique Su Visita"
+        },
+        "guide": {
+            "eyebrow": "Su Guía",
+            "title": "Conozca a Diego Feliu",
+            "bio_1": "Diego Feliu es Licenciado en Turismo Histórico y cuenta con más de una década de experiencia dando vida al rico patrimonio de Panamá. Nacido y criado en la Ciudad de Panamá, es miembro de la Asociación Panameña de Antropología e Historia y ha dedicado su carrera a hacer el complejo pasado del país accesible y cautivador para visitantes de todas las edades.",
+            "bio_2": "Ya sea guiando grupos escolares por las ruinas de Panamá Viejo o llevando turistas por las coloridas calles del Casco Antiguo, Diego combina profundo conocimiento con un don natural para la narración que transforma cada tour en un viaje inolvidable.",
+            "cta": "Contáctenos"
+        },
+        "blog": {
+            "eyebrow": "Del Blog",
+            "title": "Historias del Pasado de Panamá",
+            "subtitle": "Perspectivas, análisis históricos profundos y recursos educativos para ayudarle a descubrir Panamá.",
+            "cta": "Ver Todos los Artículos",
+            "posts": {
+                "post_1": {
+                    "title": "Los Tres Panamás: Comprendiendo la Historia Colonial del País",
+                    "desc": "Desde Panamá Viejo hasta el Casco Antiguo y la moderna Ciudad de Panamá—explore cómo tres centros urbanos distintos cuentan la historia de 500 años de historia panameña.",
+                    "category": "Historia"
+                },
+                "post_2": {
+                    "title": "El Canal de Panamá: Maravilla de Ingeniería e Impacto Global",
+                    "desc": "Cómo la \"Gran Zanja\" transformó el comercio global y moldeó la identidad nacional de Panamá. Un análisis profundo de la construcción y legado del canal.",
+                    "category": "Canal"
+                },
+                "post_3": {
+                    "title": "Enseñando Historia a Través de Excursiones: Una Guía para Educadores",
+                    "desc": "Estrategias prácticas para hacer que los sitios históricos cobren vida para los estudiantes. Cómo preparar, involucrar y dar seguimiento para máximo impacto educativo.",
+                    "category": "Educación"
+                }
+            },
+            "author": {
+                "name": "Diego Feliu",
+                "role": "Guía Experto"
+            }
+        },
+        "mailing_blog": {
+            "title": "Nunca Se Pierda una Historia",
+            "subtitle": "Suscríbase para recibir notificaciones cuando publiquemos nuevos artículos sobre la historia y cultura de Panamá.",
+            "success": "¡Está suscrito! Le notificaremos cuando publiquemos nuevo contenido.",
+            "error": "Algo salió mal. Por favor intente nuevamente más tarde.",
+            "placeholder": "Ingrese su correo electrónico",
+            "button": "Suscribirse",
+            "submitting": "Suscribiendo..."
+        },
+        "cta": {
+            "title": "¿Listo para Descubrir Panamá?",
+            "subtitle": "Ya sea que esté planeando una excursión escolar o buscando una experiencia de viaje auténtica, estamos aquí para ayudarle a explorar la rica historia y cultura de Panamá.",
+            "cta_contact": "Contáctenos",
+            "cta_schools": "Para Escuelas",
+            "cta_tourists": "Para Turistas"
+        }
+    },
+    "contact": {
+        "title": "Contáctenos",
+        "bio": "Hola, soy Diego Feliu. Como licenciado en turismo histórico y experto en la historia panameña, he dedicado mi carrera a crear experiencias que permiten comprender verdaderamente nuestro país. Ya sea que esté organizando una excursión escolar o buscando un tour privado, cuente conmigo para diseñar una visita memorable.",
+        "form": {
+            "interest_label": "Estoy interesado en",
+            "interest_field_trips": "Excursiones Académicas",
+            "interest_tours": "Tours Privados",
+            "select_interest_hint": "Por favor seleccione su interés para continuar",
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email": "Correo electrónico",
+            "school_name": "Nombre del colegio",
+            "grade_levels": "Niveles de grado",
+            "grades": {
+                "3_4": "3º - 4º Grado",
+                "5_6": "5º - 6º Grado",
+                "7_8": "7º - 8º Grado",
+                "9_10": "9º - 10º Grado",
+                "11_12": "11º - 12º Grado"
+            },
+            "field_trips_interested": "¿Qué excursiones le interesan?",
+            "field_trips": {
+                "casco_plazas": "Casco Antiguo: Plazas e Iglesias",
+                "casco_museums": "Casco Antiguo: Circuito de Museos",
+                "panama_viejo": "Sitio Arqueológico de Panamá Viejo",
+                "biomuseo": "Museo de la Biodiversidad (Biomuseo)",
+                "miraflores": "Centro de Visitantes Miraflores e IMAX",
+                "religious": "Jornada Inter-Religiosa"
+            },
+            "country": "País de residencia",
+            "date_from": "Fecha de llegada",
+            "date_to": "Fecha de salida",
+            "group_size": "Tamaño del grupo",
+            "adults": "Adultos",
+            "children_under_5": "Niños < 5",
+            "children_5_17": "Niños 5-17",
+            "tours_interested": "¿Qué tours le interesan?",
+            "tours_list": {
+                "canal": "Canal de Panamá: Esclusas de Miraflores",
+                "casco_plazas": "Casco Antiguo: Plazas e Iglesias",
+                "casco_museums": "Casco Antiguo: Circuito de Museos",
+                "panama_viejo": "Sitio Arqueológico de Panamá Viejo",
+                "biomuseo": "Biomuseo: Museo de la Biodiversidad",
+                "mi_pueblito": "Mi Pueblito: Patrimonio Cultural"
+            },
+            "hotel_address": "Hotel o dirección",
+            "hotel_address_placeholder": "Donde se hospedará en Panamá",
+            "needs_transport": "Necesito transporte desde mi hotel",
+            "message": "Mensaje",
+            "submit": "Enviar mensaje",
+            "submitting": "Enviando...",
+            "success_message": "Gracias! Su mensaje ha sido enviado exitosamente. Nos pondremos en contacto pronto.",
+            "error_message": "Lo sentimos, hubo un error al enviar su mensaje. Por favor intente nuevamente o contáctenos por WhatsApp."
+        }
+    }
+}
