@@ -23,6 +23,11 @@ from app.services.notifications import get_notification_service
 
 logger = logging.getLogger(__name__)
 
+# How long an admin magic link (and the session it becomes) stays valid. A week,
+# not a day: the operator works long content-generation sessions and a 24h token
+# expired mid-week (2026-10-04). Logout still revokes it server-side.
+ADMIN_LINK_VALIDITY = timedelta(days=7)
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -149,7 +154,7 @@ def request_admin_access(
         token=secrets.token_urlsafe(32),
         admin_email=request.email,
         action=MagicLinkAction.ADMIN_ACCESS.value,
-        expires_at=datetime.now(UTC) + timedelta(hours=24),  # 24 hour validity
+        expires_at=datetime.now(UTC) + ADMIN_LINK_VALIDITY,
     )
     db.add(magic_link)
     db.commit()
@@ -186,7 +191,7 @@ def admin_logout(
 ) -> Response:
     """Revoke the caller's admin magic link on logout (#57).
 
-    Admin tokens are valid for 24h; without server-side revocation a token stays
+    Admin tokens are valid for 7 days; without server-side revocation a token stays
     replayable from browser history / logs after the admin signs out (the old
     client-only logout just cleared sessionStorage). Deleting the row makes
     logout effective immediately. The dev-token bypass resolves to a synthetic

@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -24,19 +25,43 @@ from app.prompts.edu_material_generation import (
     build_edu_slides_subset_prompt,
 )
 from app.schemas.edu import MAX_GRADE_BANDS
-from app.services.llm import SONNET_MODEL, create_message, first_text, parse_llm_json
+from app.services.llm import OPUS_MODEL, create_message, first_text, parse_llm_json
 
 logger = logging.getLogger(__name__)
+
+ProgressCallback = Callable[[int, int, str], None]
 
 # Research shorter than this goes directly to outline (no condensation needed)
 CONDENSE_THRESHOLD = 2500
 
-# Condensation runs on Sonnet with adaptive thinking (#338): deciding what to keep
+# Every edu call (guide condense/outline/content, deck condense/slides, narration)
+# runs on Opus 5.5 — the operator's call on 2026-10-04, as the blog pipeline did.
+# Each site passes effort "high" explicitly, which matters: Opus 5.5 defaults to
+# "medium". The caps below were measured on Sonnet; Opus tends to think more per
+# turn, so a TruncationError here is the first thing to check against the logs.
+#
+# That happened on the first Opus runs (jobs 264/265, Panama History Museum
+# 9th-12th, 2026-10-04/05): edu_outline hit its 12,000 cap both times and
+# edu_condense used 19,380-19,439 of 20,000. Every cap was then raised to
+# roughly 2x its Sonnet value. They are ceilings, not spend, and every call
+# streams, where the 600s SDK timeout is per read, not per call.
+EDU_MODEL = OPUS_MODEL
+
+# Condensation runs with adaptive thinking (#338): deciding what to keep
 # is a judgment task worth a reasoning model, and at a handful of guides total the
 # cost is negligible. max_tokens must cover the thinking spend PLUS the briefing
-# output (the largest band target ~4500 words ≈ ~9k tokens on Sonnet 5's tokenizer),
+# output (the largest band target ~4500 words ≈ ~9k tokens, measured on Sonnet 5),
 # with headroom so the create_message truncation guard never trips on a long briefing.
-CONDENSE_MAX_TOKENS = 20_000
+CONDENSE_MAX_TOKENS = 40_000
+
+# Full-deck slide content (the 16-22 slide JSON array of build_edu_slides_prompt).
+# Adaptive thinking counts toward max_tokens (measured on Sonnet 5), and planning a deck arc
+# over a ~3500-4000-word briefing at effort "high" is an expensive think: a
+# 7th-8th band deck tripped the create_message truncation guard at 12k, having
+# spent most of the cap before it finished emitting the array (~4-5k tokens of
+# Spanish JSON for 22 slides). 20k leaves the thinking room and keeps the call
+# above anthropic_stream_min_tokens, so it streams on the 600s timeout.
+SLIDES_MAX_TOKENS = 40_000
 
 
 def _parse_outline_response(text: str) -> tuple[str, str]:
@@ -82,7 +107,7 @@ def _condense_research(
     target_words: int | None = None,
     feature: str = "edu_condense",
 ) -> str:
-    """Condense a long research doc into a per-band briefing (Sonnet + thinking).
+    """Condense a long research doc into a per-band briefing (``EDU_MODEL`` + thinking).
 
     ``target_words``/``feature`` let the slides path reuse this with its own
     (larger) briefing target and its own telemetry label.
@@ -114,7 +139,7 @@ def _condense_research(
 
     msg = create_message(
         feature=feature,
-        model=SONNET_MODEL,
+        model=EDU_MODEL,
         max_tokens=CONDENSE_MAX_TOKENS,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
@@ -173,6 +198,18 @@ def _media_fields(raw: dict) -> dict:
     if media_path:
         out["media_path"] = media_path
     return out
+
+
+# Photo frame shapes the guide renderer supports (guide_pdf._FIGURE_ASPECTS).
+# "landscape" is the renderer default, so it is stored implicitly (absent key).
+_PHOTO_ASPECTS = frozenset({"wide", "portrait"})
+
+
+def _aspect_field(raw: dict) -> dict:
+    """Editor-chosen photo frame shape for image/map blocks; unknown values and
+    the default ("landscape") normalize to the absent key."""
+    aspect = _as_str(raw.get("aspect"))
+    return {"aspect": aspect} if aspect in _PHOTO_ASPECTS else {}
 
 
 def _normalize_block(raw: dict) -> dict | None:
@@ -247,6 +284,7 @@ def _normalize_block(raw: dict) -> dict | None:
             "caption": _txt(raw.get("caption")),
             "locations": locations,
             **_media_fields(raw),
+            **_aspect_field(raw),
         }
     # image
     image_query = _as_str(raw.get("image_query"))
@@ -257,6 +295,7 @@ def _normalize_block(raw: dict) -> dict | None:
         "image_query": image_query,
         "caption": _txt(raw.get("caption")),
         **_media_fields(raw),
+        **_aspect_field(raw),
     }
 
 
@@ -419,10 +458,11 @@ def generate_edu_materials(
     suggestion: EduSuggestion,
     db: Session,
     force: bool = False,
+    progress: ProgressCallback | None = None,
 ) -> tuple[list[EduMaterial], list[str], list[str]]:
     """Generate study guides for all grade bands of an edu suggestion.
 
-    Pipeline per grade band: condense (Haiku) -> outline (Sonnet) -> content (Sonnet).
+    Pipeline per grade band: condense -> outline -> content, all on ``EDU_MODEL``.
 
     A band whose guide is already ``APPROVED`` is preserved (skipped, no LLM
     call) unless ``force`` is set. ``PENDING``/``REJECTED`` and missing bands
@@ -437,7 +477,8 @@ def generate_edu_materials(
     per-band upsert idempotent under concurrent calls.
 
     The caller need not commit (this function commits per band); a trailing
-    commit is harmless.
+    commit is harmless. ``progress(done, total, current)`` is called before each
+    band starts (``current`` names it) and once more when the loop finishes.
     """
     grade_bands = suggestion.grade_bands or []
 
@@ -456,7 +497,9 @@ def generate_edu_materials(
     failed_bands: list[str] = []
     research_content = research.content or ""
 
-    for band in grade_bands:
+    for index, band in enumerate(grade_bands):
+        if progress is not None:
+            progress(index, len(grade_bands), f"band {band}")
         logger.info("Generating edu material for band=%s suggestion=%s", band, suggestion.id)
 
         try:
@@ -477,6 +520,8 @@ def generate_edu_materials(
         materials.append(material)
         logger.info("Committed edu material id=%s for band=%s", material.id, band)
 
+    if progress is not None:
+        progress(len(grade_bands), len(grade_bands), "done")
     return materials, skipped_bands, failed_bands
 
 
@@ -535,14 +580,14 @@ def _generate_band(
     )
 
     # Outline cap is sized so a detailed 6-section outline for a 3000-word guide
-    # does not truncate (#93), with headroom for Sonnet 5's default adaptive
-    # thinking (counts toward max_tokens) and its ~30%-denser tokenizer.
+    # does not truncate (#93), with headroom for always-on adaptive thinking
+    # (counts toward max_tokens; sized on Sonnet 5.5's ~30%-denser tokenizer).
     # create_message rejects any residual truncation (stop_reason ==
     # "max_tokens") before the parser papers over it.
     outline_msg = create_message(
         feature="edu_outline",
-        model=SONNET_MODEL,
-        max_tokens=12_000,
+        model=EDU_MODEL,
+        max_tokens=32_000,
         output_config={"effort": "high"},
         messages=[{"role": "user", "content": outline_prompt}],
     )
@@ -565,10 +610,15 @@ def _generate_band(
         band_focus=band_focus,
     )
 
+    # Blocks cap: a 9th-12th guide measured 15,217 output tokens (thinking +
+    # blocks JSON) against the old 16,000 on 2026-09-22 — one richer research
+    # document from truncating. Ceiling, not spend. Raised to 32,000 after the
+    # Sonnet 5.5 switch: the Panama History Museum 9th-12th guide hit the 20,000
+    # ceiling on 2026-10-03 (job 246) — 5.5 thinks more per turn at "high".
     blocks_msg = create_message(
         feature="edu_content",
-        model=SONNET_MODEL,
-        max_tokens=16_000,
+        model=EDU_MODEL,
+        max_tokens=64_000,
         output_config={"effort": "high"},
         messages=[{"role": "user", "content": blocks_prompt}],
     )
@@ -686,7 +736,7 @@ def _normalize_slide(raw: dict) -> dict:
     }
 
 
-def _slides_preview_text(slides: list[dict]) -> str:
+def slides_preview_text(slides: list[dict]) -> str:
     """Readable plain-text rendering of the deck, stored on EduMaterial.content for
     the existing detail/download endpoints. The structured edu_slides rows are the
     source of truth for rendering (#321) and narration audio (#322)."""
@@ -711,7 +761,7 @@ def generate_edu_slides(
 
     Stage 1 of the two-stage deck flow (slides redesign): condense the research
     into a slides briefing (``SLIDES_CONDENSED_TARGET``, persisted on
-    ``EduMaterial.source_briefing``), then one Sonnet call returns a JSON array
+    ``EduMaterial.source_briefing``), then one ``EDU_MODEL`` call returns a JSON array
     of 16-22 slides — template / title / body / image_query only, **no
     narration**. A human edits and approves the deck in the admin (picking real
     photos for the image_query placeholders); ``generate_edu_narration`` then
@@ -780,8 +830,8 @@ def generate_edu_slides(
 
     msg = create_message(
         feature="edu_slides",
-        model=SONNET_MODEL,
-        max_tokens=12_000,
+        model=EDU_MODEL,
+        max_tokens=SLIDES_MAX_TOKENS,
         output_config={"effort": "high"},
         messages=[{"role": "user", "content": prompt}],
     )
@@ -794,7 +844,7 @@ def generate_edu_slides(
 
     now = datetime.now(UTC)
     title = f"{guide_material.title} — Slides"
-    preview = _slides_preview_text(slides)
+    preview = slides_preview_text(slides)
 
     # Upsert the slides material row on (research_id, "slides", grade_band), then
     # replace its slides (clear old via delete-orphan before appending the new).
@@ -850,7 +900,7 @@ def regenerate_slides_subset(
 ) -> dict:
     """Re-roll the CONTENT of a subset of an existing deck's slides, in place.
 
-    One Sonnet call sees the full current deck (for continuity) plus the same
+    One ``EDU_MODEL`` call sees the full current deck (for continuity) plus the same
     condensed briefing (``EduMaterial.source_briefing``; legacy decks re-condense
     on the fly) and rewrites template/title/body/image_query for ONLY the targeted
     ``positions`` — the slide count is fixed. Targeted rows are updated in place
@@ -908,10 +958,12 @@ def regenerate_slides_subset(
         band_focus=band_focus,
         language=language,
     )
+    # Same cap as the full-deck call: the subset prompt carries the whole deck
+    # as context and thinks over the same arc, so it needs the same headroom.
     msg = create_message(
         feature="edu_slides",
-        model=SONNET_MODEL,
-        max_tokens=12_000,
+        model=EDU_MODEL,
+        max_tokens=SLIDES_MAX_TOKENS,
         output_config={"effort": "high"},
         messages=[{"role": "user", "content": prompt}],
     )
@@ -944,7 +996,7 @@ def regenerate_slides_subset(
         # editor). Keep the human photo pick, narration, and audio.
         slide.image_url = None
 
-    material.content = _slides_preview_text(
+    material.content = slides_preview_text(
         [{"title": s.title, "body": s.body, "narration": s.narration} for s in slides]
     )
     material.updated_at = datetime.now(UTC)
@@ -960,7 +1012,7 @@ def generate_edu_narration(
 ) -> dict:
     """Write Diego's narration over an approved, human-edited slide deck.
 
-    Stage 2 of the two-stage deck flow: one Sonnet call takes the FINAL slides
+    Stage 2 of the two-stage deck flow: one ``EDU_MODEL`` call takes the FINAL slides
     (position / template / title / body) plus the same condensed briefing the
     content was generated from (``material.source_briefing``; legacy decks
     without one re-condense on the fly) and returns one narration per slide.
@@ -1041,10 +1093,15 @@ def generate_edu_narration(
         language=language,
         target_positions=sorted(positions) if subset else None,
     )
+    # 16,000 truncated twice in a row on a 22-slide deck (material 32, 2026-09-24):
+    # at effort "high" the adaptive thinking spent the whole budget before the
+    # ~2,500-word script was out. 32,000 leaves headroom for the thinking plus
+    # the JSON. The call streams at ~105 tok/s, so a worst case run nears the
+    # api. vhost's 300s proxy timeout; a 504 there still commits server-side.
     msg = create_message(
         feature="edu_narration",
-        model=SONNET_MODEL,
-        max_tokens=16_000,
+        model=EDU_MODEL,
+        max_tokens=64_000,
         output_config={"effort": "high"},
         messages=[{"role": "user", "content": prompt}],
     )
@@ -1074,7 +1131,7 @@ def generate_edu_narration(
         slide.audio_url = None
         slide.duration_ms = None
 
-    material.content = _slides_preview_text(
+    material.content = slides_preview_text(
         [{"title": s.title, "body": s.body, "narration": s.narration} for s in slides]
     )
     material.updated_at = datetime.now(UTC)

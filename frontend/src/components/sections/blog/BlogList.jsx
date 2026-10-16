@@ -1,33 +1,55 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { articleImageUrl } from '../../../utils/articleImage'
+import { SpeakerWaveIcon } from '@heroicons/react/20/solid'
 import { getArticles } from '../../../services/articles'
+import AskPicCallout from './AskPicCallout.jsx'
+
+// Cut an excerpt at a word boundary near maxChars, appending an ellipsis
+// only when something was actually trimmed.
+function truncateExcerpt(text, maxChars = 250) {
+    if (!text || text.length <= maxChars) return text || ''
+    const cut = text.slice(0, maxChars)
+    const lastSpace = cut.lastIndexOf(' ')
+    return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxChars).trimEnd()}…`
+}
+
+// Group consecutive articles by suggestion_id. The API list is already
+// ordered category → suggestion → research → series, so one pass suffices;
+// an article without a suggestion becomes its own group.
+function groupBySuggestion(articles) {
+    const groups = []
+    for (const article of articles) {
+        const last = groups[groups.length - 1]
+        if (last && article.suggestion_id != null && last.id === article.suggestion_id) {
+            last.articles.push(article)
+        } else {
+            groups.push({
+                id: article.suggestion_id ?? `article-${article.id}`,
+                title: article.suggestion_title || article.title,
+                articles: [article],
+            })
+        }
+    }
+    return groups
+}
 
 export default function BlogList() {
     const { t, i18n } = useTranslation()
     const [articles, setArticles] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [searchInput, setSearchInput] = useState('')
-    const [searchQuery, setSearchQuery] = useState('')
-
-    const handleSearch = () => {
-        setSearchQuery(searchInput.trim())
-    }
-
-    const handleClear = () => {
-        setSearchInput('')
-        setSearchQuery('')
-    }
+    // Series order only: the API list is oldest → newest history, and inside a
+    // series the articles keep their series_order either way.
+    const [newestFirst, setNewestFirst] = useState(false)
 
     useEffect(() => {
         async function fetchArticles() {
             try {
                 setLoading(true)
-                const data = await getArticles(i18n.language, 100, searchQuery)
-                // Sort by ID ascending (chronological order for history content)
-                const sorted = [...data].sort((a, b) => a.id - b.id)
-                setArticles(sorted)
+                // API order is the blog order (historical chronology) — do not re-sort.
+                const data = await getArticles(i18n.language, 100)
+                setArticles(data)
                 setError(null)
             } catch (err) {
                 console.error('Failed to fetch articles:', err)
@@ -37,15 +59,7 @@ export default function BlogList() {
             }
         }
         fetchArticles()
-    }, [i18n.language, searchQuery])
-
-    // Build image URL (handle relative paths from API)
-    const getImageUrl = (path) => {
-        if (!path) return '/images/placeholder-article.jpg'
-        if (path.startsWith('http')) return path
-        const apiBase = import.meta.env.VITE_API_URL || 'https://api.panamaincontext.com'
-        return `${apiBase}${path}`
-    }
+    }, [i18n.language])
 
     // Build article URL with language prefix for SEO
     const getArticleUrl = (slug) => {
@@ -58,20 +72,20 @@ export default function BlogList() {
     if (loading) {
         return (
             <div className="bg-white py-24 sm:py-32">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl lg:max-w-4xl">
-                        <div className="animate-pulse space-y-8">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex gap-8">
-                                    <div className="w-80 h-44 bg-gray-200 rounded-2xl"></div>
-                                    <div className="flex-1 space-y-4">
-                                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                                        <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                                        <div className="h-4 bg-gray-200 rounded w-full"></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                <div className="mx-auto px-6 lg:px-12">
+                    <div className="mx-auto max-w-2xl text-center animate-pulse">
+                        <div className="h-10 bg-gray-200 rounded w-2/3 mx-auto"></div>
+                        <div className="mt-4 h-5 bg-gray-200 rounded w-full"></div>
+                    </div>
+                    <div className="mt-16 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="space-y-4">
+                                <div className="aspect-video bg-gray-200 rounded-2xl"></div>
+                                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -88,95 +102,100 @@ export default function BlogList() {
         )
     }
 
+    const groups = groupBySuggestion(articles)
+    const orderedGroups = newestFirst ? [...groups].reverse() : groups
+
     return (
         <div className="bg-white py-24 sm:py-32">
-            <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="mx-auto max-w-2xl lg:max-w-4xl">
+            <div className="mx-auto px-6 lg:px-12">
+                <div className="mx-auto max-w-2xl text-center">
                     <h2 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
                         {t('blog.title', 'Our Blog')}
                     </h2>
                     <p className="mt-2 text-lg/8 text-gray-600">
                         {t('blog.subtitle', 'Discover the rich history and culture of Panama through our articles.')}
                     </p>
-                    <div className="mt-8 flex max-w-md gap-2">
-                        <div className="relative flex-1">
-                            <input
-                                type="text"
-                                value={searchInput}
-                                onChange={(e) => setSearchInput(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
-                                placeholder={t('blog.search_placeholder', 'Search articles...')}
-                                className="block w-full rounded-lg border-0 py-2.5 pl-4 pr-9 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm/6"
-                            />
-                            {searchInput && (
-                                <button
-                                    onClick={handleClear}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    <XMarkIcon className="size-5" />
-                                </button>
-                            )}
-                        </div>
-                        <button
-                            onClick={handleSearch}
-                            className="inline-flex items-center rounded-lg bg-indigo-600 px-3.5 py-2.5 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                        >
-                            <MagnifyingGlassIcon className="size-5" />
-                        </button>
+                </div>
+
+                <AskPicCallout className="mt-10" />
+
+                <div className="mt-10 flex items-center justify-center gap-3">
+                    <span id="blog-sort-label" className="text-sm text-gray-600">
+                        {t('blog.sort_label', 'Series order')}
+                    </span>
+                    <div
+                        role="group"
+                        aria-labelledby="blog-sort-label"
+                        className="inline-flex rounded-full bg-gray-50 p-1 ring-1 ring-inset ring-gray-200"
+                    >
+                        {[
+                            { value: false, label: t('blog.sort_oldest', 'Oldest first') },
+                            { value: true, label: t('blog.sort_newest', 'Newest first') },
+                        ].map((option) => (
+                            <button
+                                key={String(option.value)}
+                                type="button"
+                                aria-pressed={newestFirst === option.value}
+                                onClick={() => setNewestFirst(option.value)}
+                                className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                                    newestFirst === option.value
+                                        ? 'bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200'
+                                        : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
                     </div>
-                    {searchQuery && !loading && (
-                        <p className="mt-3 text-sm text-gray-500">
-                            {articles.length === 0
-                                ? t('blog.no_results', 'No articles found for "{{query}}"', { query: searchQuery })
-                                : t('blog.results_count', '{{count}} article(s) found', { count: articles.length })
-                            }
-                        </p>
-                    )}
-                    <div className="mt-16 space-y-20 lg:mt-20">
-                        {articles.map((article) => (
-                            <article key={article.id} className="relative isolate flex flex-col gap-8 lg:flex-row">
-                                <div className="relative aspect-video lg:aspect-[16/9] lg:w-80 lg:shrink-0">
-                                    <a href={getArticleUrl(article.slug)}>
-                                        <img
-                                            alt={article.title}
-                                            src={getImageUrl(article.feature_image_url)}
-                                            loading="lazy"
-                                            className="absolute inset-0 size-full rounded-2xl bg-gray-50 object-cover"
-                                        />
-                                        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
-                                    </a>
-                                </div>
-                                <div>
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-                                        <span className="rounded-full bg-indigo-50 px-3 py-1.5 font-medium text-indigo-600">
-                                            {article.taxonomy_name}
-                                        </span>
-                                        <span className="rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-600">
-                                            {article.category_name}
-                                        </span>
-                                    </div>
-                                    <div className="group relative max-w-xl">
-                                        <h3 className="mt-3 text-lg/6 font-semibold text-gray-900 group-hover:text-gray-600">
+                </div>
+
+                <div className="mt-12 space-y-20 lg:mt-16">
+                    {orderedGroups.map((group) => (
+                        <section key={group.id}>
+                            <h3 className="text-center text-2xl font-semibold tracking-tight text-gray-900">
+                                {group.title}
+                            </h3>
+                            <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                                {group.articles.map((article) => (
+                                    <article key={article.id} className="group relative flex flex-col">
+                                        <div className="relative aspect-video">
+                                            <img
+                                                alt={article.title}
+                                                src={articleImageUrl(article.feature_image_url)}
+                                                loading="lazy"
+                                                className="absolute inset-0 size-full rounded-2xl bg-gray-50 object-cover"
+                                            />
+                                            <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
+                                        </div>
+                                        <h4 className="mt-4 text-lg/6 font-semibold text-gray-900 group-hover:text-gray-600">
                                             <a href={getArticleUrl(article.slug)}>
                                                 <span className="absolute inset-0" />
                                                 {article.title}
                                             </a>
-                                        </h3>
-                                        <p className="mt-5 text-sm/6 text-gray-600">{article.excerpt}</p>
-                                    </div>
-                                    {article.tags?.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-2 mt-4">
-                                            {article.tags.map(tag => (
-                                                <span key={tag.id} className="rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-500 ring-1 ring-inset ring-gray-200">
-                                                    {tag.name}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </article>
-                        ))}
-                    </div>
+                                        </h4>
+                                        <p className="mt-3 text-sm/6 text-gray-600">
+                                            {truncateExcerpt(article.excerpt)}
+                                        </p>
+                                        {article.tags?.length > 0 && (
+                                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                                                {article.tags.map(tag => (
+                                                    <span key={tag.id} className="rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-500 ring-1 ring-inset ring-gray-200">
+                                                        {tag.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {article.has_audio && (
+                                            <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600">
+                                                <SpeakerWaveIcon className="size-4" />
+                                                {t('blog.listen_available', 'Escuche este artículo, leído por el autor.')}
+                                            </p>
+                                        )}
+                                    </article>
+                                ))}
+                            </div>
+                        </section>
+                    ))}
                 </div>
             </div>
         </div>

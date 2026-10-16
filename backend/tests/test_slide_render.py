@@ -110,10 +110,19 @@ def _slides_material(
     return m
 
 
+def _job(test_client, resp):
+    """Fetch the background job a 202 kickoff created (it has already run)."""
+    assert resp.status_code == 202, resp.text
+    return test_client.get(f"/api/v1/media-library/jobs/{resp.json()['id']}").json()
+
+
 # --- POST /materials/{id}/render-slides (render patched out) ----------------
 
 
+@pytest.mark.usefixtures("edu_job_session")
 class TestRenderEndpoint:
+    """render-slides validates synchronously, then runs as a background job (#346)."""
+
     URL = "/api/v1/admin/dashboard/edu/materials/{id}/render-slides"
 
     def test_missing_material_404(self, test_client, test_db):
@@ -130,52 +139,59 @@ class TestRenderEndpoint:
         resp = test_client.post(self.URL.format(id=m.id))
         assert resp.status_code == 400
 
-    @patch("app.api.edu.render_material_slides")
-    def test_success_sets_urls_and_counts(self, mock_render, test_client, test_db):
+    @patch("app.services.edu_jobs.render_material_slides")
+    def test_success_job_carries_urls_and_counts(self, mock_render, test_client, test_db):
         m = _slides_material(test_db, n=3)
 
-        def fake(material, db, positions=None):
+        def fake(material, db, positions=None, progress=None):
             for slide in material.slides:
                 slide.image_url = f"https://cdn.example/frames/{material.id}/{slide.position}.png"
+                progress(slide.position, 3, f"slide {slide.position}")
             return {"rendered": 3, "images_resolved": 2, "images_missing": 1}
 
         mock_render.side_effect = fake
 
-        resp = test_client.post(self.URL.format(id=m.id))
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["slides_rendered"] == 3
-        assert body["images_resolved"] == 2
-        assert body["images_missing"] == 1
-        assert len(body["slide_image_urls"]) == 3
+        job = _job(test_client, test_client.post(self.URL.format(id=m.id)))
+        assert job["job_type"] == "EDU_RENDER_SLIDES"
+        assert job["status"] == "SUCCEEDED"
+        assert (job["units_done"], job["units_total"]) == (3, 3)
+        stats = job["stats"]
+        assert stats["material_id"] == m.id
+        assert stats["slides_rendered"] == 3
+        assert stats["images_resolved"] == 2
+        assert stats["images_missing"] == 1
+        assert len(stats["slide_image_urls"]) == 3
+        test_db.expire_all()
+        assert all(s.image_url for s in test_db.get(EduMaterial, m.id).slides)
 
-    @patch("app.api.edu.render_material_slides", side_effect=RuntimeError("no chromium"))
-    def test_render_engine_unavailable_500(self, _mock_render, test_client, test_db):
+    @patch("app.services.edu_jobs.render_material_slides", side_effect=RuntimeError("no chromium"))
+    def test_render_engine_unavailable_fails_the_job(self, _mock_render, test_client, test_db):
         m = _slides_material(test_db, n=1)
-        resp = test_client.post(self.URL.format(id=m.id))
-        assert resp.status_code == 500
+        job = _job(test_client, test_client.post(self.URL.format(id=m.id)))
+        assert job["status"] == "FAILED"
+        assert "no chromium" in job["error"]
 
-    @patch("app.api.edu.render_material_slides")
+    @patch("app.services.edu_jobs.render_material_slides")
     def test_positions_threaded_to_service(self, mock_render, test_client, test_db):
         m = _slides_material(test_db, n=4)
         mock_render.return_value = {"rendered": 2, "images_resolved": 0, "images_missing": 2}
         resp = test_client.post(self.URL.format(id=m.id), json={"positions": [3, 1, 3]})
-        assert resp.status_code == 200
+        assert _job(test_client, resp)["status"] == "SUCCEEDED"
         assert mock_render.call_args.kwargs["positions"] == {1, 3}
 
     def test_out_of_range_positions_422(self, test_client, test_db):
         m = _slides_material(test_db, n=2)
-        with patch("app.api.edu.render_material_slides") as svc:
+        with patch("app.services.edu_jobs.render_material_slides") as svc:
             resp = test_client.post(self.URL.format(id=m.id), json={"positions": [9]})
         assert resp.status_code == 422
         svc.assert_not_called()
 
     def test_whole_deck_when_positions_omitted(self, test_client, test_db):
         m = _slides_material(test_db, n=2)
-        with patch("app.api.edu.render_material_slides") as svc:
+        with patch("app.services.edu_jobs.render_material_slides") as svc:
             svc.return_value = {"rendered": 2, "images_resolved": 0, "images_missing": 2}
             resp = test_client.post(self.URL.format(id=m.id))
-        assert resp.status_code == 200
+        assert _job(test_client, resp)["status"] == "SUCCEEDED"
         assert svc.call_args.kwargs["positions"] is None
 
 

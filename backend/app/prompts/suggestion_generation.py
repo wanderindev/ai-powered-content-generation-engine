@@ -8,9 +8,21 @@ def build_historical_suggestion_prompt(
     category_description: str | None,
     num_suggestions: int,
     existing_titles: list[str],
+    covered_article_titles: list[str] | None = None,
 ) -> str:
-    """Build prompt for generating chronologically-ordered article suggestions."""
+    """Build prompt for generating chronologically-ordered article suggestions.
+
+    ``covered_article_titles`` (#630, only when SUGGESTION_DEDUP_ENABLED is on)
+    lists the nearest existing articles from any category. Empty or ``None``
+    adds nothing, so the prompt is byte-for-byte the pre-#630 one.
+    """
     titles_block = "\n".join(f"- {t}" for t in existing_titles) if existing_titles else "(none yet)"
+    if covered_article_titles:
+        covered = "\n".join(f"- {t}" for t in covered_article_titles)
+        titles_block += (
+            "\n\nAlready Covered on the Site (closest existing articles, any category; "
+            "do not suggest a topic one of these already covers):\n" + covered
+        )
 
     return f"""You are an expert researcher for Panama In Context, a blog dedicated to exploring how historical events and cultural elements have shaped Panama's national identity.
 

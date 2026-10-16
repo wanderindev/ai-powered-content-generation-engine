@@ -22,6 +22,7 @@ from app.core.database import Base
 from app.models import (
     ContactSubmission,
     Educator,
+    KnowledgeChunk,
     EduMaterial,
     EduResearch,
     EduSuggestion,
@@ -30,15 +31,26 @@ from app.models import (
     Order,
 )
 from app.models.enums import (
+    AgentTaskAction,
+    AgentTaskStatus,
+    AskPicQueryStatus,
     BookingStatus,
     CandidateSource,
     CandidateStatus,
+    ConsistencyResolution,
+    ConsistencySource,
+    ConsistencyVerdict,
     ContactInterest,
     ContentStatus,
     EducatorStatus,
+    KnowledgeSourceType,
     Language,
     MagicLinkAction,
     MaterialType,
+    McpApprovalAction,
+    McpApprovalStatus,
+    McpCallOutcome,
+    McpScope,
     OrderStatus,
     PaymentMethod,
     TimeSlot,
@@ -67,6 +79,26 @@ EXPECTED = {
     ("orders", "customer_language"): (Language,),
 }
 
+# CHECKs added after 0006 by their table's own CREATE TABLE migration; their
+# migration agreement is tested with that migration (and, for a
+# drop-and-recreate vocabulary, in test_migration_check_vocabularies.py).
+LATER_EXPECTED = {
+    ("knowledge_chunks", "source_type"): (KnowledgeSourceType,),
+    ("knowledge_chunks", "language"): (Language,),
+    ("consistency_findings", "verdict"): (ConsistencyVerdict,),
+    ("consistency_findings", "other_source_type"): (ConsistencySource,),
+    ("consistency_findings", "resolution"): (ConsistencyResolution,),
+    ("ask_pic_queries", "status"): (AskPicQueryStatus,),
+    ("ask_pic_queries", "language"): (Language,),
+    ("mcp_tokens", "scopes"): (McpScope,),
+    ("mcp_tool_calls", "outcome"): (McpCallOutcome,),
+    ("mcp_tool_calls", "required_scope"): (McpScope,),
+    ("agent_task_actions", "action"): (AgentTaskAction,),
+    ("agent_task_actions", "previous_status"): (AgentTaskStatus,),
+    ("mcp_approval_requests", "action"): (McpApprovalAction,),
+    ("mcp_approval_requests", "status"): (McpApprovalStatus,),
+}
+
 
 def _expected_values(enums):
     """Ordered de-duplicated union of the enums' values."""
@@ -88,10 +120,11 @@ def _model_allowed(table, column):
     raise AssertionError(f"model {table} is missing CHECK constraint {name}")
 
 
-@pytest.mark.parametrize(("table", "column"), list(EXPECTED), ids=lambda v: v)
+@pytest.mark.parametrize(("table", "column"), list(EXPECTED | LATER_EXPECTED), ids=lambda v: v)
 def test_model_check_matches_enum(table, column):
     """Each model CHECK exists and lists exactly its enum(s) values."""
-    assert _model_allowed(table, column) == set(_expected_values(EXPECTED[(table, column)]))
+    enums = (EXPECTED | LATER_EXPECTED)[(table, column)]
+    assert _model_allowed(table, column) == set(_expected_values(enums))
 
 
 def _load_migration_constraints():
@@ -202,6 +235,30 @@ def _bad_contact_interest():
     )
 
 
+def _bad_knowledge_source_type():
+    return KnowledgeChunk(
+        source_type="WEBPAGE",
+        source_id=1,
+        language="en",
+        chunk_index=0,
+        content="x",
+        content_hash="0" * 64,
+        token_count=1,
+    )
+
+
+def _bad_knowledge_language():
+    return KnowledgeChunk(
+        source_type=KnowledgeSourceType.VERIFIED_CLAIM.value,
+        source_id=1,
+        language="fr",
+        chunk_index=0,
+        content="x",
+        content_hash="0" * 64,
+        token_count=1,
+    )
+
+
 ENFORCEMENT_CASES = {
     "orders.status": _bad_order_status,
     "orders.payment_method": _bad_order_payment_method,
@@ -213,6 +270,8 @@ ENFORCEMENT_CASES = {
     "magic_links.action": _bad_magic_link_action,
     "edu_materials.material_type": _bad_material_type,
     "contact_submissions.interest": _bad_contact_interest,
+    "knowledge_chunks.source_type": _bad_knowledge_source_type,
+    "knowledge_chunks.language": _bad_knowledge_language,
 }
 
 
@@ -262,6 +321,15 @@ def test_valid_value_accepted(test_db, case):
             first_name="A",
             last_name="B",
             email="a@b.com",
+        ),
+        "knowledge_chunks.source_type": lambda: KnowledgeChunk(
+            source_type=KnowledgeSourceType.VERIFIED_CLAIM.value,
+            source_id=1,
+            language="es",
+            chunk_index=0,
+            content="x",
+            content_hash="0" * 64,
+            token_count=1,
         ),
     }
     if case not in valid:

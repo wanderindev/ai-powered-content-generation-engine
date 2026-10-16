@@ -23,17 +23,15 @@ import argparse
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-import anthropic
-from sqlalchemy import func, select
-
-from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.models.article import Article
 from app.models.media import Media, media_tags
 from app.models.media_candidate import MediaCandidate
 from app.models.tag import Tag
+from app.services.llm import HAIKU_MODEL, create_message, first_text
+from sqlalchemy import func, select
 
 logging.basicConfig(
     level=logging.INFO,
@@ -146,8 +144,6 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show results without writing to DB")
     args = parser.parse_args()
 
-    settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     db = SessionLocal()
 
     try:
@@ -204,15 +200,21 @@ def main():
             prompt_text = PROMPT.format(existing_tags=existing_tags_text) + items_text
 
             try:
-                message = client.messages.create(
-                    model="claude-haiku-4-5-20251001",
-                    max_tokens=4096,
+                # Through the seam (#610): usage logging, the budget backstop,
+                # TruncationError, and HAIKU_MODEL instead of a hardcoded id.
+                # Haiku 5.5 thinks at medium effort and thinking counts toward
+                # the cap, so 8000 (was 4096; it also streams at 8000).
+                message = create_message(
+                    feature="backfill_media_tags",
+                    model=HAIKU_MODEL,
+                    max_tokens=8000,
+                    output_config={"effort": "medium"},
                     messages=[
                         {"role": "user", "content": prompt_text}
                     ],
                 )
 
-                results = parse_response(message.content[0].text)
+                results = parse_response(first_text(message))
                 media_map = {media.id: media for media, _ in rows}
 
                 for item in results:
@@ -254,7 +256,7 @@ def main():
                             continue
 
                         # 3. Genuinely new tag
-                        now = datetime.now(timezone.utc)
+                        now = datetime.now(UTC)
                         new_tag = Tag(name=tag_name, status="APPROVED", created_at=now, updated_at=now)
                         db.add(new_tag)
                         db.flush()

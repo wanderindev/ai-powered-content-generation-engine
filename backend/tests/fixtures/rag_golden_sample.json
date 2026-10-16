@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "description": "Test fixture for the #627 golden loader; not the real golden set.",
+  "questions": [
+    {
+      "id": "t001",
+      "language": "en",
+      "question": "Who built the Panama Railroad?",
+      "type": "factual",
+      "expected_article_ids": [1],
+      "expected_section": "Construction"
+    },
+    {
+      "id": "t002",
+      "language": "es",
+      "question": "¿Cómo se compara el ferrocarril con el canal?",
+      "type": "multi-article",
+      "expected_article_ids": [1, 2]
+    },
+    {
+      "id": "t003",
+      "language": "es",
+      "question": "¿Quién construyó el ferrocarril de Panamá?",
+      "type": "cross-lingual",
+      "expected_article_ids": [1]
+    },
+    {
+      "id": "t004",
+      "language": "en",
+      "question": "What is the capital of Mongolia?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    }
+  ]
+}

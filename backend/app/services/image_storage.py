@@ -7,6 +7,7 @@ from pathlib import PurePosixPath
 import boto3
 import sentry_sdk
 from botocore.config import Config as BotoConfig
+from botocore.exceptions import ClientError
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
 from app.core.config import get_settings
@@ -145,6 +146,19 @@ class ImageStorageService:
             ACL="public-read",
         )
 
+        return f"{self.cdn_url}/{key}"
+
+    def object_exists(self, key: str) -> bool:
+        """HEAD an object; False on 404, re-raises anything else."""
+        try:
+            self.client.head_object(Bucket=self.bucket, Key=key)
+        except ClientError as e:
+            if e.response.get("ResponseMetadata", {}).get("HTTPStatusCode") == 404:
+                return False
+            raise
+        return True
+
+    def public_url(self, key: str) -> str:
         return f"{self.cdn_url}/{key}"
 
     def upload_image(

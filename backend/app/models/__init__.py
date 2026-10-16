@@ -1,8 +1,18 @@
+from app.models.agent_task import (
+    AgentTask,
+    AgentTaskAction,
+    AgentTaskActionLog,
+    AgentTaskKind,
+    AgentTaskStatus,
+    AgentTaskSubject,
+)
 from app.models.article import Article
 from app.models.article_suggestion import ArticleSuggestion
+from app.models.ask_pic_query import AskPicQuery
 from app.models.attraction import Attraction
 from app.models.booking import Booking, BookingStatus, BookingStatusLog
 from app.models.category import Category, Taxonomy
+from app.models.consistency_finding import ConsistencyFinding
 from app.models.contact_submission import ContactSubmission
 from app.models.crawl_job import CrawlJob, CrawlJobStatus, CrawlJobType
 from app.models.edu_material import EduMaterial
@@ -28,9 +38,19 @@ from app.models.fact_check import (
     FactCheckVerdict,
     FactClaimType,
 )
+from app.models.grammar_check import GrammarCheckFix
+from app.models.grammar_review import GrammarReviewDiff
 from app.models.hotel import Hotel
 from app.models.instagram_post import InstagramPost
+from app.models.knowledge_chunk import KnowledgeChunk, KnowledgeSourceType
 from app.models.magic_link import AdminEmail, MagicLink, MagicLinkAction
+from app.models.mcp_approval_request import (
+    McpApprovalAction,
+    McpApprovalRequest,
+    McpApprovalStatus,
+)
+from app.models.mcp_token import McpScope, McpToken
+from app.models.mcp_tool_call import McpCallOutcome, McpToolCall
 from app.models.media import Media, media_tags
 from app.models.media_candidate import CandidateSource, CandidateStatus, MediaCandidate
 from app.models.order import Order, OrderStatus, PaymentMethod
@@ -61,6 +81,8 @@ __all__ = [
     "CrawlJob",
     "CrawlJobStatus",
     "CrawlJobType",
+    "KnowledgeChunk",
+    "KnowledgeSourceType",
     "Tag",
     "article_tags",
     "media_tags",
@@ -78,6 +100,10 @@ __all__ = [
     "AdminEmail",
     "MagicLink",
     "MagicLinkAction",
+    "McpCallOutcome",
+    "McpScope",
+    "McpToken",
+    "McpToolCall",
     "Order",
     "OrderStatus",
     "PaymentMethod",
@@ -105,6 +131,22 @@ __all__ = [
     "FactCheckVerdict",
     "FactClaimType",
     "VerifiedClaim",
+    # Grammar-check stage (issue #409)
+    "GrammarCheckFix",
+    "GrammarReviewDiff",
+    "ConsistencyFinding",
+    # Ask PIC abuse / cost controls (#634)
+    "AskPicQuery",
     # Instagram / social pipeline
     "InstagramPost",
+    # Weekly-series agent tasks (epic #422)
+    "AgentTask",
+    "AgentTaskAction",
+    "AgentTaskActionLog",
+    "McpApprovalAction",
+    "McpApprovalRequest",
+    "McpApprovalStatus",
+    "AgentTaskKind",
+    "AgentTaskStatus",
+    "AgentTaskSubject",
 ]

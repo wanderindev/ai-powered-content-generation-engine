@@ -48,53 +48,72 @@ def _mock_anthropic_response(text: str):
 def _bypass_admin_auth():
     """Bypass admin token validation for all tests in this module (#54).
 
-    The router gates auth via ``dependencies=[Depends(validate_admin_token)]``,
-    so we override the dependency rather than patching the imported name.
+    The router gates auth at the router level, so we override the dependency
+    rather than patching the imported name.
     """
-    from app.api.dependencies import validate_admin_token
+    from app.api.dependencies import (
+        validate_admin_or_allowlisted_driver_token,
+        validate_admin_token,
+    )
     from app.main import app
 
+    # dependency_overrides keys on the exact callable a router declares: the
+    # dashboard/instagram/admin routers now declare the allowlisted-driver
+    # variant (#444), other admin routers still the plain one. Override both.
     app.dependency_overrides[validate_admin_token] = lambda: _FAKE_ADMIN
+    app.dependency_overrides[validate_admin_or_allowlisted_driver_token] = lambda: _FAKE_ADMIN
     yield
     app.dependency_overrides.pop(validate_admin_token, None)
+    app.dependency_overrides.pop(validate_admin_or_allowlisted_driver_token, None)
 
 
-SINGLE_OUTLINE_JSON = json.dumps({
-    "articles": [
-        {
-            "title": "The Panama Canal: A Historical Overview",
-            "summary": "An overview of the canal's construction and impact.",
-            "outline": "## Introduction\n- Key context\n\n## Construction\n- Timeline\n\n## Impact\n- Economic effects",
-            "estimated_word_count": 2000,
-        }
-    ]
-})
+SINGLE_OUTLINE_JSON = json.dumps(
+    {
+        "articles": [
+            {
+                "title": "The Panama Canal: A Historical Overview",
+                "summary": "An overview of the canal's construction and impact.",
+                "outline": "## Introduction\n- Key context\n\n## Construction\n- Timeline\n\n## Impact\n- Economic effects",
+                "estimated_word_count": 2000,
+            }
+        ]
+    }
+)
 
-SERIES_OUTLINE_JSON = json.dumps({
-    "articles": [
-        {
-            "title": "The Canal: Part 1 - The French Attempt",
-            "summary": "The failed French effort to build the canal.",
-            "outline": "## French Era\n- De Lesseps\n\n## Failure\n- Disease",
-            "estimated_word_count": 2000,
-        },
-        {
-            "title": "The Canal: Part 2 - American Success",
-            "summary": "How the US completed the canal.",
-            "outline": "## American Takeover\n- Roosevelt\n\n## Completion\n- 1914",
-            "estimated_word_count": 2000,
-        },
-    ]
-})
+SERIES_OUTLINE_JSON = json.dumps(
+    {
+        "articles": [
+            {
+                "title": "The Canal: Part 1 - The French Attempt",
+                "summary": "The failed French effort to build the canal.",
+                "outline": "## French Era\n- De Lesseps\n\n## Failure\n- Disease",
+                "estimated_word_count": 2000,
+            },
+            {
+                "title": "The Canal: Part 2 - American Success",
+                "summary": "How the US completed the canal.",
+                "outline": "## American Takeover\n- Roosevelt\n\n## Completion\n- 1914",
+                "estimated_word_count": 2000,
+            },
+        ]
+    }
+)
 
-ARTICLE_CONTENT = "## Introduction\n\nThe Panama Canal is one of the greatest engineering achievements in modern history. " * 20
-EXCERPT_TEXT = "The Panama Canal transformed global trade. This article explores its remarkable history."
+ARTICLE_CONTENT = (
+    "## Introduction\n\nThe Panama Canal is one of the greatest engineering achievements in modern history. "
+    * 20
+)
+EXCERPT_TEXT = (
+    "The Panama Canal transformed global trade. This article explores its remarkable history."
+)
 SUMMARY_TEXT = "This article examines the Panama Canal's construction. It covers the French and American efforts. The canal's impact on global trade is assessed."
 
-TAGS_JSON = json.dumps({
-    "assign": ["Panama Canal"],
-    "suggest": ["Engineering History"],
-})
+TAGS_JSON = json.dumps(
+    {
+        "assign": ["Panama Canal"],
+        "suggest": [{"name": "Engineering History", "name_es": "Historia de la Ingeniería"}],
+    }
+)
 
 
 def _create_research_chain(test_db, category_factory, research_status="APPROVED"):
@@ -128,9 +147,7 @@ class TestGenerateOutlines:
     """Tests for POST /admin/dashboard/articles/generate-outlines."""
 
     @patch("app.services.llm.get_client")
-    def test_creates_single_article(
-        self, mock_get_client, test_client, test_db, category_factory
-    ):
+    def test_creates_single_article(self, mock_get_client, test_client, test_db, category_factory):
         mock_get_client.return_value = _mock_anthropic_response(SINGLE_OUTLINE_JSON)
         category, suggestion, research = _create_research_chain(test_db, category_factory)
 
@@ -165,20 +182,24 @@ class TestGenerateOutlines:
         assert "APPROVED" in response.json()["detail"]
 
     @patch("app.services.llm.get_client")
-    def test_rejects_duplicate_articles(
+    def test_replays_existing_articles_without_regenerating(
         self, mock_get_client, test_client, test_db, category_factory
     ):
+        """Idempotent replay: the agent driver can lose the response after the
+        server committed (client-side timeout mid-call), and the re-run must
+        return the existing articles instead of 400ing the task into a park."""
         category, suggestion, research = _create_research_chain(test_db, category_factory)
 
-        # Create existing article for this research
+        # Article committed by an earlier (timed-out) invocation.
         article = Article(
             research_id=research.id,
             category_id=category.id,
             title="Existing Article",
+            outline="## Existing outline",
             status="PENDING",
         )
         test_db.add(article)
-        test_db.flush()
+        test_db.commit()
 
         response = test_client.post(
             "/api/v1/admin/dashboard/articles/generate-outlines",
@@ -186,13 +207,16 @@ class TestGenerateOutlines:
             json={"research_id": research.id},
         )
 
-        assert response.status_code == 400
-        assert "already exist" in response.json()["detail"]
+        assert response.status_code == 200
+        data = response.json()
+        assert data["articles_created"] == 0
+        assert data["is_series"] is False
+        assert [a["article_id"] for a in data["articles"]] == [article.id]
+        assert data["articles"][0]["outline"] == "## Existing outline"
+        mock_get_client.assert_not_called()
 
     @patch("app.services.llm.get_client")
-    def test_creates_series(
-        self, mock_get_client, test_client, test_db, category_factory
-    ):
+    def test_creates_series(self, mock_get_client, test_client, test_db, category_factory):
         mock_get_client.return_value = _mock_anthropic_response(SERIES_OUTLINE_JSON)
         category, suggestion, research = _create_research_chain(test_db, category_factory)
 
@@ -213,12 +237,8 @@ class TestGenerateOutlines:
         assert articles_data[1]["series_order"] == 2
 
         # Verify DB parent/child relationship
-        parent = test_db.query(Article).filter(
-            Article.id == articles_data[0]["article_id"]
-        ).first()
-        child = test_db.query(Article).filter(
-            Article.id == articles_data[1]["article_id"]
-        ).first()
+        parent = test_db.query(Article).filter(Article.id == articles_data[0]["article_id"]).first()
+        child = test_db.query(Article).filter(Article.id == articles_data[1]["article_id"]).first()
         assert child.series_parent_id == parent.id
 
 
@@ -255,13 +275,12 @@ class TestArticleCondensation:
     outline-targeted briefing (broad context + focus) on Sonnet."""
 
     @patch("app.services.llm.get_client")
-    def test_outline_uses_full_research(
-        self, mock_get_client, test_db, category_factory
-    ):
+    def test_outline_uses_full_research(self, mock_get_client, test_db, category_factory):
         from app.services.article_generation import generate_outlines
+        from app.services.llm import OPUS_MODEL
 
         client = _make_client(
-            MagicMock(content=[MagicMock(text=SINGLE_OUTLINE_JSON)]),  # outline (Sonnet)
+            MagicMock(content=[MagicMock(text=SINGLE_OUTLINE_JSON)]),  # outline (Opus)
         )
         mock_get_client.return_value = client
 
@@ -276,19 +295,21 @@ class TestArticleCondensation:
         assert client.messages.create.call_count == 0
         assert client.messages.stream.call_count == 1
         # The raw research — not a condensed briefing — feeds the outline prompt.
-        outline_prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
-        assert "word word word" in outline_prompt
+        outline_call = client.messages.stream.call_args.kwargs
+        assert "word word word" in outline_call["messages"][0]["content"]
+        # #415: outlining is the one stage that runs on Opus, not Sonnet.
+        assert outline_call["model"] == OPUS_MODEL
 
     @patch("app.services.llm.get_client")
     def test_long_research_condensed_before_content(
         self, mock_get_client, test_db, category_factory
     ):
         from app.services.article_generation import generate_article_content
-        from app.services.llm import SONNET_MODEL
+        from app.services.llm import OPUS_MODEL
 
         client = _make_client(
-            MagicMock(content=[MagicMock(text="Condensed briefing")]),  # condense (Sonnet)
-            MagicMock(content=[MagicMock(text=ARTICLE_CONTENT)]),  # content (Sonnet)
+            MagicMock(content=[MagicMock(text="Condensed briefing")]),  # condense (Opus)
+            MagicMock(content=[MagicMock(text=ARTICLE_CONTENT)]),  # content (Opus)
         )
         mock_get_client.return_value = client
 
@@ -311,13 +332,17 @@ class TestArticleCondensation:
         )
 
         assert content == ARTICLE_CONTENT
-        # Both calls stream: the condense cap sits at the streaming threshold
-        # (thinking counts toward max_tokens on Sonnet 5) and content is 12k.
+        # Both calls stream: condense is 16k and content is 12k, both at or above
+        # anthropic_stream_min_tokens (8k).
         assert client.messages.create.call_count == 0
         assert client.messages.stream.call_count == 2  # condense, then content
-        # The focus condensation runs on Sonnet and is keyed to the article outline.
+        # The whole blog pipeline runs on Opus; condense is keyed to the outline.
         condense_call = client.messages.stream.call_args_list[0].kwargs
-        assert condense_call["model"] == SONNET_MODEL
+        assert condense_call["model"] == OPUS_MODEL
+        # Guard the thinking headroom: this call carries the full research, and
+        # Opus thinking counts toward max_tokens (the PR #407 truncation class).
+        assert condense_call["max_tokens"] == 16_000
+        assert client.messages.stream.call_args_list[1].kwargs["model"] == OPUS_MODEL
         condense_prompt = condense_call["messages"][0]["content"]
         assert "## Distinctive Section" in condense_prompt
         assert "word word word" in condense_prompt
@@ -363,6 +388,33 @@ class TestArticleCondensation:
         assert "word word word" in content_prompt
 
 
+    @patch("app.services.llm.get_client")
+    def test_generated_emphasis_is_stripped(self, mock_get_client, test_db, category_factory):
+        """#540: the prompt forbids bold/italics; the service enforces it."""
+        from app.services.article_generation import generate_article_content
+
+        mock_get_client.return_value = _make_client(
+            MagicMock(content=[MagicMock(text="## **Intro**\n\nThe **Crown** sent *galleons*.")]),
+        )
+        category, suggestion, research = _create_research_chain(test_db, category_factory)
+        research.content = "word " * 100
+        article = Article(
+            research_id=research.id,
+            category_id=category.id,
+            title="T",
+            outline="## Outline",
+            status="PENDING",
+        )
+        test_db.add(article)
+        test_db.flush()
+
+        content = generate_article_content(
+            article, research, suggestion, category, category.taxonomy
+        )
+
+        assert content == "## Intro\n\nThe Crown sent galleons."
+
+
 # --- Phase 2: Article Writing ---
 
 
@@ -370,9 +422,7 @@ class TestWriteArticle:
     """Tests for POST /admin/dashboard/articles/{id}/write."""
 
     @patch("app.services.llm.get_client")
-    def test_writes_article_content(
-        self, mock_get_client, test_client, test_db, category_factory
-    ):
+    def test_writes_article_content(self, mock_get_client, test_client, test_db, category_factory):
         # content (streamed, 8k) then excerpt + summary (Haiku, non-streamed)
         mock_get_client.return_value = _make_client(
             MagicMock(content=[MagicMock(text=ARTICLE_CONTENT)]),
@@ -516,10 +566,111 @@ class TestGenerateTags:
         assert existing_tag.id in data["assigned_tag_ids"]
         assert "Engineering History" in data["suggested_new_tags"]
 
-        # Verify new tag was created as PENDING
+        # Verify new tag was created as PENDING, with the Spanish name the
+        # model returned alongside it (nothing downstream translates tags).
         new_tag = test_db.query(Tag).filter(Tag.name == "Engineering History").first()
         assert new_tag is not None
         assert new_tag.status == "PENDING"
+        assert new_tag.name_es == "Historia de la Ingeniería"
+
+    @patch("app.services.llm.get_client")
+    def test_collapses_overlapping_variants_to_one_tag(
+        self, mock_get_client, test_client, test_db, category_factory, research_factory
+    ):
+        """Portobelo / Portobelo Fair / Portobelo Fair Trade Monopoly -> Portobelo."""
+        from datetime import UTC, datetime
+
+        mock_get_client.return_value = _mock_anthropic_response(
+            json.dumps(
+                {
+                    "assign": ["Portobelo"],
+                    "suggest": ["Portobelo Fair", "Portobelo Fair Trade Monopoly"],
+                }
+            )
+        )
+        portobelo = Tag(
+            name="Portobelo",
+            status="APPROVED",
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        test_db.add(portobelo)
+        test_db.flush()
+
+        article = Article(
+            research_id=research_factory().id,
+            category_id=category_factory().id,
+            title="Portobelo Fairs",
+            content="Portobelo " * 100,
+            outline="## Outline",
+            status="PENDING",
+        )
+        test_db.add(article)
+        test_db.flush()
+
+        response = test_client.post(
+            f"/api/v1/admin/dashboard/articles/{article.id}/generate-tags",
+            params={"token": "any"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["assigned_tag_ids"] == [portobelo.id]
+        assert data["suggested_new_tags"] == []
+        assert test_db.query(Tag).filter(Tag.name.like("Portobelo %")).count() == 0
+
+    @patch("app.services.llm.get_client")
+    def test_caps_total_tags_counting_already_attached(
+        self, mock_get_client, test_client, test_db, category_factory, research_factory
+    ):
+        """No more than MAX_ARTICLE_TAGS end up on the article, existing first."""
+        from datetime import UTC, datetime
+
+        from app.services.article_generation import MAX_ARTICLE_TAGS
+
+        now = datetime.now(UTC)
+        names = ["Silver Trade", "Spanish Empire", "Colonial Panama", "Francis Drake"]
+        existing = [Tag(name=n, status="APPROVED", created_at=now, updated_at=now) for n in names]
+        attached = Tag(name="Caribbean", status="APPROVED", created_at=now, updated_at=now)
+        test_db.add_all([*existing, attached])
+        test_db.flush()
+
+        # The model over-returns: 4 existing + 3 new = 7 candidates, article
+        # already carries 1 tag. Existing tags outrank new suggestions, so the
+        # 4 remaining slots all go to existing tags and no new tag is created.
+        mock_get_client.return_value = _mock_anthropic_response(
+            json.dumps(
+                {
+                    "assign": names,
+                    "suggest": ["Treasure Fleet", "Royal Fifth", "Convoy System"],
+                }
+            )
+        )
+
+        article = Article(
+            research_id=research_factory().id,
+            category_id=category_factory().id,
+            title="Capped Article",
+            content="Silver " * 100,
+            outline="## Outline",
+            status="PENDING",
+        )
+        article.tags.append(attached)
+        test_db.add(article)
+        test_db.flush()
+
+        response = test_client.post(
+            f"/api/v1/admin/dashboard/articles/{article.id}/generate-tags",
+            params={"token": "any"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        test_db.refresh(article)
+        assert len(article.tags) == MAX_ARTICLE_TAGS
+        assert len(data["assigned_tag_ids"]) == MAX_ARTICLE_TAGS - 1
+        assert data["suggested_new_tags"] == []
+        assert test_db.query(Tag).filter(Tag.name == "Treasure Fleet").first() is None
 
     def test_requires_content(self, test_client, test_db, category_factory, research_factory):
         category = category_factory()

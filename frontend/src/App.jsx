@@ -27,6 +27,7 @@ import TourPanamaViejoPage from './pages/tours/PanamaViejoPage.jsx'
 import TourBiomuseoPage from './pages/tours/BiomuseoPage.jsx'
 import TourMiPueblitoPage from './pages/tours/MiPueblitoPage.jsx'
 import SieteIglesiasPage from './pages/tours/SieteIglesiasPage.jsx'
+import PanamaViejo507Page from './pages/tours/PanamaViejo507Page.jsx'
 import ConfirmSubscription from './pages/ConfirmSubscription.jsx'
 import Unsubscribe from './pages/Unsubscribe.jsx'
 import TermsAndConditions from './pages/TermsAndConditions.jsx'
@@ -60,6 +61,11 @@ const AdminEduResearch = lazy(() => import('./pages/admin/AdminEduResearch'));
 const AdminEduMaterials = lazy(() => import('./pages/admin/AdminEduMaterials'));
 const AdminInstagram = lazy(() => import('./pages/admin/AdminInstagram'));
 const AdminEditorialCalendar = lazy(() => import('./pages/admin/AdminEditorialCalendar'));
+const AdminAgentTasks = lazy(() => import('./pages/admin/AdminAgentTasks'));
+const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));
+
+// Ask PIC (#636) is lazy too: a public page most visitors never open.
+const AskPic = lazy(() => import('./pages/AskPic'));
 
 // Centered spinner shown while a lazy admin chunk loads (matches the
 // app's existing loading affordance, e.g. OrderConfirmation).
@@ -90,6 +96,9 @@ function App() {
             <Route path="en/articles/:slug" element={<Article />} />
             <Route path="es/articulos/:slug" element={<Article />} />
             <Route path="articles/:slug" element={<Article />} />
+            {/* Ask PIC (#636) — EN /ask, ES /preguntar; the path sets the language */}
+            <Route path="ask" element={<Suspense fallback={<AdminFallback />}><AskPic /></Suspense>} />
+            <Route path="preguntar" element={<Suspense fallback={<AdminFallback />}><AskPic /></Suspense>} />
             <Route path="contacto" element={<Contact />} />
             <Route path="contacto/confirmacion" element={<ContactConfirmation />} />
             <Route path="excursiones-academicas/casco-antiguo-plazas" element={<CascoAntiguoPlazasPage />} />
@@ -105,6 +114,7 @@ function App() {
             <Route path="tours-guiados/biomuseo" element={<TourBiomuseoPage />} />
             <Route path="tours-guiados/mi-pueblito" element={<TourMiPueblitoPage />} />
             <Route path="tours-guiados/siete-iglesias" element={<SieteIglesiasPage />} />
+            <Route path="tours-guiados/panama-viejo-507" element={<PanamaViejo507Page />} />
             {/* Mailing list confirmation and unsubscribe */}
             <Route path="confirm-subscription" element={<ConfirmSubscription />} />
             <Route path="unsubscribe" element={<Unsubscribe />} />
@@ -162,6 +172,8 @@ function App() {
             <Route path="edu-materials" element={<AdminEduMaterials />} />
             <Route path="instagram" element={<AdminInstagram />} />
             <Route path="editorial-calendar" element={<AdminEditorialCalendar />} />
+            <Route path="agent-tasks" element={<AdminAgentTasks />} />
+            <Route path="approvals" element={<AdminApprovals />} />
             <Route path="media-library" element={<AdminMediaLibrary />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="calendar" element={<AdminCalendar />} />

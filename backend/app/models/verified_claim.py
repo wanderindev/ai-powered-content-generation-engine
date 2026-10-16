@@ -38,7 +38,7 @@ class VerifiedClaim(Base):
     verdict: Mapped[str] = mapped_column(String(30))
     correction: Mapped[str | None] = mapped_column(Text)
     citation: Mapped[str | None] = mapped_column(Text)
-    # How the source verdict was reached (WEB_SEARCH / DEEP_RESEARCH).
+    # How the source verdict was reached (DEEP_RESEARCH; WEB_SEARCH is historical, #751).
     source_method: Mapped[str | None] = mapped_column(String(20))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

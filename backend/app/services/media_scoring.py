@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.media_candidate import CandidateStatus, MediaCandidate
-from app.services.llm import HAIKU_MODEL, create_message
+from app.services.llm import HAIKU_MODEL, create_message, first_text
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,8 @@ def score_candidates(
             message = create_message(
                 feature="media_scoring",
                 model=HAIKU_MODEL,
-                max_tokens=2048,
+                max_tokens=6000,  # thinking headroom at medium effort (#610)
+                output_config={"effort": "medium"},
                 messages=[
                     {
                         "role": "user",
@@ -120,7 +121,7 @@ def score_candidates(
                 ],
             )
 
-            response_text = message.content[0].text.strip()
+            response_text = first_text(message).strip()
             # Extract JSON from response (handle markdown code blocks)
             if "```" in response_text:
                 response_text = response_text.split("```")[1]

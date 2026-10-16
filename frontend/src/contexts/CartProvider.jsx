@@ -61,7 +61,7 @@ export function CartProvider({ children }) {
 
     // Returns { [dateStr]: Set<'morning'|'afternoon'> } from current cart items
     // Tours that allow multiple bookings per slot (open group tours)
-    const openGroupTours = new Set(['siete-iglesias']);
+    const openGroupTours = new Set(['siete-iglesias', 'panama-viejo-507']);
 
     const getBookedSlots = useCallback((excludeItemId = null) => {
         const slots = {};

@@ -170,10 +170,10 @@ class TestRequestAdminAccess:
         assert resp.status_code == 200
         assert resp.json()["email_sent"] is True
         link = test_db.query(MagicLink).filter(MagicLink.admin_email == "real@example.com").one()
-        # ORACLE: link is for ADMIN_ACCESS and time-limited (24h).
+        # ORACLE: link is for ADMIN_ACCESS and time-limited (7 days).
         assert link.action == MagicLinkAction.ADMIN_ACCESS.value
-        assert link.expires_at > datetime.now(UTC) + timedelta(hours=23)
-        assert link.expires_at < datetime.now(UTC) + timedelta(hours=25)
+        assert link.expires_at > datetime.now(UTC) + timedelta(days=7, hours=-1)
+        assert link.expires_at < datetime.now(UTC) + timedelta(days=7, hours=1)
         patched_notifications.send_admin_magic_link.assert_called_once()
 
     def test_email_delivery_failure_is_swallowed(self, test_client, test_db):

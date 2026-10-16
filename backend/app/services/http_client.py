@@ -16,7 +16,8 @@ Provides:
   ``urlparse`` check would be bypassable via DNS rebinding or an attacker
   redirect. The validated IP is *pinned* into the connection (the request URL is
   rewritten to the IP literal, Host header and TLS SNI preserved) to close the
-  resolve-then-connect TOCTOU window.
+  resolve-then-connect TOCTOU window; a connect failure falls back to the next
+  validated address, which pinning would otherwise forfeit.
 - **Pooled-client factory** (:func:`make_hardened_client`) — one client per
   service instance / per crawl, reused across calls (no per-call TLS handshake).
 - **Retry helper** (:func:`run_with_retry`) — exponential backoff on transient
@@ -53,6 +54,12 @@ ALLOWED_SCHEMES = frozenset({"https"})
 
 # Belt-and-suspenders names; the resolved-IP check below is the real guard.
 BLOCKED_HOSTS = frozenset({"localhost", "metadata.google.internal", "169.254.169.254"})
+
+# How many of a host's validated addresses a single request may try before
+# giving up. Pinning (below) costs httpcore's own per-address failover, and this
+# is what restores it — bounded, because ``media_http_timeout`` applies per
+# connect attempt and ``import_media_from_url`` runs on the request path.
+MAX_CONNECT_ATTEMPTS = 3
 
 
 class SSRFError(ValueError):
@@ -124,11 +131,31 @@ class SSRFValidatingTransport(httpx.HTTPTransport):
         # with ENETUNREACH. ``resolved`` is a set — iteration order is
         # otherwise process-hash-randomized, so this was an intermittent
         # failure, not a v6-specific one; sorting makes the pick deterministic.
-        ipv4 = sorted(ip for ip in resolved if ":" not in ip)
-        pinned = ipv4[0] if ipv4 else sorted(resolved)[0]
-        request.url = url.copy_with(host=pinned)
+        candidates = sorted(ip for ip in resolved if ":" not in ip) + sorted(
+            ip for ip in resolved if ":" in ip
+        )
         request.extensions = {**request.extensions, "sni_hostname": host}
 
+        # Pinning an IP literal also costs httpcore's per-address failover:
+        # ``socket.create_connection`` walks every ``getaddrinfo`` result and
+        # tries the next one when a connect fails, but an IP literal resolves to
+        # exactly one. So walk the validated candidates here instead — one dead
+        # record on a multi-homed host should not be a failed fetch. Only
+        # connect-phase errors are retried (nothing has been written to the wire
+        # yet, so the request stays replayable), and every candidate comes from
+        # the set validated above, so the SSRF guarantee is unchanged.
+        attempts = candidates[:MAX_CONNECT_ATTEMPTS]
+        for pinned in attempts[:-1]:
+            request.url = url.copy_with(host=pinned)
+            try:
+                return super().handle_request(request)
+            except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+                logger.warning(
+                    "Connect to %s pinned at %s failed (%s); trying next address", host, pinned, e
+                )
+
+        # Last candidate: let its failure propagate untouched.
+        request.url = url.copy_with(host=attempts[-1])
         return super().handle_request(request)
 
 

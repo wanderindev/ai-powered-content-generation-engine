@@ -252,12 +252,34 @@ function GenerateInstagramModal({ open, onClose, token, onSuccess }) {
   );
 }
 
+const PUBLISHING_OFF_TITLE =
+  'Publishing to Instagram is turned off (INSTAGRAM_PUBLISHING_ENABLED). '
+  + 'Scheduled posts stay queued; use "Verify (no post)" to test the integration.';
+
 // Schedule / publish-now modal for an APPROVED + rendered post. A rescheduled
 // FAILED post has its error cleared server-side (the operator retry path).
-function ScheduleModal({ open, onClose, post, token, onSuccess }) {
+// publishingEnabled === false (the default, #576) disables publish-now; verify
+// still works — it creates a media container but never publishes it.
+function ScheduleModal({ open, onClose, post, token, onSuccess, publishingEnabled }) {
   const [dateValue, setDateValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Keyed by post id so a result never shows on another post's modal.
+  const [verify, setVerify] = useState({ postId: null, result: null });
+  const verifyResult = verify.postId === post?.id ? verify.result : null;
+
+  const runVerify = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await adminService.verifyInstagram(token, post.id);
+      setVerify({ postId: post.id, result });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -301,7 +323,7 @@ function ScheduleModal({ open, onClose, post, token, onSuccess }) {
             enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
             leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <Dialog.Panel className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
               <Dialog.Title className="text-lg font-semibold text-gray-900">
                 Schedule Instagram Post
               </Dialog.Title>
@@ -322,18 +344,45 @@ function ScheduleModal({ open, onClose, post, token, onSuccess }) {
                 />
                 {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
               </div>
+              {verifyResult && (
+                <div className="mt-4 rounded border border-gray-200 p-2 text-xs">
+                  <p className={verifyResult.ok ? 'font-medium text-green-700' : 'font-medium text-red-700'}>
+                    {verifyResult.ok ? 'Verify passed — nothing was posted' : 'Verify found problems — nothing was posted'}
+                  </p>
+                  <ul className="mt-1 space-y-0.5">
+                    {verifyResult.steps.map((step) => (
+                      <li key={step.name} className={step.ok ? 'text-gray-700' : 'text-red-700'}>
+                        {step.ok ? '✓' : '✗'} {step.name}: {step.detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div className="mt-6 flex items-center justify-between gap-3">
-                <button
-                  onClick={() => {
-                    if (window.confirm('Publish this post to Instagram right now?')) {
-                      run(adminService.publishInstagramPostNow);
-                    }
-                  }}
-                  disabled={loading}
-                  className="rounded border border-green-600 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
-                >
-                  Publish now
-                </button>
+                <div className="flex gap-2">
+                  {/* The span carries the tooltip: a disabled button fires no hover events. */}
+                  <span title={publishingEnabled ? '' : PUBLISHING_OFF_TITLE}>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Publish this post to Instagram right now?')) {
+                          run(adminService.publishInstagramPostNow);
+                        }
+                      }}
+                      disabled={loading || !publishingEnabled}
+                      className="rounded border border-green-600 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Publish now
+                    </button>
+                  </span>
+                  <button
+                    onClick={runVerify}
+                    disabled={loading}
+                    title="Check the account, the token and this post's image container. Never posts."
+                    className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Verify (no post)
+                  </button>
+                </div>
                 <div className="flex gap-2">
                   {post?.scheduled_at && (
                     <button
@@ -381,6 +430,10 @@ export default function AdminInstagram() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [schedulePost, setSchedulePost] = useState(null);
+  // { configured, publishing_enabled }; null until loaded (publish-now stays
+  // disabled meanwhile — off is the safe default).
+  const [publishingStatus, setPublishingStatus] = useState(null);
+  const publishingEnabled = !!publishingStatus?.publishing_enabled;
   const { toasts, show: showToast, dismiss: dismissToast } = useToast();
 
   const refreshGrid = useCallback(() => {
@@ -483,6 +536,12 @@ export default function AdminInstagram() {
       .finally(() => setLoading(false));
   }, [token]);
 
+  useEffect(() => {
+    adminService.getInstagramPublishingStatus(token)
+      .then(setPublishingStatus)
+      .catch((err) => console.error('Publishing status failed:', err));
+  }, [token]);
+
   if (error) return <div className="text-red-600">Error: {error}</div>;
 
   return (
@@ -490,7 +549,17 @@ export default function AdminInstagram() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Instagram</h1>
-          <p className="mt-2 text-sm text-gray-700">{rowData.length} posts</p>
+          <p className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+            {rowData.length} posts
+            {publishingStatus && !publishingEnabled && (
+              <span
+                className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800"
+                title={PUBLISHING_OFF_TITLE}
+              >
+                Publishing off
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -549,6 +618,7 @@ export default function AdminInstagram() {
         post={schedulePost}
         token={token}
         onSuccess={refreshGrid}
+        publishingEnabled={publishingEnabled}
       />
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

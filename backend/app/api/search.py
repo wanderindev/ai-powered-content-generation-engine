@@ -4,13 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.article import Article
-from app.models.category import Category, Taxonomy
+from app.models.category import EXCLUDED_TAXONOMY_ID, Category, Taxonomy
 from app.schemas.article import ArticleSearchResult
 
 router = APIRouter(prefix="/search", tags=["search"])
-
-# Taxonomy ID for Notable Figures (bio articles to exclude)
-EXCLUDED_TAXONOMY_ID = 5
 
 
 @router.get("", response_model=list[ArticleSearchResult])

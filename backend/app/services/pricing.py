@@ -382,38 +382,65 @@ def calculate_fixed_price(
     """
     Calculate price for a fixed-price tour (open group).
 
-    Config format:
+    Config format (every value is a per-person price, except the pct):
         {
-            "adult": 20.00,        # price for 10+ (adults, children 10-17)
+            "adult": 20.00,             # adults, and 10-17 unless child_10_17 is set
             "child_5_10": 12.50,
             "child_under_5": 0,
-            "senior_discount_pct": 20
+
+            # Seniors: EITHER a flat price ...
+            "senior": 10.00,
+            # ... OR a percentage off the adult price.
+            "senior_discount_pct": 20,
+
+            # Optional own price for 10-17; defaults to the adult price.
+            "child_10_17": 5.00,
         }
 
-    Seniors pay the adult price minus the discount percentage.
+    `senior` and `child_10_17` are both optional, and omitting them reproduces the
+    original behaviour exactly — seniors pay the adult price minus the discount
+    percentage, and 10-17-year-olds pay the adult price. Configs written before
+    those keys existed (siete-iglesias) are therefore unaffected. A flat `senior`
+    price wins over `senior_discount_pct` when both are present.
     """
     adult_price = Decimal(str(config.get("adult", 0)))
     child_5_10_price = Decimal(str(config.get("child_5_10", 0)))
     child_under_5_price = Decimal(str(config.get("child_under_5", 0)))
-    senior_discount_pct = Decimal(str(config.get("senior_discount_pct", 0))) / 100
+
+    # 10-17 ride along with the adult price unless given their own.
+    child_10_17_price = (
+        Decimal(str(config["child_10_17"])) if "child_10_17" in config else adult_price
+    )
+
+    if "senior" in config:
+        senior_price = Decimal(str(config["senior"]))
+    else:
+        senior_discount_pct = Decimal(str(config.get("senior_discount_pct", 0))) / 100
+        senior_price = adult_price - (adult_price * senior_discount_pct)
 
     # Count participants
     senior_count = participants.senior_count
-    adult_count = participants.adult.total + participants.child_10_17.total
+    adult_count = participants.adult.total
+    child_10_17_count = participants.child_10_17.total
     child_5_10_count = participants.child_5_10.total
     child_under_5_count = participants.child_under_5.total
 
-    # Calculate totals
-    senior_subtotal = senior_count * adult_price
-    adult_subtotal = adult_count * adult_price
-    child_5_10_subtotal = child_5_10_count * child_5_10_price
-    child_under_5_subtotal = child_under_5_count * child_under_5_price
+    # `service_total` is the pre-discount figure, so seniors are counted at the
+    # full adult price here and the saving is reported separately as
+    # `senior_discount` — that keeps the receipt showing what the senior rate
+    # saved, whether it came from a flat price or a percentage.
+    senior_discount = senior_count * (adult_price - senior_price)
 
-    service_total = senior_subtotal + adult_subtotal + child_5_10_subtotal + child_under_5_subtotal
-    senior_discount = senior_subtotal * senior_discount_pct
+    service_total = (
+        senior_count * adult_price
+        + adult_count * adult_price
+        + child_10_17_count * child_10_17_price
+        + child_5_10_count * child_5_10_price
+        + child_under_5_count * child_under_5_price
+    )
     grand_total = service_total - senior_discount
 
-    paying_count = senior_count + adult_count + child_5_10_count
+    paying_count = senior_count + adult_count + child_10_17_count + child_5_10_count
     per_pax = adult_price if paying_count > 0 else Decimal("0")
 
     return PriceBreakdown(

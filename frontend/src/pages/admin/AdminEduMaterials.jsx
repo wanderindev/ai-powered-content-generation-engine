@@ -6,13 +6,27 @@ import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { adminService } from '../../services/admin';
 import ActionsCellRenderer from '../../components/admin/ActionsCellRenderer';
 import InlineStatusCell from '../../components/admin/InlineStatusCell';
+import { cacheBustUrl } from '../../utils/cacheBust';
 
 // Only the two public-delivery types are publishable, and only once APPROVED
 // (#326/#327). Publishing the slides deck makes its assembled video go live.
 const PUBLISHABLE_TYPES = ['slides', 'guide'];
+
+// The assembled MP4 is stored as a sibling `video` EduMaterial (assemble-video
+// upserts on research_id × "video" × grade_band), but it is an implementation
+// artifact, not something an admin acts on: it is reached, regenerated and
+// published through its slides deck (the deck drawer's "Open video" link,
+// #361), and the public surface ignores the video row's own status. Showing
+// it only offers a misleading inline-status control, so keep it off the grid.
+const HIDDEN_TYPES = ['video'];
+const visibleMaterials = (rows) => rows.filter((r) => !HIDDEN_TYPES.includes(r.material_type));
 import EditDrawer from '../../components/admin/EditDrawer';
+import FactCheckStatusCell from '../../components/admin/FactCheckStatusCell';
+import FactCheckModal from '../../components/admin/FactCheckModal';
 import { ToastContainer } from '../../components/admin/Toast';
 import { useToast } from '../../hooks/useToast';
+import { useFactCheck, factCheckState } from '../../hooks/useFactCheck';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
 
 const modules = [AllCommunityModule];
 
@@ -25,6 +39,7 @@ function GenerateMaterialsModal({ open, onClose, token, onSuccess }) {
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [progress, setProgress] = useState(null); // guide job's current band (#346)
 
   const selectedResearch = researchList.find((r) => String(r.id) === selectedId);
   const selectedGuide = guideList.find((g) => String(g.id) === selectedId);
@@ -59,9 +74,19 @@ function GenerateMaterialsModal({ open, onClose, token, onSuccess }) {
     setLoading(true);
     setError(null);
     setResult(null);
+    setProgress(null);
     try {
       if (mode === 'guide') {
-        const res = await adminService.generateEduMaterials(token, Number(selectedId));
+        // Background job (#346): bands commit as they finish; the button label
+        // tracks which band is being written.
+        const res = await adminService.generateEduMaterials(token, Number(selectedId), {
+          onProgress: (job) =>
+            setProgress(
+              job.current_unit && job.units_total
+                ? `${job.current_unit} (${job.units_done + 1}/${job.units_total})`
+                : null,
+            ),
+        });
         setResult(res);
       } else {
         const res = await adminService.generateEduSlides(token, Number(selectedId));
@@ -72,6 +97,7 @@ function GenerateMaterialsModal({ open, onClose, token, onSuccess }) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -130,7 +156,7 @@ function GenerateMaterialsModal({ open, onClose, token, onSuccess }) {
                 ) : mode === 'guide' ? (
                   /* Study Guide mode */
                   researchList.length === 0 ? (
-                    <p className="text-sm text-gray-500">No approved research without materials.</p>
+                    <p className="text-sm text-gray-500">No approved research with study guides left to generate.</p>
                   ) : (
                     <>
                       <select
@@ -149,6 +175,14 @@ function GenerateMaterialsModal({ open, onClose, token, onSuccess }) {
                       {selectedResearch && (
                         <p className="mt-2 text-xs text-gray-500">
                           Grade bands: {selectedResearch.grade_bands.join(', ') || 'None configured'}
+                          {selectedResearch.bands_to_generate?.length > 0 &&
+                            selectedResearch.bands_to_generate.length < selectedResearch.grade_bands.length && (
+                              <>
+                                <br />
+                                Will generate: {selectedResearch.bands_to_generate.join(', ')}{' '}
+                                (approved guides are kept; pending ones are rewritten)
+                              </>
+                            )}
                         </p>
                       )}
                     </>
@@ -214,7 +248,9 @@ function GenerateMaterialsModal({ open, onClose, token, onSuccess }) {
                     className="rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
                   >
                     {loading
-                      ? (mode === 'guide' ? 'Generating study guides...' : 'Generating slides...')
+                      ? (mode === 'guide'
+                        ? `Generating study guides...${progress ? ` ${progress}` : ''}`
+                        : 'Generating slides...')
                       : 'Generate'}
                   </button>
                 )}
@@ -407,10 +443,22 @@ export default function AdminEduMaterials() {
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { toasts, show: showToast, dismiss: dismissToast } = useToast();
+  const [confirmAction, setConfirmAction] = useState(null);
+  // Guides are grounded against their research (#461), so there is no mode to
+  // pick. entityType is the edu router's path segment: the run POSTs to
+  // /admin/dashboard/edu/materials/{id}/fact-check.
+  const factCheck = useFactCheck({
+    token,
+    subjectType: 'EDU_MATERIAL',
+    entityType: 'edu/materials',
+    showToast,
+    dismissToast,
+    titleOf: (r) => r.title,
+  });
 
   const refreshGrid = useCallback(() => {
     adminService.getEduMaterials(token)
-      .then(setRowData)
+      .then((rows) => setRowData(visibleMaterials(rows)))
       .catch((err) => {
         console.error('Refresh failed:', err);
         showToast({ type: 'error', title: 'Failed to refresh', message: 'Data may be out of date' });
@@ -425,7 +473,7 @@ export default function AdminEduMaterials() {
   const handleDownload = useCallback(async (record) => {
     try {
       if (record.file_url) {
-        window.open(record.file_url, '_blank');
+        window.open(cacheBustUrl(record.file_url), '_blank');
         return;
       }
       const { blob, filename } = await adminService.downloadEduMaterial(token, record.id);
@@ -455,7 +503,7 @@ export default function AdminEduMaterials() {
 
   // Translate an APPROVED study guide to Spanish (DeepL). Slides/narration are
   // authored natively in Spanish elsewhere, so this only applies to guides.
-  const handleTranslate = useCallback(async (record) => {
+  const runTranslate = useCallback(async (record) => {
     try {
       const res = await adminService.translateEduGuide(token, record.id);
       showToast({ type: 'success', title: 'Translated to Spanish', message: `${res.word_count} words` });
@@ -467,9 +515,29 @@ export default function AdminEduMaterials() {
     }
   }, [token, showToast]);
 
+  // Soft gate (#462). The backend hard-blocks INACCURATE; unresolved claims are
+  // allowed through on an internal step, but the operator should know first —
+  // a correction later means paying DeepL for the same guide twice.
+  const handleTranslate = useCallback((record) => {
+    const state = factCheckState(factCheck.getCounts(record));
+    if (state.kind === 'open' || state.kind === 'disputed') {
+      setConfirmAction({
+        record,
+        run: runTranslate,
+        title: 'Translate with unresolved claims?',
+        message:
+          'This guide still has claims awaiting deep research or editorial review. '
+          + 'If any turn out inaccurate you will need to correct and re-translate.',
+        confirmLabel: 'Translate anyway',
+      });
+      return;
+    }
+    runTranslate(record);
+  }, [factCheck, runTranslate]);
+
   // Publish / unpublish a video or guide material to the public delivery
   // surface (#326/#327). Reflect published_at locally so the cell updates.
-  const handlePublish = useCallback(async (record) => {
+  const runPublish = useCallback(async (record) => {
     try {
       const res = await adminService.publishEduMaterial(token, record.id);
       setRowData((prev) =>
@@ -481,6 +549,25 @@ export default function AdminEduMaterials() {
       showToast({ type: 'error', title: 'Failed to publish', message: err.message || 'Unexpected error' });
     }
   }, [token, showToast]);
+
+  // Soft gate (#462). Unresolved claims are hard-blocked by the backend on this
+  // step; the one case left to the operator is material that was never checked
+  // at all — warn, matching how the blog pipeline treats an unchecked article.
+  const handlePublish = useCallback((record) => {
+    if (factCheckState(factCheck.getCounts(record)).kind === 'none') {
+      setConfirmAction({
+        record,
+        run: runPublish,
+        title: 'Publish without a fact-check?',
+        message:
+          'This material has never been fact-checked. Publishing puts it in front of '
+          + 'teachers — and, for a deck, its narrated video in Diego\'s voice.',
+        confirmLabel: 'Publish anyway',
+      });
+      return;
+    }
+    runPublish(record);
+  }, [factCheck, runPublish]);
 
   const handleUnpublish = useCallback(async (record) => {
     try {
@@ -509,8 +596,19 @@ export default function AdminEduMaterials() {
       cellRendererParams: { onStatusChange: handleStatusChange },
     },
     {
+      headerName: 'Fact Check',
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: FactCheckStatusCell,
+      cellRendererParams: {
+        getCounts: factCheck.getCounts,
+        onOpen: factCheck.setModalRecord,
+      },
+    },
+    {
       headerName: 'Actions',
-      width: 160,
+      width: 190,
       sortable: false,
       filter: false,
       cellRenderer: ActionsCellRenderer,
@@ -525,13 +623,24 @@ export default function AdminEduMaterials() {
         isPublished: (d) => !!d.published_at,
         onPublish: handlePublish,
         onUnpublish: handleUnpublish,
+        // Guides only, and only once they have structured blocks — the blocks
+        // are what a correction can be applied to (#461). Decks are #464.
+        // A guide is checked via its blocks, a deck via its slide rows — both
+        // must exist, since they are the correctable target (#461/#464). A
+        // video has nothing of its own: it renders its deck's narration.
+        showFactCheck: (d) =>
+          (d.material_type === 'guide' && d.has_blocks) ||
+          (d.material_type === 'slides' && d.has_slides),
+        onFactCheck: factCheck.run,
+        isFactChecking: factCheck.isRunning,
+        factCheckTitle: 'Fact-check: ground this material against its research',
       },
     },
-  ], [handleEdit, handleStatusChange, handleDownload, handleTranslate, handlePublish, handleUnpublish]);
+  ], [handleEdit, handleStatusChange, handleDownload, handleTranslate, handlePublish, handleUnpublish, factCheck]);
 
   useEffect(() => {
     adminService.getEduMaterials(token)
-      .then(setRowData)
+      .then((rows) => setRowData(visibleMaterials(rows)))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [token]);
@@ -587,8 +696,9 @@ export default function AdminEduMaterials() {
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
-          // Deck pipeline actions can create sibling rows (assemble-video adds
-          // a video material) — refresh so they appear without a page reload.
+          // Deck pipeline actions mutate rows (status/file changes; assemble-video
+          // also adds a hidden sibling video material) — refresh so the grid
+          // reflects them without a page reload.
           refreshGrid();
         }}
         record={selectedRecord}
@@ -608,6 +718,29 @@ export default function AdminEduMaterials() {
         onClose={() => setUploadModalOpen(false)}
         token={token}
         onSuccess={refreshGrid}
+      />
+
+      <ConfirmDialog
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          const { record, run } = confirmAction;
+          setConfirmAction(null);
+          await run(record);
+        }}
+        title={confirmAction?.title}
+        message={confirmAction?.message}
+        confirmLabel={confirmAction?.confirmLabel}
+      />
+
+      <FactCheckModal
+        open={!!factCheck.modalRecord}
+        onClose={() => factCheck.setModalRecord(null)}
+        token={token}
+        subjectType="EDU_MATERIAL"
+        subjectId={factCheck.modalRecord?.id}
+        title={factCheck.modalRecord?.title}
+        onCountsChange={factCheck.updateCounts}
       />
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pic": {
+      "type": "http",
+      "url": "${PIC_MCP_URL:-https://api.panamaincontext.com/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${PIC_MCP_TOKEN:-}"
+      }
+    }
+  }
+}

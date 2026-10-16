@@ -19,6 +19,7 @@ import io
 import logging
 import os
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from pydub import AudioSegment
@@ -28,6 +29,8 @@ from app.services.audio_tts import synthesize
 from app.services.image_storage import ImageStorageService
 
 logger = logging.getLogger(__name__)
+
+ProgressCallback = Callable[[int, int, str], None]
 
 # Per-slide MP3s are cached here between retries (one dir per slides-material).
 SEGMENT_CACHE_DIR = "/tmp/edu_slide_audio_segments"
@@ -79,7 +82,12 @@ def _sweep_stale_segment_caches(max_age_seconds: int = SEGMENT_CACHE_TTL_SECONDS
             logger.warning("Failed to sweep stale slide-audio cache %s: %s", path, e)
 
 
-def generate_slide_audio(material: EduMaterial, db, positions: set[int] | None = None) -> dict:
+def generate_slide_audio(
+    material: EduMaterial,
+    db,
+    positions: set[int] | None = None,
+    progress: ProgressCallback | None = None,
+) -> dict:
     """Synthesize Diego-voice narration for a deck's narrated slides.
 
     For each targeted ``EduSlide`` with non-empty ``narration`` (in ``position``
@@ -92,6 +100,10 @@ def generate_slide_audio(material: EduMaterial, db, positions: set[int] | None =
     cache** (reads and writes) so a re-roll always produces fresh audio for the
     edited text; slides outside the subset are left untouched. A whole-deck run
     (``positions is None``) keeps the resume cache and clears it on full success.
+
+    ``progress(done, total, current)`` is called after each slide's MP3 is
+    uploaded — the background-job runner (#346) commits there, so audio persists
+    per slide.
 
     Returns ``{narrated, total_duration_ms, skipped_no_narration}``.
     Raises ``ValueError`` if no targeted slide has narration.
@@ -111,7 +123,7 @@ def generate_slide_audio(material: EduMaterial, db, positions: set[int] | None =
     total_ms = 0
     storage = ImageStorageService()
     try:
-        for slide in narrated:
+        for done, slide in enumerate(narrated, start=1):
             cache_path = _segment_cache_path(material.id, slide.position)
             if not subset and os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
                 logger.info("Slide %d audio cached; skipping synthesis", slide.position)
@@ -133,6 +145,8 @@ def generate_slide_audio(material: EduMaterial, db, positions: set[int] | None =
             slide.audio_url = storage.upload_bytes(mp3, key, "audio/mpeg")
             slide.duration_ms = duration_ms
             total_ms += duration_ms
+            if progress is not None:
+                progress(done, len(narrated), f"slide {slide.position}")
     finally:
         storage.close()
 

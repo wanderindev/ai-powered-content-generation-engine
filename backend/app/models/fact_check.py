@@ -7,8 +7,8 @@ verification tier assigned to it:
 
 * **GROUNDING** — article claims judged against their approved research doc
   (#375; the research *is* the ground truth for an article).
-* **WEB_SEARCH** — Sonnet + the web-search tool for suggestion/research claims
-  (#376); punts to ``NEEDS_DEEP_RESEARCH`` rather than guessing.
+* **WEB_SEARCH** — historical: Sonnet + the web-search tool (#376), run once
+  and removed in #751. Existing rows stay valid; nothing writes it any more.
 * **DEEP_RESEARCH** — the manual claude.ai deep-research loop (#377).
 * **KB_MATCH** — inherited from an already-verified claim (#378).
 

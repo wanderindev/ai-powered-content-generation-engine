@@ -5,7 +5,9 @@ from app.utils.markdown import (
     html_to_markdown,
     markdown_to_html,
     strip_bio_links,
+    strip_inline_emphasis,
 )
+from app.services.series_sections import split_series_sections
 
 
 class TestMarkdownToHtml:
@@ -186,3 +188,76 @@ class TestStripBioLinks:
 
     def test_empty_string(self):
         assert strip_bio_links("") == ""
+
+
+class TestStripInlineEmphasis:
+    """#540 — article bodies carry no bold/italics; everything else survives."""
+
+    def test_bold_italic_and_bold_italic(self):
+        md = "The **Spanish Crown** sent *galleons* to ***Portobelo***."
+        assert strip_inline_emphasis(md) == "The Spanish Crown sent galleons to Portobelo."
+
+    def test_underscore_forms(self):
+        assert strip_inline_emphasis("__bold__ and _italic_") == "bold and italic"
+
+    def test_nested_runs_unwrap(self):
+        md = "**bold *nested* bold** and *it **nest** it*"
+        assert strip_inline_emphasis(md) == "bold nested bold and it nest it"
+
+    def test_titles_and_foreign_terms_are_stripped_too(self):
+        md = "*Recopilación de Leyes de Indias* (1680) and the *encomienda*."
+        assert strip_inline_emphasis(md) == "Recopilación de Leyes de Indias (1680) and the encomienda."
+
+    def test_headings_lose_emphasis_but_keep_level(self):
+        assert strip_inline_emphasis("## **Heading**") == "## Heading"
+
+    def test_list_markers_and_rules_untouched(self):
+        md = "* item with *emph*\n- other\n* * *\n***\n---\n___"
+        assert strip_inline_emphasis(md) == "* item with emph\n- other\n* * *\n***\n---\n___"
+
+    def test_spaced_or_intra_word_asterisks_untouched(self):
+        md = "5 * 3 * 2 = 30, and 5*3*2, a lone * star"
+        assert strip_inline_emphasis(md) == md
+
+    def test_intra_word_underscores_untouched(self):
+        md = "snake_case_name and file_name_here"
+        assert strip_inline_emphasis(md) == md
+        assert strip_inline_emphasis("_a snake_case term_") == "a snake_case term"
+
+    def test_escaped_markers_untouched(self):
+        md = "An escaped \\*literal\\* and \\_this\\_"
+        assert strip_inline_emphasis(md) == md
+
+    def test_code_spans_and_fences_untouched(self):
+        md = "Code `**not**` here\n```\n**in fence**\n```\nafter **fence**"
+        assert strip_inline_emphasis(md) == "Code `**not**` here\n```\n**in fence**\n```\nafter fence"
+
+    def test_link_text_stripped_but_urls_untouched(self):
+        md = "[**link** text](https://ex.com/a_b_/c*d*) and https://x.com/_u_/"
+        assert strip_inline_emphasis(md) == "[link text](https://ex.com/a_b_/c*d*) and https://x.com/_u_/"
+
+    def test_image_target_untouched(self):
+        assert strip_inline_emphasis("![alt *x*](https://cdn/x_y_.png)") == "![alt x](https://cdn/x_y_.png)"
+
+    def test_unclosable_opener_is_not_paired_with_a_later_run(self):
+        md = "**Note:**text stays, **bold**, and (*paren*)"
+        assert strip_inline_emphasis(md) == "**Note:**text stays, bold, and (paren)"
+
+    def test_idempotent_and_empty(self):
+        md = "The **Spanish Crown** and *galleons*."
+        once = strip_inline_emphasis(md)
+        assert strip_inline_emphasis(once) == once
+        assert strip_inline_emphasis("") == ""
+        assert strip_inline_emphasis(None) is None
+
+    def test_body_only_strip_keeps_series_sections_byte_identical(self):
+        """The one-off script strips the body and re-attaches the sections."""
+        about = "**Acerca de este artículo**\n\nParte 2 de *la serie*.\n\n---\n\n"
+        body = "## Inicio\n\nLa **Corona** envió *galeones*.\n"
+        cont = "\n**Continuar leyendo**\n\n- [Parte 3](/es/articulos/x)"
+        content = about + body + cont
+        a, b, c = split_series_sections(content)
+        assert a + b + c == content
+        rebuilt = a + strip_inline_emphasis(b) + c
+        assert rebuilt == content.replace("**Corona**", "Corona").replace("*galeones*", "galeones")
+        assert "*la serie*" in rebuilt and "**Continuar leyendo**" in rebuilt

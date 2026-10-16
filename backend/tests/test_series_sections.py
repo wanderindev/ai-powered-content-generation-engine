@@ -6,6 +6,7 @@ in the article pipeline (outline-gen, write_article, translate_article).
 The underlying generate_about_section / generate_continue_reading_section
 helpers are exercised indirectly via the happy-path test.
 """
+
 import pytest
 from app.models.article import Article
 from app.services.series_sections import (
@@ -17,9 +18,7 @@ from fastapi import HTTPException
 
 
 @pytest.fixture
-def two_part_series(
-    test_db, suggestion_factory, research_factory, article_factory
-):
+def two_part_series(test_db, suggestion_factory, research_factory, article_factory):
     """Build a 2-article published series with both EN and ES content and
     titles set on the suggestion, ready to feed SeriesSectionGenerator.
 
@@ -62,16 +61,11 @@ class TestSeriesSectionsIdempotencyRefusal:
     """Refuse-on-rerun policy for #99 — raises HTTPException(400) if any
     series article already carries the about-marker in either language."""
 
-    def test_refusal_when_en_marker_present_in_content(
-        self, test_db, two_part_series
-    ):
+    def test_refusal_when_en_marker_present_in_content(self, test_db, two_part_series):
         parent, child, _, _ = two_part_series
 
         # Simulate an already-processed parent article (EN side only).
-        parent.content = (
-            f"{ABOUT_MARKER_EN}\n\nIntro blurb...\n\n---\n\n"
-            + (parent.content or "")
-        )
+        parent.content = f"{ABOUT_MARKER_EN}\n\nIntro blurb...\n\n---\n\n" + (parent.content or "")
         test_db.add(parent)
         test_db.commit()
 
@@ -98,15 +92,12 @@ class TestSeriesSectionsIdempotencyRefusal:
         assert child.content == before_child_content
         assert child.content_es == before_child_content_es
 
-    def test_refusal_when_es_marker_present_in_content_es(
-        self, test_db, two_part_series
-    ):
+    def test_refusal_when_es_marker_present_in_content_es(self, test_db, two_part_series):
         parent, child, _, _ = two_part_series
 
         # Simulate an already-processed child article (ES side only).
-        child.content_es = (
-            f"{ABOUT_MARKER_ES}\n\nIntroducción...\n\n---\n\n"
-            + (child.content_es or "")
+        child.content_es = f"{ABOUT_MARKER_ES}\n\nIntroducción...\n\n---\n\n" + (
+            child.content_es or ""
         )
         test_db.add(child)
         test_db.commit()
@@ -131,9 +122,7 @@ class TestSeriesSectionsIdempotencyRefusal:
         assert child.content == before_child_content
         assert child.content_es == before_child_content_es
 
-    def test_happy_path_generates_when_no_markers_present(
-        self, test_db, two_part_series
-    ):
+    def test_happy_path_generates_when_no_markers_present(self, test_db, two_part_series):
         parent, child, _, _ = two_part_series
 
         # Sanity-check: no markers present anywhere before the call.
@@ -169,9 +158,7 @@ class TestSeriesSectionsOrmGeneration:
     the ORM path newly restores (updated_at trigger firing).
     """
 
-    def test_generated_content_has_correct_shape(
-        self, test_db, two_part_series
-    ):
+    def test_generated_content_has_correct_shape(self, test_db, two_part_series):
         parent, child, _, _ = two_part_series
 
         original_parent_content = parent.content
@@ -191,9 +178,7 @@ class TestSeriesSectionsOrmGeneration:
         assert parent.content.startswith(ABOUT_MARKER_EN)
         assert original_parent_content in parent.content
         assert "**Continue Reading**" in parent.content
-        assert parent.content.index(ABOUT_MARKER_EN) < parent.content.index(
-            original_parent_content
-        )
+        assert parent.content.index(ABOUT_MARKER_EN) < parent.content.index(original_parent_content)
         assert parent.content.index(original_parent_content) < parent.content.index(
             "**Continue Reading**"
         )
@@ -212,6 +197,7 @@ class TestSeriesSectionsOrmGeneration:
         assert original_child_content_es in child.content_es
         assert "**Continuar leyendo**" not in child.content_es
 
+
 class TestSeriesSectionsEndpoint:
     """End-to-end tests for POST /admin/dashboard/articles/{id}/series-sections.
 
@@ -221,9 +207,10 @@ class TestSeriesSectionsEndpoint:
 
     ENDPOINT_FMT = "/api/v1/admin/dashboard/articles/{id}/series-sections"
 
-    def test_endpoint_returns_400_on_rerun(
-        self, test_client, admin_token, two_part_series
-    ):
+    def test_endpoint_rerun_is_an_idempotent_no_op(self, test_client, admin_token, two_part_series):
+        """The weekly planner schedules a series-sections task per member and
+        each regenerates the whole series — a rerun after full success must
+        converge (200, 0 updated), not park the sibling tasks on a 400."""
         parent, _, _, _ = two_part_series
 
         url = self.ENDPOINT_FMT.format(id=parent.id)
@@ -235,7 +222,32 @@ class TestSeriesSectionsEndpoint:
         assert first_body["success"] is True
         assert first_body["articles_updated"] == 2
 
-        # Second call: about-marker now present, should refuse with 400.
+        # Second call: every article carries the about-marker — no-op success.
+        second = test_client.post(f"{url}?token={admin_token}")
+        assert second.status_code == 200, second.text
+        second_body = second.json()
+        assert second_body["success"] is True
+        assert second_body["articles_updated"] == 0
+        assert "already generated" in second_body["message"]
+
+    def test_endpoint_still_refuses_a_partially_marked_series(
+        self, test_client, admin_token, two_part_series, test_db
+    ):
+        """Only SOME articles carrying the marker is an inconsistent state a
+        human has to untangle — the #99 refuse-on-rerun 400 stays for that."""
+        parent, child, _, _ = two_part_series
+
+        url = self.ENDPOINT_FMT.format(id=parent.id)
+        first = test_client.post(f"{url}?token={admin_token}")
+        assert first.status_code == 200, first.text
+
+        # Strip the markers from the child only.
+        from app.services.series_sections import ABOUT_MARKER_EN
+
+        test_db.refresh(child)
+        child.content = child.content.split(ABOUT_MARKER_EN)[-1]
+        test_db.commit()
+
         second = test_client.post(f"{url}?token={admin_token}")
         assert second.status_code == 400, second.text
         detail = second.json().get("detail", "")

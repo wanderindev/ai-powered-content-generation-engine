@@ -51,7 +51,7 @@ export function factCheckWarning(counts, entityLabel) {
 
 const POLL_INTERVAL_MS = 5000;
 // 45 minutes — far beyond what extract-only or grounding jobs need (#389), but
-// harmless headroom kept from the web-search era (now an API-only escape hatch).
+// harmless headroom kept from the web-search era (that tier was removed in #751).
 const MAX_POLLS = 540;
 
 export function useFactCheck({ token, subjectType, entityType, showToast, dismissToast, titleOf }) {

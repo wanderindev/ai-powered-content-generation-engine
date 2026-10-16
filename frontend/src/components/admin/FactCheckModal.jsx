@@ -15,6 +15,17 @@ const VERDICT_STYLES = {
   CORRECTED: 'bg-green-100 text-green-700',
 };
 
+// `fact_check_claims.correction` is not only a correction: a VERIFIED row keeps
+// what the source says there (#746, and deep research always did), and a
+// deferred row keeps the note it was downgraded with. Label it by verdict so a
+// correct claim never reads "Correction: …" (#749).
+function noteLabel(verdict) {
+  if (verdict === 'INACCURATE' || verdict === 'CORRECTED') return 'Correction: ';
+  if (verdict === 'DISPUTED') return 'Positions: ';
+  if (verdict === 'VERIFIED') return 'Source: ';
+  return 'Note: ';
+}
+
 function Citation({ citation }) {
   if (!citation) return null;
   // Citations are comma/semicolon-separated; render URL tokens as links.
@@ -72,6 +83,10 @@ function CorrectionsPreview({ preview, claimTextById }) {
                   </p>
                   <p className="rounded bg-green-50 px-2 py-1 text-green-800">{edit.replace}</p>
                 </div>
+              ) : edit.status === 'skipped' ? (
+                <p className="mt-1 rounded bg-green-50 px-2 py-1 text-xs text-green-800">
+                  Already correct — will be marked resolved on apply: {edit.reason}
+                </p>
               ) : (
                 <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
                   Not correctable ({edit.status.replaceAll('_', ' ')}): {edit.reason}
@@ -135,6 +150,9 @@ export default function FactCheckModal({
     : [];
   const claimTextById = Object.fromEntries((detail?.claims || []).map((c) => [c.id, c.claim_text]));
   const applicableEdits = preview ? preview.edits.filter((e) => e.status === 'ok') : [];
+  // "Skipped" = the model says the content never asserts the inaccuracy;
+  // applying echoes these back so the claim resolves without a content edit.
+  const skippedEdits = preview ? preview.edits.filter((e) => e.status === 'skipped') : [];
 
   const handlePreview = async () => {
     setPreviewing(true);
@@ -157,11 +175,12 @@ export default function FactCheckModal({
         token,
         subjectType,
         subjectId,
-        applicableEdits.map(({ claim_id, language, find, replace }) => ({
+        [...applicableEdits, ...skippedEdits].map(({ claim_id, language, find, replace, status }) => ({
           claim_id,
           language,
           find,
           replace,
+          status,
         })),
       );
       setApplyResult(result);
@@ -214,6 +233,13 @@ export default function FactCheckModal({
               {applyResult && (
                 <div className="mt-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
                   {applyResult.corrected_claim_ids.length} claim(s) corrected in the content.
+                  {(applyResult.already_correct_claim_ids?.length ?? 0) > 0 && (
+                    <span>
+                      {' '}
+                      {applyResult.already_correct_claim_ids.length} claim(s) resolved as already
+                      correct.
+                    </span>
+                  )}
                   {applyResult.failed.length > 0 && (
                     <span className="text-amber-800">
                       {' '}
@@ -263,10 +289,15 @@ export default function FactCheckModal({
                           </button>
                           <button
                             onClick={handleApply}
-                            disabled={applying || applicableEdits.length === 0}
+                            disabled={applying || (applicableEdits.length === 0 && skippedEdits.length === 0)}
                             className="rounded bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
                           >
-                            {applying ? 'Applying...' : `Apply ${applicableEdits.length} edit(s)`}
+                            {applying
+                              ? 'Applying...'
+                              : `Apply ${applicableEdits.length} edit(s)` +
+                                (skippedEdits.length > 0
+                                  ? ` + resolve ${skippedEdits.length}`
+                                  : '')}
                           </button>
                         </span>
                       </div>
@@ -290,7 +321,7 @@ export default function FactCheckModal({
                             {claim.correction && (
                               <p className="mt-1 text-xs text-gray-700">
                                 <span className="font-medium">
-                                  {claim.verdict === 'DISPUTED' ? 'Positions: ' : 'Correction: '}
+                                  {noteLabel(claim.verdict)}
                                 </span>
                                 {claim.correction}
                               </p>

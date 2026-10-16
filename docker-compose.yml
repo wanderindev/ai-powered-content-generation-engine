@@ -46,7 +46,9 @@ services:
         required: false
 
   db:
-    image: postgres:17-alpine
+    # pgvector image (#621): same PG major as before, so existing volumes keep
+    # working; ships the `vector` extension the RAG layer (epic #617) needs.
+    image: pgvector/pgvector:pg17
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:

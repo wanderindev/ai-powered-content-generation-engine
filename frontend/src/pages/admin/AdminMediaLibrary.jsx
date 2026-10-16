@@ -4,7 +4,9 @@ import { adminService } from '../../services/admin';
 import MediaGrid from '../../components/admin/MediaGrid';
 import MediaDetailModal from '../../components/admin/MediaDetailModal';
 import CrawlPanel from '../../components/admin/CrawlPanel';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import ImportedMediaPanel from '../../components/admin/ImportedMediaPanel';
+import MediaImportModal from '../../components/admin/MediaImportModal';
+import { LinkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 const SCORE_OPTIONS = [
   { label: 'All scores', value: null },
@@ -23,6 +25,11 @@ const STATUS_OPTIONS = [
 ];
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
+
+const TABS = [
+  { id: 'candidates', label: 'Candidates' },
+  { id: 'imported', label: 'Imported' },
+];
 
 export default function AdminMediaLibrary() {
   const { token } = useAdminAuth();
@@ -43,6 +50,13 @@ export default function AdminMediaLibrary() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // "Candidates" (crawl review) or "Imported" (images added by link, #589).
+  const [tab, setTab] = useState('candidates');
+  // "Add from link" modal: mounted while open; the counter keys a fresh form.
+  const [importOpen, setImportOpen] = useState(false);
+  const [importCount, setImportCount] = useState(0);
+  const [importedRefreshKey, setImportedRefreshKey] = useState(0);
 
   // Modal
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -130,6 +144,17 @@ export default function AdminMediaLibrary() {
 
   const currentIdx = candidates.findIndex((c) => c.id === selectedCandidate?.id);
 
+  const openImport = () => {
+    setImportCount((n) => n + 1);
+    setImportOpen(true);
+  };
+
+  const handleImported = () => {
+    setImportOpen(false);
+    setTab('imported');
+    setImportedRefreshKey((k) => k + 1);
+  };
+
   return (
     <div>
       {/* Header */}
@@ -146,8 +171,49 @@ export default function AdminMediaLibrary() {
             </p>
           )}
         </div>
+        <button
+          type="button"
+          onClick={openImport}
+          className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 self-start sm:self-auto"
+        >
+          <LinkIcon className="h-4 w-4" />
+          Add from link
+        </button>
       </div>
 
+      {/* Tabs */}
+      <div className="mb-5 border-b border-gray-200">
+        <nav className="-mb-px flex gap-6" aria-label="Media views">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`border-b-2 px-1 pb-2 text-sm font-medium ${
+                tab === t.id
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {importOpen && (
+        <MediaImportModal
+          key={importCount}
+          token={token}
+          onClose={() => setImportOpen(false)}
+          onImported={handleImported}
+        />
+      )}
+
+      {tab === 'imported' ? (
+        <ImportedMediaPanel token={token} refreshKey={importedRefreshKey} />
+      ) : (
+      <>
       {/* Crawl & scoring */}
       <CrawlPanel token={token} onComplete={handleJobComplete} />
 
@@ -261,6 +327,8 @@ export default function AdminMediaLibrary() {
         hasPrev={currentIdx > 0}
         hasNext={currentIdx < candidates.length - 1}
       />
+      </>
+      )}
     </div>
   );
 }

@@ -286,3 +286,91 @@ Text with *emphasis* and **bold**."""
         assert out[2]["media_path"] == "media/x.jpg"
         assert out[2]["image_query"] == "tower"
         assert mock_translator.translate_text.call_count == 1
+
+
+# --- Spanish thousands separator (#531) ----------------------------------------
+
+
+class TestNormalizeEsThousands:
+    def test_dot_thousands_become_commas(self):
+        from app.services.translation import normalize_es_thousands
+
+        assert normalize_es_thousands("hasta 10.000 indígenas") == "hasta 10,000 indígenas"
+        assert normalize_es_thousands("entre 1.800 y 2.000 hombres.") == "entre 1,800 y 2,000 hombres."
+
+    def test_chained_groups_convert_whole(self):
+        from app.services.translation import normalize_es_thousands
+
+        assert normalize_es_thousands("unos 1.234.567 pesos") == "unos 1,234,567 pesos"
+
+    def test_decimals_years_dates_untouched(self):
+        from app.services.translation import normalize_es_thousands
+
+        text = "3.5 millas, 2.75 m, 0.125, en 1903, el 12.05.1903, versión 1.2.3"
+        assert normalize_es_thousands(text) == text
+
+    def test_european_decimal_and_long_groups_untouched(self):
+        from app.services.translation import normalize_es_thousands
+
+        text = "1.500,75 pesos y 12345.678 unidades y 1.5000 kg"
+        assert normalize_es_thousands(text) == text
+
+    def test_sentence_final_number(self):
+        from app.services.translation import normalize_es_thousands
+
+        assert normalize_es_thousands("Eran 4.000.") == "Eran 4,000."
+        assert normalize_es_thousands("(1.500)") == "(1,500)"
+
+    def test_code_and_urls_untouched(self):
+        from app.services.translation import normalize_es_thousands
+
+        text = (
+            "Ver `1.500` y https://x.com/v1.500/a y [enlace](https://x.com/2.000) "
+            "y <code>3.000</code>\n```\n4.000\n```\npero 5.000"
+        )
+        expected = text.replace("pero 5.000", "pero 5,000")
+        assert normalize_es_thousands(text) == expected
+
+    def test_idempotent_and_empty(self):
+        from app.services.translation import normalize_es_thousands
+
+        once = normalize_es_thousands("1.500 y 1,500")
+        assert once == "1,500 y 1,500"
+        assert normalize_es_thousands(once) == once
+        assert normalize_es_thousands("") == ""
+        assert normalize_es_thousands(None) is None
+
+
+class TestTranslationNormalizesThousands:
+    """Every DeepL output path is normalised for the ES target."""
+
+    async def test_translate_text(self):
+        with patch("app.services.translation.deepl.Translator") as mock_translator_class:
+            mock_translator_class.return_value.translate_text.return_value = MagicMock(
+                text="Unos 3.000 hombres"
+            )
+            service = TranslationService("fake-api-key")
+            assert await service.translate_text("About 3,000 men") == "Unos 3,000 hombres"
+
+    async def test_translate_markdown(self):
+        with patch("app.services.translation.deepl.Translator") as mock_translator_class:
+            mock_translator_class.return_value.translate_text.return_value = MagicMock(
+                text="<p>Unos 1.846 hombres</p>\n"
+            )
+            service = TranslationService("fake-api-key")
+            assert await service.translate_markdown("About 1,846 men") == "Unos 1,846 hombres"
+
+    async def test_translate_blocks(self):
+        with patch("app.services.translation.deepl.Translator") as mock_translator_class:
+            mock_translator_class.return_value.translate_text.side_effect = lambda texts, **kw: [
+                MagicMock(text=t.replace(",", ".")) for t in texts
+            ]
+            service = TranslationService("fake-api-key")
+            out = await service.translate_blocks([{"type": "paragraph", "text": "2,500 pesos"}])
+            assert out[0]["text"] == "2,500 pesos"
+
+    def test_non_spanish_target_untouched(self):
+        with patch("app.services.translation.deepl.Translator"):
+            service = TranslationService("fake-api-key")
+            service.target_lang = "DE"
+            assert service._normalize("1.500") == "1.500"

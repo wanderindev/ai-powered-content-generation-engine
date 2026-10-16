@@ -15,11 +15,19 @@ Key facts this module pins down:
   ``inter-religiosa-oriental`` (Eastern) — that share the single public page
   ``religious``. Each owes its own video + study guide (operator decision,
   2026-06-20). So the public ``religious`` page surfaces two deliverable sets.
+- **Museum-circuit deliverables are per museum, not per combination** (#523).
+  Teachers pick which museums to visit, so ``museo-del-canal`` (Museo del Canal
+  Interoceánico) is its own excursion owing its own video + study guide per
+  band, grouped under the same public page ``casco_museums`` as the circuit
+  key — the same many-keys-one-page shape as ``religious``. The circuit key
+  ``casco-antiguo-museos`` stays (its research is approved and fact-checked);
+  later museums follow the same pattern — ``museo-de-historia`` (Museo de
+  Historia de Panamá) and ``museo-de-la-mola`` (MUMO) are the next two.
 - Each (excursion, band) carries a **grade-band focus** (#339): the analytical lens
   for that band, fed into the study-guide condense step so each band emphasizes a
   different slice of the research instead of differing only by voice/length.
 
-Total owed = 15 (excursion × grade-band) deliverable pairs (video + study guide).
+Total owed = 24 (excursion × grade-band) deliverable pairs (video + study guide).
 """
 
 from dataclasses import dataclass, field
@@ -106,9 +114,75 @@ _BAND_FOCUS: dict[str, dict[str, str]] = {
         ),
     },
     "miraflores": {
-        "4th-6th": (
+        "4th-8th": (
             "Educational materials incorporate science, history, and global economics "
             "in age-appropriate formats."
+        ),
+    },
+    # Per-museum lens (#523): written for the museum's actual route (ground
+    # floor isthmus → 1879, upper floor the Zone, sovereignty and the ACP era),
+    # not lifted from the circuit page's generic adaptations. The site copy is
+    # aligned to these strings in #524 — keep the two identical.
+    "museo-del-canal": {
+        "3rd-6th": (
+            "Follow the route across the isthmus through concrete objects and "
+            "stories: the land bridge and its animals, mules and treasure on the "
+            "Camino Real, the Gold Rush railroad, how a lock lifts a ship, and the "
+            "story of Panama's flag."
+        ),
+        "7th-8th": (
+            "Trace cause and effect across the eras of the route: why the French "
+            "failed and the U.S. succeeded, what life in the Canal Zone (Gold and "
+            "Silver Roll) meant for Panamanians, and how the road from the flag to "
+            "9 January 1964 led to the 1977 treaties and the 1999 handover."
+        ),
+        "9th-12th": (
+            "Read the museum critically: analyze the 1903 and 1977 treaties as "
+            "primary sources, weigh contested figures and the museum's "
+            "sovereignty-centered narrative, and evaluate the canal's present-day "
+            "challenges of water and neutrality."
+        ),
+    },
+    # The next two museums on the circuit, same per-museum lens. The public
+    # page still lists them inside the circuit visit with the circuit's
+    # generic adaptations; when they get their own visit block, copy these
+    # strings into the site copy verbatim (as #524 did for the canal).
+    "museo-de-historia": {
+        "3rd-6th": (
+            "Meet Panama's story through the building and its symbols: the "
+            "council hall where independence was declared in 1821 and 1903, the "
+            "colonial city and its treasure route, the first flag sewn by María "
+            "Ossa de Amador, and the national symbols of the Republic."
+        ),
+        "7th-8th": (
+            "Trace cause and effect from colony to republic: why Panama broke "
+            "from Spain and joined Gran Colombia in 1821, why separation attempts "
+            "recurred through the nineteenth century, and how the Thousand Days' "
+            "War and the canal question led to 3 November 1903."
+        ),
+        "9th-12th": (
+            "Read the museum critically: analyze the 1821 and 1903 acts of "
+            "independence as primary sources, weigh the Panamanian, Colombian and "
+            "U.S. interpretations of 1903, examine figures such as Victoriano "
+            "Lorenzo, and ask what a national history museum chooses to celebrate."
+        ),
+    },
+    "museo-de-la-mola": {
+        "3rd-6th": (
+            "Discover how a mola is made and what it shows: the layers and "
+            "stitches of reverse appliqué, the animals, plants and stories in the "
+            "designs, and who the Guna people are and where they live."
+        ),
+        "7th-8th": (
+            "Connect the mola to Guna history and identity: how the art grew out "
+            "of body painting, why wearing the mola became an act of resistance in "
+            "the 1925 Guna Revolution, and how Guna Yala governs itself today."
+        ),
+        "9th-12th": (
+            "Examine the mola as living heritage: analyze Guna cosmovision and "
+            "symbolism, the comarca system as a model of Indigenous autonomy, and "
+            "debates over commercialization, cultural appropriation and who has "
+            "the authority to present a culture in a museum."
         ),
     },
     "inter-religiosa-abrahamica": {"9th-12th": _RELIGIOUS_9_12},
@@ -134,6 +208,30 @@ EXCURSIONS: tuple[Excursion, ...] = (
         display_name_es="Casco Antiguo: Circuito de Museos",
     ),
     Excursion(
+        "museo-del-canal",
+        "casco_museums",
+        ("3rd-6th", "7th-8th", "9th-12th"),
+        _BAND_FOCUS["museo-del-canal"],
+        display_name="Interoceanic Canal Museum",
+        display_name_es="Museo del Canal Interoceánico",
+    ),
+    Excursion(
+        "museo-de-historia",
+        "casco_museums",
+        ("3rd-6th", "7th-8th", "9th-12th"),
+        _BAND_FOCUS["museo-de-historia"],
+        display_name="Panama History Museum",
+        display_name_es="Museo de Historia de Panamá",
+    ),
+    Excursion(
+        "museo-de-la-mola",
+        "casco_museums",
+        ("3rd-6th", "7th-8th", "9th-12th"),
+        _BAND_FOCUS["museo-de-la-mola"],
+        display_name="Mola Museum",
+        display_name_es="Museo de la Mola",
+    ),
+    Excursion(
         "panama-viejo",
         "panama_viejo",
         ("3rd-6th", "7th-8th", "9th-12th"),
@@ -152,7 +250,7 @@ EXCURSIONS: tuple[Excursion, ...] = (
     Excursion(
         "miraflores",
         "miraflores",
-        ("4th-6th",),
+        ("4th-8th",),
         _BAND_FOCUS["miraflores"],
         display_name="Miraflores Visitor Center and IMAX",
         display_name_es="Centro de Visitantes de Miraflores e IMAX",
@@ -211,5 +309,5 @@ def edu_keys_for_public(public_key: str) -> list[str]:
 
 
 def owed_combos() -> list[tuple[str, str]]:
-    """Every (excursion_key, grade_band) deliverable pair we owe (15 total)."""
+    """Every (excursion_key, grade_band) deliverable pair we owe (24 total)."""
     return [(e.key, band) for e in EXCURSIONS for band in e.grade_bands]

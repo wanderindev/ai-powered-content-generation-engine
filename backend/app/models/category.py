@@ -6,6 +6,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
+# Notable Figures: bio articles with quality issues, kept out of every public
+# surface (articles, search, categories, knowledge retrieval). The one shared
+# definition; don't re-declare it per module.
+EXCLUDED_TAXONOMY_ID = 5
+
 if TYPE_CHECKING:
     from app.models.article import Article
 

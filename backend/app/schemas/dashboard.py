@@ -47,6 +47,14 @@ class SuggestionListItem(BaseModel):
     has_research: bool = False
     articles_status: str = "NONE"
     created_at: datetime
+    # Possible-duplicate flag (#630): advisory, set only while
+    # SUGGESTION_DEDUP_ENABLED is on. At most one of the two ids is set.
+    duplicate_article_id: int | None = None
+    duplicate_article_title: str | None = None
+    duplicate_article_slug: str | None = None
+    duplicate_suggestion_id: int | None = None
+    duplicate_suggestion_title: str | None = None
+    duplicate_similarity: float | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,6 +72,14 @@ class SuggestionDetailAdmin(BaseModel):
     category_name: str | None = None
     taxonomy_name: str | None = None
     created_at: datetime
+    # Possible-duplicate flag (#630): advisory, set only while
+    # SUGGESTION_DEDUP_ENABLED is on. At most one of the two ids is set.
+    duplicate_article_id: int | None = None
+    duplicate_article_title: str | None = None
+    duplicate_article_slug: str | None = None
+    duplicate_suggestion_id: int | None = None
+    duplicate_suggestion_title: str | None = None
+    duplicate_similarity: float | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -140,6 +156,22 @@ class ArticleListItem(BaseModel):
     is_series: bool = False
     series_parent_id: int | None = None
     published_at: datetime | None = None
+    # Grammar-check stamps (#409) so the admin grid can show per-language status (#410).
+    grammar_checked_en_at: datetime | None = None
+    grammar_checked_es_at: datetime | None = None
+    # Whether the pic-extension may run the Grammarly pass on this language now
+    # (#556). For an article the agent driver is running, true only while its
+    # WAIT_GRAMMAR_CHECKED_<LANG> task is READY / WAITING (so no later
+    # fact-check correction rewrites the polished text); for any other article,
+    # has content in that language and no stamp yet.
+    ready_for_grammar_en: bool = False
+    ready_for_grammar_es: bool = False
+    # Unresolved grammar_review_diffs rows (#518) so the grid can show a pill.
+    grammar_review_count: int = 0
+    # Open cross-article consistency findings (#631, shadow mode); 0 before 0046.
+    consistency_open_count: int = 0
+    # Narration voice check of the last run (#601) — the grid's review pill.
+    audio_qa_es: dict | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -166,6 +198,10 @@ class ArticleDetailAdmin(BaseModel):
     title_es: str | None = None
     excerpt_es: str | None = None
     content_html_es: str | None = None
+    audio_url_es: str | None = None
+    # Narration voice check of the last run (#601): status, re-taken and
+    # to-listen segments with their timestamps (see app/services/article_audio.py).
+    audio_qa_es: dict | None = None
     status: str
     tags: list[TagListItem] = []
     created_at: datetime
@@ -335,13 +371,13 @@ class FactCheckClaimItem(BaseModel):
 
 
 class SubjectFactCheckResponse(BaseModel):
-    """Response of the web-search fact-check tier for suggestions/research (#376)."""
+    """A subject's persisted fact-check claims and per-verdict counts."""
 
     subject_type: str
     subject_id: int
     total_claims: int
     # Verdict -> count (VERIFIED / INACCURATE / DISPUTED / NEEDS_DEEP_RESEARCH /
-    # PENDING for claims beyond the per-run search cap).
+    # ...).
     counts: dict[str, int]
     claims: list[FactCheckClaimItem]
 
@@ -361,8 +397,9 @@ class CorrectionEditItem(BaseModel):
     language: str  # "en" | "es" (es only for ARTICLE subjects)
     find: str
     replace: str
-    # ok | not_found | ambiguous | skipped | missing — only ok edits are
-    # applicable; the rest explain why a claim can't be corrected yet.
+    # ok | not_found | ambiguous | skipped | missing — ok edits rewrite the
+    # content and skipped entries resolve the claim as already correct; the
+    # rest explain why a claim can't be corrected yet.
     status: str
     reason: str | None = None
 
@@ -383,6 +420,9 @@ class CorrectionEditPayload(BaseModel):
     language: str
     find: str
     replace: str
+    # "ok" edits rewrite content; "skipped" entries (the model said the content
+    # never asserts the inaccuracy) resolve the claim without touching it.
+    status: Literal["ok", "skipped"] = "ok"
 
 
 class CorrectionsApplyRequest(BaseModel):
@@ -405,6 +445,9 @@ class CorrectionsApplyResponse(BaseModel):
     subject_type: str
     subject_id: int
     corrected_claim_ids: list[int]
+    # Claims resolved via skipped entries — content already matched the
+    # correction, so nothing was rewritten but the claim flipped to CORRECTED.
+    already_correct_claim_ids: list[int] = []
     failed: list[CorrectionFailure]
     # Refreshed verdict counts for the subject, for the grid badge.
     counts: dict[str, int]
@@ -413,7 +456,8 @@ class CorrectionsApplyResponse(BaseModel):
 class DeepResearchPromptRequest(BaseModel):
     """Request to compile NEEDS_DEEP_RESEARCH claims into a prompt (#377)."""
 
-    # Optional scope: SUGGESTION or RESEARCH; subject_id requires subject_type.
+    # Optional scope: SUGGESTION, RESEARCH, EDU_RESEARCH or ARTICLE;
+    # subject_id requires subject_type.
     subject_type: str | None = None
     subject_id: int | None = None
 
@@ -473,6 +517,45 @@ class ArticleTagResponse(BaseModel):
     suggested_new_tags: list[str]
 
 
+class ArticleAudioGenerateRequest(BaseModel):
+    """Body for generate-audio. ``changed`` re-synthesizes only segments whose
+    text hash left the stored manifest and reuses the rest."""
+
+    mode: Literal["all", "changed"] = "all"
+
+
+class ArticleAudioResponse(BaseModel):
+    """Response after narrating the Spanish article (generate-audio)."""
+
+    article_id: int
+    audio_url_es: str
+    duration_ms: int
+    segments: int
+    synthesized: int
+    reused: int
+    # Voice-check summary (#601); the full result is articles.audio_qa_es.
+    voice_check: dict | None = None
+
+
+class ArticleAudioSegmentItem(BaseModel):
+    """One narration segment of the current Spanish text, diffed vs the manifest."""
+
+    position: int  # 1-based over the current segmentation (title included)
+    is_heading: bool
+    preview: str
+    changed: bool  # no stored audio for this text — a regeneration must pay for it
+
+
+class ArticleAudioSegmentsResponse(BaseModel):
+    """Segment-level diff between content_es and the stored narration."""
+
+    article_id: int
+    has_audio: bool
+    has_manifest: bool
+    segments: list[ArticleAudioSegmentItem]
+    changed_positions: list[int]
+
+
 class ResearchForOutlineItem(BaseModel):
     """Research available for outline generation."""
 
@@ -496,9 +579,15 @@ class OutlineStatusUpdateRequest(BaseModel):
 
 
 class PublishRequest(BaseModel):
-    """Request to publish an article."""
+    """Request to publish an article.
 
-    published_at: datetime
+    ``published_at`` omitted (or null) means "pick the slot for me": the next
+    free 12:00 UTC day, shared by the whole series (#558,
+    ``app/services/publish_slot.py``). The admin UI always sends a date; the
+    agent driver's ``SET_PUBLISH_DATE`` sends none.
+    """
+
+    published_at: datetime | None = None
 
 
 class TranslateResponse(BaseModel):
@@ -518,14 +607,6 @@ class SeriesSectionsResponse(BaseModel):
 
 
 # --- Feature Image ---
-
-
-class ImagePromptResponse(BaseModel):
-    """Generated image prompt for Gemini."""
-
-    article_id: int
-    title: str
-    prompt_text: str
 
 
 class ImageUploadResponse(BaseModel):

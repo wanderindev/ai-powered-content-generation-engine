@@ -3,7 +3,7 @@ import { AllCommunityModule, themeAlpine } from 'ag-grid-community';
 import { AgGridProvider, AgGridReact } from 'ag-grid-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { adminService } from '../../services/admin';
-import { BooleanCell, ArticlesStatusCell } from '../../components/admin/SharedCellRenderers';
+import { BooleanCell, ArticlesStatusCell, DuplicateCell } from '../../components/admin/SharedCellRenderers';
 import ActionsCellRenderer from '../../components/admin/ActionsCellRenderer';
 import InlineStatusCell from '../../components/admin/InlineStatusCell';
 import EditDrawer from '../../components/admin/EditDrawer';
@@ -113,6 +113,7 @@ export default function AdminSuggestions() {
   const [error, setError] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [drawerRecordType, setDrawerRecordType] = useState('Suggestion');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -130,6 +131,21 @@ export default function AdminSuggestions() {
 
   const handleEdit = useCallback((record) => {
     setSelectedRecord(record);
+    setDrawerRecordType('Suggestion');
+    setDrawerOpen(true);
+  }, []);
+
+  // A "possible duplicate" pill pointing at another suggestion opens its drawer.
+  const handleOpenSuggestion = useCallback((id) => {
+    const match = rowData.find((r) => r.id === id);
+    if (match) handleEdit(match);
+  }, [rowData, handleEdit]);
+
+  // A pill pointing at an article opens the admin Article drawer (it fetches
+  // its own detail by id); never the public page, which 404s an unpublished one.
+  const handleOpenArticle = useCallback((id) => {
+    setSelectedRecord({ id });
+    setDrawerRecordType('Article');
     setDrawerOpen(true);
   }, []);
 
@@ -196,6 +212,15 @@ export default function AdminSuggestions() {
     { field: 'title', headerName: 'Title', flex: 2, minWidth: 200, filter: true },
     { field: 'category_name', headerName: 'Category', flex: 1, minWidth: 120, filter: true },
     {
+      field: 'duplicate_similarity',
+      headerName: 'Duplicate?',
+      flex: 1,
+      minWidth: 160,
+      filter: false,
+      cellRenderer: DuplicateCell,
+      cellRendererParams: { onOpenSuggestion: handleOpenSuggestion, onOpenArticle: handleOpenArticle },
+    },
+    {
       field: 'status',
       headerName: 'Status',
       width: 160,
@@ -230,7 +255,7 @@ export default function AdminSuggestions() {
         factCheckTitle: 'Fact-check: extract claims & queue deep research',
       },
     },
-  ], [handleEdit, handleStatusChange, factCheck]);
+  ], [handleEdit, handleStatusChange, factCheck, handleOpenSuggestion, handleOpenArticle]);
 
   useEffect(() => {
     adminService.getSuggestions(token)
@@ -298,7 +323,7 @@ export default function AdminSuggestions() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         record={selectedRecord}
-        recordType="Suggestion"
+        recordType={drawerRecordType}
         token={token}
       />
 

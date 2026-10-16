@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { adminService } from '../../services/admin';
+import MediaMetadataFields from './MediaMetadataFields';
+import { IMPORT_FIELDS, importMetadata, titleFromUrl } from './mediaMetadataUtils';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -33,6 +35,8 @@ export default function MediaPickerModal({
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState(null);
+  // The metadata form revealed by "Import" (#589); null while hidden.
+  const [importForm, setImportForm] = useState(null);
   const fetchSeq = useRef(0);
 
   const fetchMedia = useCallback(async () => {
@@ -73,21 +77,35 @@ export default function MediaPickerModal({
       setMediaPage(1);
       setImportUrl('');
       setImportError(null);
+      setImportForm(null);
     }
   }, [open, initialSearch]);
 
-  const handleImportUrl = async () => {
+  // First "Import" (or Enter) reveals the metadata form, prefilled with a
+  // title from the URL; "Import image" then submits it.
+  const handleImportUrl = () => {
     const url = importUrl.trim();
     if (!url || importing) return;
+    if (!importForm) {
+      setImportForm({ title: titleFromUrl(url) });
+      return;
+    }
+    submitImport();
+  };
+
+  const submitImport = async () => {
+    const url = importUrl.trim();
+    if (!url || importing || !importForm?.title?.trim()) return;
     setImporting(true);
     setImportError(null);
     try {
-      const item = await adminService.importMediaFromUrl(token, url);
+      const item = await adminService.importMediaFromUrl(token, url, importMetadata(importForm));
       // Surface the import immediately: selected (ready to Insert) and at the
       // front of the grid, regardless of the current search.
       setSelectedMedia(item);
       setMedia((prev) => [item, ...prev.filter((m) => m.id !== item.id)]);
       setImportUrl('');
+      setImportForm(null);
     } catch (err) {
       setImportError(err.message);
     } finally {
@@ -153,14 +171,41 @@ export default function MediaPickerModal({
                       placeholder="Or paste an image URL from the web to import it..."
                       className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
-                    <button
-                      onClick={handleImportUrl}
-                      disabled={!importUrl.trim() || importing}
-                      className="rounded bg-white px-3 py-1.5 text-sm font-medium text-indigo-600 ring-1 ring-inset ring-indigo-300 hover:bg-indigo-50 disabled:opacity-40 shrink-0"
-                    >
-                      {importing ? 'Importing...' : 'Import'}
-                    </button>
+                    {!importForm && (
+                      <button
+                        onClick={handleImportUrl}
+                        disabled={!importUrl.trim() || importing}
+                        className="rounded bg-white px-3 py-1.5 text-sm font-medium text-indigo-600 ring-1 ring-inset ring-indigo-300 hover:bg-indigo-50 disabled:opacity-40 shrink-0"
+                      >
+                        Import
+                      </button>
+                    )}
                   </div>
+                  {importForm && (
+                    <div className="mb-3 rounded-md border border-indigo-100 bg-indigo-50/40 p-3 overflow-y-auto" style={{ maxHeight: '40vh' }}>
+                      <MediaMetadataFields
+                        values={importForm}
+                        onChange={(field, value) => setImportForm((prev) => ({ ...prev, [field]: value }))}
+                        fields={IMPORT_FIELDS}
+                      />
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          onClick={() => { setImportForm(null); setImportError(null); }}
+                          disabled={importing}
+                          className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={submitImport}
+                          disabled={!importUrl.trim() || !importForm.title?.trim() || importing}
+                          className="rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40"
+                        >
+                          {importing ? 'Importing...' : 'Import image'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {importError && (
                     <p className="mb-3 text-xs text-red-600">{importError}</p>
                   )}
@@ -181,7 +226,7 @@ export default function MediaPickerModal({
                         onClick={() => {
                           onSelect({
                             src: mediaUrl(selectedMedia.file_path),
-                            alt: selectedMedia.title || '',
+                            alt: selectedMedia.alt_text || selectedMedia.title || '',
                             attribution: selectedMedia.attribution,
                             license: selectedMedia.license,
                             id: selectedMedia.id,

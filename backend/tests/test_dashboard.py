@@ -15,11 +15,15 @@ the shape of each successful response.
 
 from __future__ import annotations
 
+import io
+import re
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from app.core.config import get_settings
 from app.models import (
     AdminEmail,
+    Article,
     Media,
     PricingConfig,
     Research,
@@ -29,6 +33,15 @@ from app.models import (
 # ---------------------------------------------------------------------------
 # Helpers (per-file; conftest.py is intentionally untouched per the brief)
 # ---------------------------------------------------------------------------
+
+
+def _jpeg_bytes() -> bytes:
+    """A real (tiny) 16:9 JPEG — what the Gemini service is contracted to return."""
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (16, 9), (200, 180, 150)).save(buf, "JPEG")
+    return buf.getvalue()
 
 
 def _seed_pricing(test_db):
@@ -699,7 +712,7 @@ class TestDashboardResearch:
 
     # --- upload (POST) ---
 
-    @patch("app.api.dashboard.validate_research_document")
+    @patch("app.services.research_intake.validate_research_document")
     def test_upload_creates_new_research(
         self,
         mock_validate,
@@ -730,7 +743,7 @@ class TestDashboardResearch:
         research = test_db.query(Research).filter(Research.suggestion_id == s.id).one()
         assert "Final content" in research.content
 
-    @patch("app.api.dashboard.validate_research_document")
+    @patch("app.services.research_intake.validate_research_document")
     def test_upload_updates_existing_pending_and_resets_status(
         self,
         mock_validate,
@@ -760,7 +773,7 @@ class TestDashboardResearch:
         test_db.refresh(original)
         assert original.content == "NEW CONTENT"
 
-    @patch("app.api.dashboard.validate_research_document")
+    @patch("app.services.research_intake.validate_research_document")
     def test_upload_resets_rejected_status_to_pending(
         self,
         mock_validate,
@@ -796,7 +809,7 @@ class TestDashboardResearch:
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
 
-    @patch("app.api.dashboard.validate_research_document")
+    @patch("app.services.research_intake.validate_research_document")
     def test_upload_over_approved_blocked_409(
         self,
         mock_validate,
@@ -825,7 +838,7 @@ class TestDashboardResearch:
         assert original.content == "APPROVED CONTENT"
         assert original.status == "APPROVED"
 
-    @patch("app.api.dashboard.validate_research_document")
+    @patch("app.services.research_intake.validate_research_document")
     def test_upload_over_approved_with_force_overwrites_and_resets(
         self,
         mock_validate,
@@ -876,7 +889,7 @@ class TestDashboardResearch:
         )
         assert response.status_code == 413
 
-    @patch("app.api.dashboard.validate_research_document")
+    @patch("app.services.research_intake.validate_research_document")
     def test_upload_validation_failure_400(
         self,
         mock_validate,
@@ -1446,39 +1459,14 @@ class TestDashboardArticles:
         )
         assert response.status_code == 404
 
-    # --- image-prompt (POST) ---
+    # --- generate-image (POST) — Gemini automation, #419 ---
 
+    @patch("app.services.gemini_image.generate_feature_image")
     @patch("app.services.image_prompt.generate_image_prompt")
-    def test_image_prompt_happy(self, mock_gen, test_client, admin_token, article_factory):
-        mock_gen.return_value = "A watercolor depicting…"
-        a = article_factory(content="some content here", title="Pic Article")
-        response = test_client.post(
-            f"/api/v1/admin/dashboard/articles/{a.id}/image-prompt?token={admin_token}"
-        )
-        assert response.status_code == 200
-        body = response.json()
-        assert body["article_id"] == a.id
-        assert body["title"] == "Pic Article"
-        assert body["prompt_text"] == "A watercolor depicting…"
-
-    def test_image_prompt_404(self, test_client, admin_token):
-        response = test_client.post(
-            f"/api/v1/admin/dashboard/articles/9999999/image-prompt?token={admin_token}"
-        )
-        assert response.status_code == 404
-
-    def test_image_prompt_400_no_content(self, test_client, admin_token, article_factory):
-        a = article_factory(content="")
-        response = test_client.post(
-            f"/api/v1/admin/dashboard/articles/{a.id}/image-prompt?token={admin_token}"
-        )
-        assert response.status_code == 400
-        assert "no content" in response.json()["detail"].lower()
-
-    # --- upload-image (POST) ---
-
-    def test_upload_image_happy(
+    def test_generate_image_happy(
         self,
+        mock_prompt,
+        mock_image,
         test_client,
         test_db,
         admin_token,
@@ -1487,44 +1475,258 @@ class TestDashboardArticles:
         tmp_path,
     ):
         monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
-        a = article_factory()
-        # 1x1 PNG (smallest valid png header)
-        png_bytes = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
-            b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\x00\x01"
-            b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        mock_prompt.return_value = "A watercolor of the locks"
+        mock_image.return_value = _jpeg_bytes()
+        a = article_factory(content="some content here")
+
         response = test_client.post(
-            f"/api/v1/admin/dashboard/articles/{a.id}/upload-image?token={admin_token}",
-            files={"file": ("photo.png", png_bytes, "image/png")},
+            f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
         )
+
         assert response.status_code == 200
         body = response.json()
         assert body["article_id"] == a.id
         assert body["media_id"] > 0
-        assert body["file_path"].endswith(".png")
-        # file was actually written
-        assert (tmp_path / f"article_{a.id}.png").exists()
+        filename = body["file_path"].removeprefix("/static/images/articles/")
+        # timestamped so a regenerated image gets a fresh URL (#580)
+        assert re.fullmatch(rf"article_{a.id}_\d{{20}}\.jpg", filename)
+        assert (tmp_path / filename).exists()
+        a = test_db.get(Article, a.id)
+        assert a.feature_image_id == body["media_id"]
+        media = test_db.query(Media).filter(Media.id == body["media_id"]).first()
+        assert media.mime_type == "image/jpeg"
+        assert media.media_type == "IMAGE"
+        # the generated prompt is what reached the image API
+        mock_image.assert_called_once_with("A watercolor of the locks")
 
-    def test_upload_image_404(self, test_client, admin_token, monkeypatch, tmp_path):
+    @patch("app.services.gemini_image.generate_feature_image")
+    @patch("app.services.image_prompt.generate_image_prompt")
+    def test_generate_image_replaces_existing_media_row(
+        self,
+        mock_prompt,
+        mock_image,
+        test_client,
+        test_db,
+        admin_token,
+        article_factory,
+        monkeypatch,
+        tmp_path,
+    ):
         monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        mock_prompt.return_value = "prompt"
+        mock_image.return_value = _jpeg_bytes()
+        a = article_factory(content="some content here")
+        url = f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
+
+        first = test_client.post(url).json()
+        second = test_client.post(url).json()
+
+        assert second["media_id"] == first["media_id"]
+        assert test_db.query(Media).filter(Media.id == first["media_id"]).count() == 1
+        # a regeneration is a new URL, and the superseded file is gone (#580)
+        assert second["file_path"] != first["file_path"]
+        first_name = first["file_path"].removeprefix("/static/images/articles/")
+        second_name = second["file_path"].removeprefix("/static/images/articles/")
+        assert not (tmp_path / first_name).exists()
+        assert (tmp_path / second_name).exists()
+        assert sorted(p.name for p in tmp_path.iterdir()) == [second_name]
+
+    @patch("app.services.gemini_image.generate_feature_image")
+    @patch("app.services.image_prompt.generate_image_prompt")
+    def test_generate_image_migrates_legacy_fixed_filename(
+        self,
+        mock_prompt,
+        mock_image,
+        test_client,
+        test_db,
+        admin_token,
+        article_factory,
+        monkeypatch,
+        tmp_path,
+    ):
+        """A pre-#580 ``article_{id}.jpg`` is reused as the row and its file removed."""
+        monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        mock_prompt.return_value = "prompt"
+        mock_image.return_value = _jpeg_bytes()
+        a = article_factory(content="some content here")
+        legacy = _seed_media(test_db, filename=f"article_{a.id}.jpg")
+        (tmp_path / legacy.filename).write_bytes(b"old")
+        legacy_id = legacy.id
+        a.feature_image_id = legacy_id
+        test_db.commit()
+
+        body = test_client.post(
+            f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
+        ).json()
+
+        assert body["media_id"] == legacy_id
+        assert not (tmp_path / f"article_{a.id}.jpg").exists()
+        assert len(list(tmp_path.iterdir())) == 1
+
+    @patch("app.services.gemini_image.generate_feature_image")
+    @patch("app.services.image_prompt.generate_image_prompt")
+    def test_generate_image_leaves_assigned_catalog_media_alone(
+        self,
+        mock_prompt,
+        mock_image,
+        test_client,
+        test_db,
+        admin_token,
+        article_factory,
+        monkeypatch,
+        tmp_path,
+    ):
+        """A feature image assigned from the catalog is not overwritten or deleted."""
+        monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        mock_prompt.return_value = "prompt"
+        mock_image.return_value = _jpeg_bytes()
+        a = article_factory(content="some content here")
+        now = datetime.now(UTC)
+        catalog = Media(
+            filename="loc_canal.jpg",
+            original_filename="loc_canal.jpg",
+            file_path="https://cdn.example.com/media/loc_canal.jpg",
+            file_size=10,
+            mime_type="image/jpeg",
+            media_type="IMAGE",
+            source="LOC",
+            title="Canal",
+            created_at=now,
+            updated_at=now,
+        )
+        test_db.add(catalog)
+        test_db.commit()
+        catalog_id = catalog.id
+        a.feature_image_id = catalog_id
+        test_db.commit()
+
+        body = test_client.post(
+            f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
+        ).json()
+
+        assert body["media_id"] != catalog_id
+        catalog = test_db.get(Media, catalog_id)
+        assert catalog.file_path == "https://cdn.example.com/media/loc_canal.jpg"
+        a = test_db.get(Article, a.id)
+        assert a.feature_image_id == body["media_id"]
+
+    @patch("app.services.gemini_image.generate_feature_image")
+    @patch("app.services.image_prompt.generate_image_prompt")
+    def test_generate_image_holds_no_connection_during_model_calls(
+        self,
+        mock_prompt,
+        mock_image,
+        test_client,
+        test_db,
+        admin_token,
+        article_factory,
+        monkeypatch,
+        tmp_path,
+    ):
+        """The session is closed across the Sonnet and Gemini calls (pool rule, #580)."""
+        monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        a = article_factory(content="some content here", title="Locks")
+        seen = {}
+
+        def fake_prompt(article):
+            seen["prompt_in_tx"] = test_db.in_transaction()
+            seen["title"] = article.title
+            return "prompt"
+
+        def fake_image(prompt):
+            seen["image_in_tx"] = test_db.in_transaction()
+            return _jpeg_bytes()
+
+        mock_prompt.side_effect = fake_prompt
+        mock_image.side_effect = fake_image
+
         response = test_client.post(
-            f"/api/v1/admin/dashboard/articles/9999999/upload-image?token={admin_token}",
-            files={"file": ("photo.png", b"\x89PNG\r\n", "image/png")},
+            f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
+        )
+
+        assert response.status_code == 200
+        assert seen == {"prompt_in_tx": False, "title": "Locks", "image_in_tx": False}
+
+    @patch("app.services.gemini_image.generate_feature_image")
+    @patch("app.services.image_prompt.generate_image_prompt")
+    def test_generate_image_503_without_key(
+        self,
+        mock_prompt,
+        mock_image,
+        test_client,
+        admin_token,
+        article_factory,
+        monkeypatch,
+        tmp_path,
+    ):
+        monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "")
+        a = article_factory(content="some content here")
+
+        response = test_client.post(
+            f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
+        )
+
+        assert response.status_code == 503
+        assert "not configured" in response.json()["detail"]
+        mock_prompt.assert_not_called()
+        mock_image.assert_not_called()
+
+    def test_generate_image_404(self, test_client, admin_token, monkeypatch, tmp_path):
+        monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        response = test_client.post(
+            f"/api/v1/admin/dashboard/articles/9999999/generate-image?token={admin_token}"
         )
         assert response.status_code == 404
 
-    def test_upload_image_400_invalid_content_type(
+    def test_generate_image_400_no_content(
         self, test_client, admin_token, article_factory, monkeypatch, tmp_path
     ):
         monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
-        a = article_factory()
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        a = article_factory(content="")
         response = test_client.post(
-            f"/api/v1/admin/dashboard/articles/{a.id}/upload-image?token={admin_token}",
-            files={"file": ("bad.txt", b"hello", "text/plain")},
+            f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
         )
         assert response.status_code == 400
-        assert "Invalid file type" in response.json()["detail"]
+        assert "no content" in response.json()["detail"].lower()
+
+    @patch("app.services.gemini_image.generate_feature_image")
+    @patch("app.services.image_prompt.generate_image_prompt")
+    def test_generate_image_maps_upstream_failures(
+        self,
+        mock_prompt,
+        mock_image,
+        test_client,
+        test_db,
+        admin_token,
+        article_factory,
+        monkeypatch,
+        tmp_path,
+    ):
+        from app.services.gemini_image import GeminiImageError
+
+        monkeypatch.setattr("app.api.dashboard.IMAGES_DIR", tmp_path)
+        monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
+        mock_prompt.return_value = "prompt"
+        a = article_factory(content="some content here")
+        url = f"/api/v1/admin/dashboard/articles/{a.id}/generate-image?token={admin_token}"
+
+        mock_image.side_effect = GeminiImageError("quota", status_code=429)
+        assert test_client.post(url).status_code == 429
+
+        mock_image.side_effect = GeminiImageError("upstream blew up")
+        assert test_client.post(url).status_code == 502
+
+        a = test_db.get(Article, a.id)
+        assert a.feature_image_id is None
+        assert test_db.query(Media).count() == 0
 
     # --- assign-media (POST) ---
 

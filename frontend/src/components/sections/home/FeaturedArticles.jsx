@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { articleImageUrl } from '../../../utils/articleImage'
 import { getLatestSeries } from '../../../services/articles'
 
 export default function FeaturedArticles() {
@@ -24,15 +25,6 @@ export default function FeaturedArticles() {
         }
         fetchSeries()
     }, [i18n.language])
-
-    // Build image URL (handle relative paths from API)
-    const getImageUrl = (path) => {
-        if (!path) return '/images/placeholder-article.jpg'
-        if (path.startsWith('http')) return path
-        // API returns paths like "/static/images/articles/..."
-        const apiBase = import.meta.env.VITE_API_URL || 'https://api.panamaincontext.com'
-        return `${apiBase}${path}`
-    }
 
     // Build article URL with language prefix for SEO
     const getArticleUrl = (slug) => {
@@ -91,7 +83,7 @@ export default function FeaturedArticles() {
                                 <a href={getArticleUrl(article.slug)}>
                                     <img
                                         alt={article.title}
-                                        src={getImageUrl(article.feature_image_url)}
+                                        src={articleImageUrl(article.feature_image_url)}
                                         loading="lazy"
                                         className="aspect-video w-full rounded-2xl bg-gray-100 object-cover sm:aspect-2/1 lg:aspect-3/2"
                                     />

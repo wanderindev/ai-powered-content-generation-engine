@@ -1,6 +1,6 @@
 ---
 name: update-pr
-description: Update an open PR's branch with the latest main and resolve any merge conflicts, then push so CI re-runs — invoked as "/update-pr [<number>]". With a number, targets that PR. With no number, targets the lowest-numbered open PR that is behind main (or has conflicts). All work happens in a throwaway git worktree so the operator's main checkout (e.g. an in-progress pair-mode issue) is never touched. Merges main into the PR branch (never rebases — force-push is denied), unions the project's append-only docs automatically, and STOPS-and-surfaces real source-code conflicts rather than guessing. Use when the operator says any of "update PR N", "update the next PR", "merge main into PR N", "resolve conflicts on N", "bring N up to date with main", "update branch on N", or is churning through a backlog of agent PRs that have fallen behind main. Does NOT merge the PR itself (the operator merges) and does NOT wait for CI.
+description: Update an open PR's branch with the latest main and resolve any merge conflicts, then push so CI re-runs — invoked as "/update-pr [<number>]". With a number, targets that PR. With no number, targets the lowest-numbered open PR that is behind main (or has conflicts). All work happens in a throwaway git worktree so the operator's main checkout (e.g. an in-progress pair-mode issue) is never touched. Merges main into the PR branch (never rebases — force-push is denied), unions the project's append-only docs automatically, and STOPS-and-surfaces real source-code conflicts rather than guessing. Use when the operator says any of "update PR N", "update the next PR", "merge main into PR N", "resolve conflicts on N", "bring N up to date with main", "update branch on N", or is churning through a backlog of agent PRs that have fallen behind main. Does NOT merge the PR itself (GitHub auto-merge does, once CI is green) and does NOT wait for CI.
 ---
 
 # update-pr — bring a PR branch up to date with main
@@ -19,7 +19,7 @@ Multiple autonomous agents open PRs off `main` while the operator works a pair-m
 ## Hard constraints (from `.claude/settings.json` deny rules)
 
 - **Merge, never rebase.** Force-push is denied (`--force`, `-f`, `--force-with-lease`). The update is `git merge origin/main` into the PR branch — a normal merge commit, pushed with a plain `git push`. Never `git rebase` the PR branch.
-- **Never push to `main`/`master`** (denied) and **never `gh pr merge`** (denied) — this skill updates the PR branch only; the operator merges the PR.
+- **Never push to `main`/`master`** (blocked) and **don't merge** — this skill updates the PR branch only. A PR shipped with `personal:ship` already has GitHub auto-merge armed, so it merges itself once the new CI run is green.
 - **Worktree isolation is mandatory.** The operator is actively working in the main checkout. Do ALL git work in a dedicated worktree under `.claude/worktrees/`. Do not `git checkout` a different branch in the main checkout, do not touch its index.
 - **Clean up with `git worktree remove`** (`rm -rf` is denied). Use `--force` only after `git merge --abort` if the worktree is mid-merge.
 
@@ -34,7 +34,7 @@ Multiple autonomous agents open PRs off `main` while the operator works a pair-m
 
    Resolution = **keep every row/line from both sides** (main's rows + the PR's added row(s)), preserving order, no duplicates. Each PR adds its own issue-keyed row, so there is nothing to reconcile — just union.
 
-2. **Anything else → resolve only if unambiguous; otherwise STOP-and-surface.** Real source code, lockfiles (`package-lock.json`), Alembic migration version chains, schema — if the correct merge isn't obvious and safe, run `git merge --abort`, remove the worktree, leave the PR exactly as it was, and report to the operator that PR #N has a real conflict needing manual/pair resolution (name the files). This mirrors the `fix-issue` draft-PR escape hatch: an honest "this one needs you" beats a guessed merge that breaks the branch.
+2. **Anything else → resolve only if unambiguous; otherwise STOP-and-surface.** Real source code, lockfiles (`package-lock.json`), Alembic migration version chains, schema — if the correct merge isn't obvious and safe, run `git merge --abort`, remove the worktree, leave the PR exactly as it was, and report to the operator that PR #N has a real conflict needing manual/pair resolution (name the files). This mirrors the `fix-issue` blocked-report escape hatch: an honest "this one needs you" beats a guessed merge that breaks the branch.
 
 ## Workflow
 
@@ -89,7 +89,7 @@ Plain push (the merge commit is a fast-forward of the PR branch — no force nee
 ## Notes
 
 - **Does not wait for CI.** The whole point is to not babysit the pipeline. Report and end. If the operator wants the next one, they re-invoke (or wrap this in `/loop` to churn the backlog — e.g. `/loop /update-pr` to walk the open PRs lowest-first, one CI run at a time).
-- **Does not merge the PR.** Even if CI would pass, merging is the operator's call and is deny-blocked.
+- **Does not merge the PR.** Merging is GitHub auto-merge's job (armed by `personal:ship`); if the PR has none armed, say so in the report rather than merging.
 - **One PR per invocation.** No-number mode picks exactly one (the lowest that needs it), not a batch — each push is its own CI run, and the operator stays in control of the cadence.
 - **Always read PR state FRESH (cost/correctness guardrail, 2026-05-30).** PRs merge while you run. At the START of every invocation, `git fetch origin --prune` and re-run the `gh pr list`/`gh pr view` query — never act on a PR-list read from earlier in the conversation. If a `gh pr view <N>` errors (e.g. the PR was merged/closed), the target is gone: re-list and pick again; do not let one failed lookup cascade or cancel a batch. If a tool result comes back empty or a command is cancelled, re-run that ONE command once — do NOT fire a storm of `echo`/`cat`/probe commands; that bloats context and is what corrupts long-session state. When in doubt about your own git state, run `git status` / `git worktree list` once and proceed from the truth, not from memory.
 - **Outcomes log.** If this skill itself had to resolve a conflict in `agent-friendly-outcomes.md`, that's expected churn — no separate logging needed; the PR's own history records it.

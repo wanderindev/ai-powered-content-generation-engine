@@ -1,19 +1,37 @@
 import { DocumentMagnifyingGlassIcon, MapIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
+
+// Sample deliverables linked inline from the step copy: the Miraflores
+// 4th–8th grade deck and study guide. Both live at deterministic Spaces keys
+// (see CLAUDE.md, "Edu Media Production"), so re-rendering them keeps these
+// links valid. Spanish only for now; the same assets are linked from both
+// languages until the English versions are produced.
+const SAMPLE_VIDEO_URL = 'https://panamaincontext.nyc3.digitaloceanspaces.com/materials/video/4/4th_8th.mp4'
+const SAMPLE_GUIDE_URL = 'https://panamaincontext.nyc3.digitaloceanspaces.com/materials/guide/4/4th_8th_es.pdf'
+
+function SampleLink({ href, children }) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-indigo-600 hover:text-indigo-500"
+        >
+            {children}
+        </a>
+    )
+}
+
+// The <video>/<guide> tags in the locale strings map onto these components.
+const descComponents = {
+    video: <SampleLink href={SAMPLE_VIDEO_URL} />,
+    guide: <SampleLink href={SAMPLE_GUIDE_URL} />,
+}
 
 const features = [
-    {
-        key: 'context',
-        icon: DocumentMagnifyingGlassIcon,
-    },
-    {
-        key: 'immersion',
-        icon: MapIcon,
-    },
-    {
-        key: 'reflection',
-        icon: PencilSquareIcon,
-    },
+    { key: 'context', icon: DocumentMagnifyingGlassIcon },
+    { key: 'immersion', icon: MapIcon },
+    { key: 'reflection', icon: PencilSquareIcon },
 ]
 
 export default function Methodology() {
@@ -41,8 +59,12 @@ export default function Methodology() {
                                     {t(`excursions.methodology.steps.${feature.key}.title`)}
                                 </dt>
                                 <dd className="mt-1 flex flex-auto flex-col text-base/7 text-gray-600">
-                                    <p className="flex-auto">{t(`excursions.methodology.steps.${feature.key}.desc`)}</p>
-
+                                    <p className="flex-auto">
+                                        <Trans
+                                            i18nKey={`excursions.methodology.steps.${feature.key}.desc`}
+                                            components={descComponents}
+                                        />
+                                    </p>
                                 </dd>
                             </div>
                         ))}

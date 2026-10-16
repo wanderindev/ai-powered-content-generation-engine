@@ -68,6 +68,14 @@ export function trackPageView(pathname) {
   }
 }
 
+// Fire a named custom event (GA only), e.g. an Ask PIC outcome (#636).
+// Callers must pass no PII and no free text a visitor typed.
+export function trackEvent(name, params = {}) {
+  if (gaEnabled && window.gtag) {
+    window.gtag('event', name, params)
+  }
+}
+
 // Fire ViewContent for detail/content pages (Pixel only).
 export function trackViewContent(pathname) {
   if (pixelEnabled && window.fbq) {

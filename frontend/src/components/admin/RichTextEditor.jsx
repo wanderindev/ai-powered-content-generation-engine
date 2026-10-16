@@ -258,9 +258,14 @@ const RichTextEditor = forwardRef(function RichTextEditor({ content, onChange, o
     },
   }), [editor]);
 
+  // Syncing the editor to the `content` prop (load, EN/ES switch, discard)
+  // must not emit an update: TipTap re-serializes stored HTML (e.g. links gain
+  // target/rel attrs), and echoing that through `onChange` marks the drawer
+  // dirty with no user edit (#596). TipTap v3 takes an options object here —
+  // the v2-style positional `false` was ignored, so updates were emitted.
   useEffect(() => {
     if (editor && content !== undefined && content !== editor.getHTML()) {
-      editor.commands.setContent(content || '', false);
+      editor.commands.setContent(content || '', { emitUpdate: false });
     }
   }, [content, editor]);
 

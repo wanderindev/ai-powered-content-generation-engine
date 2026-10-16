@@ -12,6 +12,14 @@
       "cta_schools": "Para escuelas",
       "cta_tourists": "Para turistas"
     },
+    "hero_promo_pv": {
+      "badge": "Sábado 15 y domingo 16 de agosto",
+      "title": "Panamá Viejo",
+      "subtitle": "Recorre uno de los sitios históricos más importantes de la ciudad y descubre las historias que permanecen entre sus ruinas.",
+      "prices": "Adultos $15  |  Jubilados $10  |  Menores $5",
+      "cta_primary": "Reservar Ahora",
+      "cta_secondary": "Más Información"
+    },
     "hero_promo": {
       "badge": "Semana Santa 2026 — 2 al 4 de abril",
       "title": "La Ruta de las Siete Iglesias",
@@ -187,7 +195,7 @@
       "steps": {
         "context": {
           "title": "1. Antes de la visita: contexto",
-          "desc": "Ofrecemos una sesión virtual en Zoom para preparar el terreno. Proporcionamos información contextual, una lista de vocabulario y «preguntas de investigación» para despertar la curiosidad antes del viaje."
+          "desc": "Días antes de la excursión, el maestro recibe dos recursos adaptados al nivel académico del grupo: una <video>presentación en video</video> que cubre los aspectos principales del sitio, para proyectar en el aula, y una <guide>guía de estudio</guide> cuyo vocabulario y contexto histórico pueden asignarse como tarea o trabajarse en clase."
         },
         "immersion": {
           "title": "2. La excursión: inmersión",
@@ -195,27 +203,7 @@
         },
         "reflection": {
           "title": "3. Después de la visita: reflexión",
-          "desc": "Proporcionamos una guía de estudio adaptada al nivel académico para el aula con el fin de sintetizar el aprendizaje y reforzar los conocimientos adquiridos."
-        }
-      }
-    },
-    "resources": {
-      "title": "Recursos para maestros",
-      "description": "Te proporcionamos todo lo necesario para que la excursión sea un éxito educativo.",
-      "cta_pdf": "Descargar PDF",
-      "cta_video": "Ver ahora",
-      "items": {
-        "guide": {
-          "title": "Descargar guía de estudio de muestra",
-          "desc": "Vea cómo nuestros materiales posteriores a la visita refuerzan los conceptos tratados durante la excursión."
-        },
-        "infographic": {
-          "title": "Descargar infografía de muestra",
-          "desc": "Ayudas visuales que ayudan a los estudiantes a contextualizar la línea de tiempo y las figuras clave del sitio histórico."
-        },
-        "video": {
-          "title": "Ver muestra de zoom",
-          "desc": "Un fragmento de nuestra sesión virtual previa a la visita, en la que preparamos a la clase para la excursión."
+          "desc": "La misma <guide>guía de estudio</guide> cierra el ciclo en el aula: una sección de «pon a prueba tus conocimientos» y temas de reflexión sintetizan lo aprendido y refuerzan los conocimientos adquiridos."
         }
       }
     },
@@ -267,44 +255,92 @@
       "title": "Casco Antiguo: Circuito de Museos",
       "desc": "Los estudiantes siguen activamente la evolución de Panamá, desde colonia española hasta república moderna, a través de una exploración guiada del museo adaptada a su plan de estudios.",
       "details": {
-        "description_1": "Los estudiantes siguen activamente la evolución de Panamá, desde colonia española hasta república moderna, a través de una exploración guiada del museo adaptada a su plan de estudios.",
-        "description_2": "3 horas de exploración guiada disponible en español e inglés.",
-        "highlights_title": "Selecciona 3 museos",
-        "highlights": [
+        "description_1": "Los estudiantes siguen activamente la evolución de Panamá, desde colonia española hasta república moderna, a través de una exploración guiada de museos adaptada a su plan de estudios. Elija una de dos visitas: el Museo del Canal Interoceánico por sí solo, o un circuito por tres museos del Casco Antiguo.",
+        "tours_title": "Dos formas de visitar",
+        "tours": [
           {
-            "category": "Museo del Canal Interoceánico",
-            "items": "Maravilla de la ingeniería que transformó el transporte marítimo mundial"
+            "name": "Museo del Canal Interoceánico",
+            "duration": "2 horas de exploración guiada disponible en español e inglés",
+            "highlights_title": "El recorrido del museo",
+            "highlights": [
+              {
+                "category": "El istmo como puente terrestre",
+                "items": "La planta baja recién renovada sigue la ruta desde la unión de los continentes hasta 1879: los animales que cruzaron, los primeros pueblos y el descubrimiento español del Mar del Sur"
+              },
+              {
+                "category": "El Camino Real y el ferrocarril de la fiebre del oro",
+                "items": "Las recuas de mulas que cruzaban el istmo con la plata del Perú, las ferias de Portobelo y el ferrocarril de 1855 que llevó a los buscadores de oro rumbo a California"
+              },
+              {
+                "category": "El fracaso francés y el canal estadounidense",
+                "items": "El sueño de Lesseps de un canal a nivel, la fiebre amarilla y la malaria que lo quebraron, y el canal de esclusas estadounidense inaugurado en 1914"
+              },
+              {
+                "category": "La vida en la Zona del Canal",
+                "items": "El Gold Roll y el Silver Roll, la mano de obra antillana y lo que significó para los panameños un enclave extranjero en medio del país"
+              },
+              {
+                "category": "El camino a la soberanía",
+                "items": "De la bandera al 9 de enero de 1964, los tratados Torrijos-Carter de 1977 y la entrega del 31 de diciembre de 1999"
+              },
+              {
+                "category": "El canal hoy",
+                "items": "La ampliación de 2016, la Autoridad del Canal de Panamá y los retos del agua y la neutralidad"
+              }
+            ],
+            "adaptations_title": "Adaptaciones según el nivel de grado",
+            "adaptations": [
+              {
+                "grade": "3.º - 6.º Grado",
+                "desc": "Recorrido de la ruta a través del istmo mediante objetos e historias concretas: el puente terrestre y sus animales, las mulas y los tesoros del Camino Real, el ferrocarril de la fiebre del oro, cómo una esclusa eleva un barco y la historia de la bandera panameña."
+              },
+              {
+                "grade": "7.º - 8.º Grado",
+                "desc": "Análisis de causa y efecto a lo largo de las épocas de la ruta: por qué los franceses fracasaron y Estados Unidos tuvo éxito, qué significó para los panameños la vida en la Zona del Canal (Gold Roll y Silver Roll) y cómo el camino desde la bandera hasta el 9 de enero de 1964 condujo a los tratados de 1977 y a la entrega de 1999."
+              },
+              {
+                "grade": "9.º - 12.º Grado",
+                "desc": "Lectura crítica del museo: análisis de los tratados de 1903 y 1977 como fuentes primarias, valoración de las cifras en disputa y de la narrativa del museo centrada en la soberanía, y evaluación de los retos actuales del canal en cuanto al agua y la neutralidad."
+              }
+            ]
           },
           {
-            "category": "Museo de Historia",
-            "items": "Transición del período colonial al republicano en el Palacio Municipal"
-          },
-          {
-            "category": "Museo de la Mola",
-            "items": "Arte indígena y expresión cultural"
-          },
-          {
-            "category": "Museo de La Merced",
-            "items": "Patrimonio religioso colonial"
-          },
-          {
-            "category": "Palacio Bolívar",
-            "items": "Documentos históricos, regalos diplomáticos y la Biblioteca Roberto F. Chiari"
-          }
-        ],
-        "adaptations_title": "Adaptaciones según el nivel de grado",
-        "adaptations": [
-          {
-            "grade": "3.º - 6.º Grado",
-            "desc": "Interacción con exposiciones interactivas sobre el diverso patrimonio cultural de Panamá y aprendizaje sobre la independencia de Panamá."
-          },
-          {
-            "grade": "7.º - 8.º Grado",
-            "desc": "Evaluación crítica de cómo la ubicación estratégica de Panamá determinó su desarrollo histórico."
-          },
-          {
-            "grade": "9.º - 12.º Grado",
-            "desc": "Exploración de cómo la posición única de Panamá creó relaciones políticas y económicas complejas con las potencias mundiales, particularmente España, Colombia y Estados Unidos."
+            "name": "Casco Antiguo: Circuito de Museos",
+            "duration": "2 horas de exploración guiada disponible en español e inglés",
+            "highlights_title": "Elija 3 de 4 museos",
+            "highlights": [
+              {
+                "category": "Museo de Historia",
+                "items": "Transición del período colonial al republicano en el Palacio Municipal"
+              },
+              {
+                "category": "Museo de la Mola",
+                "items": "Arte indígena y expresión cultural"
+              },
+              {
+                "category": "Museo de La Merced",
+                "items": "Además de la iglesia, se visita el museo que alberga en su interior: los archivos parroquiales más completos de Panamá, con más de tres siglos de registros de bautismo y defunción de figuras históricas y narraciones de primera mano de hechos históricos, además de una amplia colección de objetos religiosos, una colección de fotografías históricas y un belén monumental que recrea todo el pueblo de Belén alrededor del nacimiento"
+              },
+              {
+                "category": "Palacio Bolívar",
+                "items": "Documentos históricos, regalos diplomáticos y la Biblioteca Roberto F. Chiari"
+              }
+            ],
+            "adaptations_title": "Adaptaciones según el nivel de grado",
+            "adaptations": [
+              {
+                "grade": "3.º - 6.º Grado",
+                "desc": "Interacción con exposiciones interactivas sobre el diverso patrimonio cultural de Panamá y aprendizaje sobre la independencia de Panamá."
+              },
+              {
+                "grade": "7.º - 8.º Grado",
+                "desc": "Evaluación crítica de cómo la ubicación estratégica de Panamá determinó su desarrollo histórico."
+              },
+              {
+                "grade": "9.º - 12.º Grado",
+                "desc": "Exploración de cómo la posición única de Panamá creó relaciones políticas y económicas complejas con las potencias mundiales, particularmente España, Colombia y Estados Unidos."
+              }
+            ]
           }
         ]
       }
@@ -403,9 +439,9 @@
     },
     "miraflores": {
       "title": "Centro de Visitantes de Miraflores e IMAX",
-      "desc": "Sea testigo de la maravilla de la ingeniería que es el Canal de Panamá mientras enormes barcos navegan por las esclusas. Perfecto para que los alumnos de 4.º a 6.º grado observen la ingeniería en acción.",
+      "desc": "Sea testigo de la maravilla de la ingeniería que es el Canal de Panamá mientras enormes barcos navegan por las esclusas. Perfecto para que los alumnos de 4.º a 8.º grado observen la ingeniería en acción.",
       "details": {
-        "description_1": "Perfecta para alumnos de 4.º a 6.º grado, esta excursión transforma los conceptos abstractos de la ingeniería y el comercio mundial en fenómenos tangibles y observables, mientras barcos que pesan miles de toneladas navegan por las legendarias esclusas del Canal de Panamá. Los estudiantes presencian el «ballet de Miraflores» mientras se abren y cierran enormes compuertas, el agua se llena y se vacía, y unas «mulas» eléctricas guían a los barcos a través de operaciones de precisión que demuestran los principios básicos de la ciencia física.",
+        "description_1": "Perfecta para alumnos de 4.º a 8.º grado, esta excursión transforma los conceptos abstractos de la ingeniería y el comercio mundial en fenómenos tangibles y observables, mientras barcos que pesan miles de toneladas navegan por las legendarias esclusas del Canal de Panamá. Los estudiantes presencian el «ballet de Miraflores» mientras se abren y cierran enormes compuertas, el agua se llena y se vacía, y unas «mulas» eléctricas guían a los barcos a través de operaciones de precisión que demuestran los principios básicos de la ciencia física.",
         "description_2": "2 horas de exploración guiada disponible en español e inglés.",
         "highlights_title": "Aspectos destacados",
         "highlights": [
@@ -429,7 +465,7 @@
         "adaptations_title": "Niveles de grado recomendados",
         "adaptations": [
           {
-            "grade": "4.º - 6.º Grado",
+            "grade": "4.º - 8.º Grado",
             "desc": "Los materiales educativos incorporan ciencia, historia y economía global en formatos apropiados para la edad."
           }
         ]
@@ -732,6 +768,77 @@
       "description": "Convierta su visita en un viaje inolvidable. Contáctenos para planear su tour privado o crear un itinerario personalizado para su grupo.",
       "button": "Comience a planificar"
     },
+    "panama_viejo_507": {
+      "title": "Panamá Viejo",
+      "desc": "Recorre uno de los sitios históricos más importantes de la ciudad y descubre las historias que permanecen entre sus ruinas.",
+      "hero": {
+        "badge": "Reserva tu tour de",
+        "title": "Panamá Viejo",
+        "subtitle": "Recorre uno de los sitios históricos más importantes de la ciudad y descubre las historias que permanecen entre sus ruinas.",
+        "prices": "Adultos $15  |  Jubilados $10  |  Menores $5",
+        "dates": "Sábado 15 y domingo 16 de agosto",
+        "duration": "Duración aproximada: 2 horas",
+        "type": "Grupo abierto",
+        "cta": "Reservar Ahora"
+      },
+      "details": {
+        "title": "Donde comenzó Panamá",
+        "description_1": "Recorra las inquietantes ruinas de la primera ciudad europea en la costa pacífica de América. Fundada en 1519 y destruida por el infame pirata Henry Morgan en 1671, Panamá Viejo se erige como un poderoso testimonio de la ambición colonial, la resistencia indígena y los dramáticos acontecimientos que dieron forma al Nuevo Mundo.",
+        "description_2": "Aproximadamente 2 horas, incluyendo la visita al museo y la subida a la torre. Este recorrido se realiza en español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "La torre de la catedral",
+            "desc": "Suba a la icónica torre del campanario, el monumento más fotografiado de Panamá, para disfrutar de vistas panorámicas impresionantes que abarcan desde las ruinas antiguas hasta el horizonte moderno, capturando 500 años de historia en una sola mirada."
+          },
+          {
+            "title": "El ataque pirata de 1671",
+            "desc": "Párese donde tuvo lugar la incursión más dramática de la historia mientras su guía relata el devastador ataque de Henry Morgan y la desesperada decisión de quemar la ciudad en lugar de entregar sus tesoros."
+          },
+          {
+            "title": "Descubrimientos arqueológicos",
+            "desc": "Explore calles, conventos y plazas excavados mientras aprende sobre el trabajo arqueológico en curso que continúa revelando secretos de la vida colonial y de los pueblos indígenas que vivieron aquí antes."
+          },
+          {
+            "title": "El museo del sitio",
+            "desc": "Vea artefactos recuperados de las ruinas, maquetas que muestran la ciudad en su apogeo y exhibiciones que dan vida a la vida cotidiana de esta próspera capital colonial."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto en español",
+          "Entradas al sitio y al museo",
+          "Acceso a la torre"
+        ],
+        "facts_title": "Datos prácticos",
+        "facts": [
+          "Duración: aproximadamente 2 horas",
+          "Punto de encuentro: estacionamiento del Complejo Arqueológico, frente al Mercado de Artesanías",
+          "Actividad física: caminata moderada por terreno irregular (recomendamos zapatos cerrados)",
+          "El recorrido se realiza en español",
+          "No incluye transporte"
+        ]
+      },
+      "booking": {
+        "title": "Reserva Tu Espacio",
+        "subtitle": "Selecciona la fecha, horario y número de participantes",
+        "step_date": "Selecciona Fecha",
+        "step_time": "Selecciona Horario",
+        "step_participants": "Participantes",
+        "adult": "Adultos (18+)",
+        "senior": "Jubilados",
+        "child_5_17": "Menores (5 a 17 años)",
+        "child_under_5": "Menores de 5 años",
+        "free": "Gratis",
+        "senior_discount": "Descuento de jubilado",
+        "total_participants": "Total: {{count}} participantes",
+        "meeting_point": "Punto de encuentro: estacionamiento del Complejo Arqueológico, frente al Mercado de Artesanías",
+        "reserve_button": "Agregar al Carrito",
+        "added_to_cart": "¡Agregado al carrito!",
+        "add_another": "Reservar otro horario",
+        "go_to_checkout": "Ir al Checkout"
+      }
+    },
     "siete_iglesias": {
       "title": "La Ruta de las Siete Iglesias",
       "desc": "Un recorrido especializado por los siete templos más significativos del Casco Antiguo durante la Semana Santa.",
@@ -890,7 +997,13 @@
   "blog": {
     "title": "Nuestro Blog",
     "subtitle": "Explore a profundidad la fascinante historia de Panamá a través de nuestros artículos y series.",
-    "error": "Error al cargar los artículos. Por favor, inténtelo de nuevo más tarde."
+    "error": "Error al cargar los artículos. Por favor, inténtelo de nuevo más tarde.",
+    "listen_available": "Escuche este artículo, leído por el autor.",
+    "sort_label": "Orden de las series",
+    "sort_newest": "Más recientes primero",
+    "sort_oldest": "Más antiguas primero",
+    "related_title": "Artículos relacionados",
+    "related_subtitle": "Más del archivo sobre personas, lugares y hechos relacionados."
   },
   "confirm_subscription": {
     "title": "Confirma tu suscripción",
@@ -1066,7 +1179,7 @@
       "description": "Ingrese su correo de administrador para recibir un enlace de acceso.",
       "request_access": "Solicitar Acceso",
       "check_email": "Revise su correo para el enlace de acceso.",
-      "link_valid": "El enlace es válido por 24 horas."
+      "link_valid": "El enlace es válido por 7 días."
     },
     "orders": {
       "title": "Pedidos Pendientes",
@@ -1088,6 +1201,35 @@
       "notes_placeholder": "ej., \"Pagado vía Cuanto - Ref #12345\"",
       "cancel": "Cancelar",
       "confirm": "Confirmar Pago Recibido"
+    },
+    "approvals": {
+      "title": "Aprobaciones",
+      "description": "Solicitudes de publicar, despublicar y aprobar presentadas por agentes MCP. Nada se ejecuta hasta que usted lo apruebe; al aprobar se vuelven a comprobar todas las condiciones de publicación.",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "confirm_approve": "¿Ejecutar esta acción ahora?",
+      "filter_pending": "Pendientes",
+      "filter_all": "Todas",
+      "loading": "Cargando…",
+      "empty": "No hay solicitudes.",
+      "auto_slot": "Fecha elegida por el servidor",
+      "col_action": "Acción",
+      "col_article": "Artículo",
+      "col_rationale": "Justificación",
+      "col_status": "Estado",
+      "failed_toast": "Aprobada, pero la acción falló",
+      "error_toast": "La solicitud falló",
+      "actions": {
+        "PUBLISH": "Publicar",
+        "UNPUBLISH": "Despublicar",
+        "APPROVE_ARTICLE": "Aprobar artículo"
+      },
+      "status": {
+        "PENDING": "Pendiente",
+        "EXECUTED": "Ejecutada",
+        "FAILED": "Fallida",
+        "REJECTED": "Rechazada"
+      }
     }
   },
   "edu_materials": {
@@ -1297,5 +1439,58 @@
     "title": "Página no encontrada",
     "message": "La página que busca no existe o es posible que haya sido movida.",
     "backHome": "Volver al inicio"
+  },
+  "ask_pic": {
+    "eyebrow": "Pregúntale a Panama in Context",
+    "title": "Haz una pregunta sobre la historia de Panamá",
+    "subtitle": "Las respuestas salen únicamente de los artículos de nuestro blog, con enlaces a los artículos en los que se basan. Si el blog no trata tu pregunta, te lo diremos en lugar de adivinar.",
+    "form": {
+      "label": "Tu pregunta",
+      "placeholder": "Por ejemplo: ¿Por qué se construyó el Ferrocarril de Panamá?",
+      "counter": "{{count}} / {{max}} caracteres",
+      "submit": "Preguntar",
+      "submitting": "Buscando en el blog…",
+      "disclaimer": "Las respuestas se generan automáticamente a partir de nuestros artículos y pueden contener errores. Por favor, no incluyas datos personales en tu pregunta."
+    },
+    "loading": "Leyendo el blog para encontrar una respuesta…",
+    "answered": {
+      "heading": "Respuesta",
+      "sources": "De estos artículos",
+      "untitled": "Artículo sin título"
+    },
+    "not_covered": {
+      "title": "Nuestro blog todavía no trata ese tema",
+      "body": "No encontramos una respuesta a esa pregunta en nuestros artículos. Prueba a formularla de otra manera o explora el blog."
+    },
+    "refused": {
+      "title": "No podemos responder esa pregunta",
+      "body": "Pregúntale a Panama in Context solo responde preguntas sobre la historia de Panamá que tratan nuestros artículos."
+    },
+    "invalid": {
+      "title": "Revisa tu pregunta",
+      "body": "Escribe una pregunta dentro del límite de caracteres e inténtalo de nuevo."
+    },
+    "rate_limited": {
+      "title": "Has hecho muchas preguntas",
+      "body": "Por favor, espera un rato antes de hacer otra."
+    },
+    "budget": {
+      "title": "Llegamos al límite de hoy",
+      "body": "Pregúntale a Panama in Context ya respondió todas las preguntas que puede por hoy. Vuelve mañana."
+    },
+    "error": {
+      "title": "Algo salió mal",
+      "body": "No pudimos responder tu pregunta en este momento. Inténtalo de nuevo en unos minutos."
+    },
+    "unavailable": {
+      "title": "Pregúntale a Panama in Context no está disponible en este momento",
+      "body": "Esta función está desactivada por ahora. Mientras tanto, todos nuestros artículos están en el blog."
+    },
+    "browse_blog": "Explorar el blog",
+    "callout": {
+      "title": "¿Tienes una pregunta sobre la historia de Panamá?",
+      "body": "Hazla y recibe una respuesta basada en nuestros artículos, con enlaces para leer más.",
+      "cta": "Hacer una pregunta"
+    }
   }
 }

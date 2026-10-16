@@ -12,6 +12,7 @@ import {
   PhotoIcon,
   CalendarIcon,
   ShieldCheckIcon,
+  DocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { adminService } from '../../services/admin';
@@ -27,17 +28,47 @@ import { useFactCheck, factCheckWarning } from '../../hooks/useFactCheck';
 
 const modules = [AllCommunityModule];
 
+// Grammar check (#410): one button per language. Green once that language has
+// been checked (the tooltip carries the timestamp); clicking always re-runs —
+// the backend allows it and re-stamps checked_at. Missing timestamps (backend
+// not deployed yet) simply read as "unchecked".
+function GrammarCheckButton({ data, language, checkedAt, running, onGrammarCheck }) {
+  const label = language.toUpperCase();
+  const title = running
+    ? 'Grammar check running...'
+    : checkedAt
+      ? `Grammar checked ${new Date(checkedAt).toLocaleString()} — click to re-run`
+      : `Grammar check (${label})`;
+
+  return (
+    <button
+      onClick={() => !running && onGrammarCheck?.(data, language)}
+      disabled={running}
+      className={`flex items-center gap-0.5 rounded p-1 hover:bg-gray-100 disabled:animate-pulse disabled:cursor-wait disabled:text-purple-400 ${
+        checkedAt ? 'text-green-500 hover:text-green-600' : 'text-gray-400 hover:text-purple-600'
+      }`}
+      title={title}
+    >
+      <DocumentCheckIcon className="h-4.5 w-4.5" />
+      <span className="text-[9px] font-semibold">{label}</span>
+    </button>
+  );
+}
+
 function ArticleActionsCellRenderer({ data, colDef }) {
   const {
     onEdit, onGenerateTags, onTranslate, onSeriesSections,
-    onFeatureImage, onPublish, onDownload,
+    onFeatureImage, isGeneratingImage, onPublish, onDownload,
     onFactCheck, isFactChecking,
+    onGrammarCheck, isGrammarChecking,
   } = colDef.cellRendererParams || {};
 
   const showTags = data.has_content && !data.has_tags;
   const showTranslate = data.status === 'APPROVED' && data.has_content && !data.has_spanish;
   const showSeries = data.is_series && data.has_spanish && !data.has_series_sections;
-  const showImage = data.has_content && !data.has_feature_image;
+  // Generate / Regenerate feature image (#580) — needs written content.
+  const showImage = data.has_content;
+  const imageRunning = isGeneratingImage ? isGeneratingImage(data) : false;
   const showPublish = data.status === 'APPROVED' && data.has_spanish && data.has_feature_image
     && (!data.is_series || data.has_series_sections) && !data.published_at;
   const isPublished = !!data.published_at;
@@ -64,6 +95,26 @@ function ArticleActionsCellRenderer({ data, colDef }) {
         >
           <ShieldCheckIcon className="h-4.5 w-4.5" />
         </button>
+      )}
+
+      {data.has_content && (
+        <GrammarCheckButton
+          data={data}
+          language="en"
+          checkedAt={data.grammar_checked_en_at}
+          running={isGrammarChecking ? isGrammarChecking(data, 'en') : false}
+          onGrammarCheck={onGrammarCheck}
+        />
+      )}
+
+      {data.has_spanish && (
+        <GrammarCheckButton
+          data={data}
+          language="es"
+          checkedAt={data.grammar_checked_es_at}
+          running={isGrammarChecking ? isGrammarChecking(data, 'es') : false}
+          onGrammarCheck={onGrammarCheck}
+        />
       )}
 
       {showTags && (
@@ -98,9 +149,14 @@ function ArticleActionsCellRenderer({ data, colDef }) {
 
       {showImage && (
         <button
-          onClick={() => onFeatureImage?.(data)}
-          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-teal-600"
-          title="Feature Image"
+          onClick={() => !imageRunning && onFeatureImage?.(data)}
+          disabled={imageRunning}
+          className={`rounded p-1 hover:bg-gray-100 disabled:animate-pulse disabled:cursor-wait disabled:text-teal-400 ${
+            data.has_feature_image ? 'text-green-500 hover:text-green-600' : 'text-gray-400 hover:text-teal-600'
+          }`}
+          title={imageRunning
+            ? 'Generating image...'
+            : data.has_feature_image ? 'Regenerate image' : 'Generate image'}
         >
           <PhotoIcon className="h-4.5 w-4.5" />
         </button>
@@ -241,6 +297,255 @@ function PublishModal({ open, onClose, article, token, onSuccess }) {
   );
 }
 
+// Read-only result view for a grammar-check run (#410): the FIND → REPLACE pairs
+// the proofread returned, with skipped entries dimmed and their reason shown.
+function GrammarResultModal({ open, onClose, result }) {
+  const language = (result?.language || '').toUpperCase();
+  const fixes = result?.fixes || [];
+
+  return (
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100"
+          leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/30" />
+        </Transition.Child>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
+            leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
+          >
+            <Dialog.Panel className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+              <Dialog.Title className="text-lg font-semibold text-gray-900">
+                Grammar Check Result{language ? ` (${language})` : ''}
+              </Dialog.Title>
+              <p className="mt-1 text-sm text-gray-500">{result?.articleTitle}</p>
+              <p className="mt-2 text-sm text-gray-600">
+                <span className="font-medium text-green-700">{result?.applied_count ?? 0}</span> applied
+                {' · '}
+                <span className="font-medium text-gray-500">{result?.skipped_count ?? 0}</span> skipped
+              </p>
+
+              <ul className="mt-4 divide-y divide-gray-100 rounded border border-gray-200">
+                {fixes.map((fix, idx) => (
+                  <li
+                    key={idx}
+                    className={`px-3 py-2 text-xs ${fix.applied ? '' : 'bg-gray-50 opacity-60'}`}
+                  >
+                    <div className="font-mono break-words text-red-700 line-through">{fix.find}</div>
+                    <div className="font-mono break-words text-green-700">{fix.replace}</div>
+                    {!fix.applied && (
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        Skipped: {fix.skipped_reason || 'no reason given'}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={onClose}
+                  className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            </Dialog.Panel>
+          </Transition.Child>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+}
+
+// Paragraphs the Grammarly meaning check (#518) wrote but could not vouch for:
+// before/after + Sonnet's reason, with a per-row Resolve once a human has
+// looked (the text itself is fixed in the drawer, not here).
+function GrammarReviewModal({ open, onClose, token, article, onResolved }) {
+  const [diffs, setDiffs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(() => new Set());
+
+  useEffect(() => {
+    if (!open || !article) return;
+    let active = true;
+    setLoading(true);
+    adminService
+      .getGrammarReviewDiffs(token, article.id)
+      .then((data) => { if (active) setDiffs(data.diffs || []); })
+      .catch((err) => console.error('Failed to load grammar review diffs:', err))
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [open, article, token]);
+
+  const resolve = async (diff) => {
+    setBusy((prev) => new Set(prev).add(diff.id));
+    try {
+      await adminService.resolveGrammarReviewDiff(token, article.id, diff.id);
+      setDiffs((prev) => prev.filter((d) => d.id !== diff.id));
+      onResolved?.(article.id);
+    } catch (err) {
+      console.error('Failed to resolve grammar review diff:', err);
+    } finally {
+      setBusy((prev) => { const next = new Set(prev); next.delete(diff.id); return next; });
+    }
+  };
+
+  return (
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100"
+          leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/30" />
+        </Transition.Child>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
+            leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
+          >
+            <Dialog.Panel className="w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+              <Dialog.Title className="text-lg font-semibold text-gray-900">
+                Grammar changes to review
+              </Dialog.Title>
+              <p className="mt-1 text-sm text-gray-500">{article?.title}</p>
+              <p className="mt-2 text-sm text-gray-600">
+                These paragraphs were written by the proofread but the meaning check could not
+                vouch for them. Fix the text in the editor if needed, then mark each as seen.
+              </p>
+
+              {loading ? (
+                <p className="mt-4 text-sm text-gray-500">Loading…</p>
+              ) : diffs.length === 0 ? (
+                <p className="mt-4 text-sm text-gray-500">Nothing left to review.</p>
+              ) : (
+                <ul className="mt-4 divide-y divide-gray-100 rounded border border-gray-200">
+                  {diffs.map((diff) => (
+                    <li key={diff.id} className="px-3 py-3 text-xs">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <span className="font-medium text-amber-800">
+                          {diff.language.toUpperCase()} · paragraph {diff.block_index + 1} · {diff.reason}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={busy.has(diff.id)}
+                          onClick={() => resolve(diff)}
+                          className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                        >
+                          {busy.has(diff.id) ? 'Resolving…' : 'Mark as seen'}
+                        </button>
+                      </div>
+                      <div className="whitespace-pre-wrap break-words text-red-700">{diff.before_text}</div>
+                      <div className="mt-1 whitespace-pre-wrap break-words text-green-700">{diff.after_text}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={onClose}
+                  className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            </Dialog.Panel>
+          </Transition.Child>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+}
+
+// Grammar status pills for the grid (#410), driven by the two
+// grammar_checked_*_at fields on the article list response.
+function GrammarStatusCell({ data, colDef }) {
+  const pill = 'inline-block rounded-full px-2 py-0.5 text-xs';
+  const en = data.grammar_checked_en_at;
+  const es = data.grammar_checked_es_at;
+  const review = data.grammar_review_count || 0;
+  const { onGrammarReview } = colDef?.cellRendererParams || {};
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      {review > 0 && (
+        <button
+          type="button"
+          onClick={() => onGrammarReview?.(data)}
+          className={`${pill} bg-amber-100 text-amber-800 hover:bg-amber-200`}
+          title={`${review} paragraph(s) flagged by the meaning check — click to review`}
+        >
+          {review} to review
+        </button>
+      )}
+      <span
+        className={`${pill} ${en ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+        title={en ? `Grammar checked ${new Date(en).toLocaleString()}` : 'Not grammar checked'}
+      >
+        {en ? 'EN ✓' : 'EN'}
+      </span>
+      {data.has_spanish && (
+        <span
+          className={`${pill} ${es ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+          title={es ? `Grammar checked ${new Date(es).toLocaleString()}` : 'Not grammar checked'}
+        >
+          {es ? 'ES ✓' : 'ES'}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// Cross-article consistency pill (#631, shadow mode): open findings where a
+// claim contradicts another article or the verified-claims KB. Clicking opens
+// the drawer, whose EN tab lists them with Dismiss / Mark resolved. Never a
+// gate — publishing ignores it.
+function ConsistencyCell({ data, colDef }) {
+  const count = data.consistency_open_count || 0;
+  if (count === 0) return null;
+  const { onOpen } = colDef?.cellRendererParams || {};
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen?.(data)}
+      className="inline-block rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800 hover:bg-rose-200"
+      title={`${count} claim(s) may contradict another article — click to review`}
+    >
+      {count} contradiction{count === 1 ? '' : 's'}
+    </button>
+  );
+}
+
+// Narration voice-check pill (#601): shown when the last narration run left
+// high-pitch paragraphs to listen to. Clicking opens the drawer on its
+// default (EN) tab; the list with timestamps is under the ES tab's narration
+// audio section.
+function NarrationQaCell({ data, colDef }) {
+  const qa = data.audio_qa_es;
+  const toReview = qa?.unresolved?.length || 0;
+  if (!qa || (qa.status !== 'NEEDS_REVIEW' && toReview === 0)) return null;
+  const { onOpen } = colDef?.cellRendererParams || {};
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen?.(data)}
+      className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
+      title="High-pitch narration paragraphs to listen to — click to open the article, then switch to the ES tab"
+    >
+      {toReview} to listen
+    </button>
+  );
+}
+
 function GenerateArticleModal({ open, onClose, token, onSuccess }) {
   const [articles, setArticles] = useState([]);
   const [selectedId, setSelectedId] = useState('');
@@ -355,205 +660,6 @@ function GenerateArticleModal({ open, onClose, token, onSuccess }) {
   );
 }
 
-function FeatureImageModal({ open, onClose, article, token, onSuccess }) {
-  const [tab, setTab] = useState('prompt');
-  const [promptText, setPromptText] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [uploadResult, setUploadResult] = useState(null);
-
-  useEffect(() => {
-    if (open) {
-      setPromptText('');
-      setError(null);
-      setCopied(false);
-      setSelectedFile(null);
-      setPreview(null);
-      setUploadResult(null);
-      setTab('prompt');
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!selectedFile) { setPreview(null); return; }
-    const url = URL.createObjectURL(selectedFile);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
-
-  const handleGenerate = async () => {
-    if (!article) return;
-    setGenerating(true);
-    setError(null);
-    try {
-      const res = await adminService.generateImagePrompt(token, article.id);
-      setPromptText(res.prompt_text);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(promptText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile || !article) return;
-    setUploading(true);
-    setError(null);
-    try {
-      await adminService.uploadFeatureImage(token, article.id, selectedFile);
-      setUploadResult(true);
-      onSuccess?.(article.id);
-      setTimeout(() => onClose(), 1500);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // Gate dismissal while a prompt-generation or image-upload is in flight (#122).
-  const busy = generating || uploading;
-  const handleClose = busy ? () => {} : onClose;
-
-  return (
-    <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100"
-          leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/30" />
-        </Transition.Child>
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
-            leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
-          >
-            <Dialog.Panel className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-              <Dialog.Title className="text-lg font-semibold text-gray-900">
-                Feature Image
-              </Dialog.Title>
-              <p className="mt-1 text-sm text-gray-500 truncate">{article?.title}</p>
-
-              {/* Tab switcher */}
-              <div className="mt-4 flex gap-1 rounded-lg bg-gray-100 p-1">
-                <button
-                  onClick={() => setTab('prompt')}
-                  disabled={busy}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${tab === 'prompt' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Generate Prompt
-                </button>
-                <button
-                  onClick={() => setTab('upload')}
-                  disabled={busy}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${tab === 'upload' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Upload Image
-                </button>
-              </div>
-
-              {/* Prompt tab */}
-              {tab === 'prompt' && (
-                <div className="mt-4">
-                  {!promptText ? (
-                    <button
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      className="rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                      {generating ? 'Generating...' : 'Generate Prompt'}
-                    </button>
-                  ) : (
-                    <>
-                      <textarea
-                        readOnly
-                        value={promptText}
-                        rows={8}
-                        className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-mono focus:outline-none"
-                      />
-                      <button
-                        onClick={handleCopy}
-                        className="mt-2 rounded bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                      >
-                        {copied ? 'Copied!' : 'Copy to Clipboard'}
-                      </button>
-                    </>
-                  )}
-                  {generating && (
-                    <p className="mt-2 text-xs text-gray-500">Generation in progress — please wait.</p>
-                  )}
-                </div>
-              )}
-
-              {/* Upload tab */}
-              {tab === 'upload' && (
-                <div className="mt-4">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    disabled={uploading}
-                    className="block w-full text-sm text-gray-500 file:mr-3 file:rounded file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200 disabled:opacity-50"
-                  />
-                  {preview && (
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      className="mt-3 max-h-48 w-full rounded border border-gray-200 object-contain"
-                    />
-                  )}
-                  {selectedFile && !uploadResult && (
-                    <button
-                      onClick={handleUpload}
-                      disabled={uploading}
-                      className="mt-3 rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                      {uploading ? 'Uploading...' : 'Upload'}
-                    </button>
-                  )}
-                  {uploadResult && (
-                    <div className="mt-3 rounded bg-green-50 p-3 text-sm text-green-800">
-                      Feature image uploaded successfully!
-                    </div>
-                  )}
-                  {uploading && (
-                    <p className="mt-2 text-xs text-gray-500">Upload in progress — please wait.</p>
-                  )}
-                </div>
-              )}
-
-              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={onClose}
-                  disabled={busy}
-                  className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Close
-                </button>
-              </div>
-            </Dialog.Panel>
-          </Transition.Child>
-        </div>
-      </Dialog>
-    </Transition>
-  );
-}
-
 export default function AdminArticles() {
   const { token } = useAdminAuth();
   const gridRef = useRef(null);
@@ -564,11 +670,15 @@ export default function AdminArticles() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [publishArticle, setPublishArticle] = useState(null);
-  const [featureImageArticle, setFeatureImageArticle] = useState(null);
+  const [imageRunning, setImageRunning] = useState(() => new Set());
+  const [regenerateImageArticle, setRegenerateImageArticle] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [errorDialog, setErrorDialog] = useState(null);
   const { toasts, show: showToast, dismiss: dismissToast } = useToast();
   const [approveWarning, setApproveWarning] = useState(null);
+  const [grammarRunning, setGrammarRunning] = useState(() => new Set());
+  const [grammarResult, setGrammarResult] = useState(null);
+  const [grammarReviewArticle, setGrammarReviewArticle] = useState(null);
   const factCheck = useFactCheck({
     token,
     subjectType: 'ARTICLE',
@@ -659,6 +769,64 @@ export default function AdminArticles() {
     }
   }, [token, showToast, dismissToast]);
 
+  // Grammar check (#410). Synchronous call — no polling. EN and ES may run at
+  // the same time, so the in-flight set is keyed by `${id}-${language}`.
+  const isGrammarChecking = useCallback(
+    (record, language) => grammarRunning.has(`${record.id}-${language}`),
+    [grammarRunning],
+  );
+
+  const handleGrammarReview = useCallback((record) => setGrammarReviewArticle(record), []);
+  const handleGrammarReviewResolved = useCallback((articleId) => {
+    setRowData((prev) =>
+      prev.map((r) =>
+        r.id === articleId
+          ? { ...r, grammar_review_count: Math.max(0, (r.grammar_review_count || 0) - 1) }
+          : r,
+      ),
+    );
+  }, []);
+
+  const handleGrammarCheck = useCallback(async (record, language) => {
+    const key = `${record.id}-${language}`;
+    if (grammarRunning.has(key)) return;
+    const label = language.toUpperCase();
+    setGrammarRunning((prev) => new Set(prev).add(key));
+    const toastId = showToast({
+      type: 'info',
+      title: `Grammar checking (${label})...`,
+      message: record.title,
+      duration: 0,
+    });
+    try {
+      const res = await adminService.grammarCheckArticle(token, record.id, language);
+      dismissToast(toastId);
+      const field = language === 'es' ? 'grammar_checked_es_at' : 'grammar_checked_en_at';
+      setRowData((prev) =>
+        prev.map((r) => (r.id === record.id ? { ...r, [field]: res.checked_at } : r)),
+      );
+      const fixes = res.fixes || [];
+      showToast({
+        type: 'success',
+        title: `Grammar check complete (${label})`,
+        message: fixes.length === 0
+          ? 'No fixes needed'
+          : `${res.applied_count} fix(es) applied, ${res.skipped_count} skipped`,
+      });
+      if (fixes.length > 0) setGrammarResult({ ...res, articleTitle: record.title });
+    } catch (err) {
+      dismissToast(toastId);
+      console.error('Grammar check failed:', err);
+      showToast({ type: 'error', title: `Grammar check failed (${label})`, message: err.message });
+    } finally {
+      setGrammarRunning((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  }, [token, showToast, dismissToast, grammarRunning]);
+
   const handleSeriesSections = useCallback(async (record) => {
     const toastId = showToast({ type: 'info', title: 'Generating series sections...', message: record.title, duration: 0 });
     try {
@@ -685,15 +853,50 @@ export default function AdminArticles() {
     }
   }, [token, showToast, dismissToast]);
 
-  const handleFeatureImage = useCallback((record) => {
-    setFeatureImageArticle(record);
-  }, []);
+  // Feature image (#580): one synchronous call to generate-image (Sonnet
+  // prompt + Gemini, typically well under a minute). Regenerating replaces the
+  // current image, so it is confirmed first.
+  const isGeneratingImage = useCallback(
+    (record) => imageRunning.has(record.id),
+    [imageRunning],
+  );
 
-  const handleFeatureImageSuccess = useCallback((articleId) => {
-    setRowData((prev) =>
-      prev.map((r) => (r.id === articleId ? { ...r, has_feature_image: true } : r)),
-    );
-  }, []);
+  const runGenerateImage = useCallback(async (record) => {
+    if (imageRunning.has(record.id)) return;
+    setImageRunning((prev) => new Set(prev).add(record.id));
+    const toastId = showToast({
+      type: 'info',
+      title: 'Generating feature image...',
+      message: record.title,
+      duration: 0,
+    });
+    try {
+      await adminService.generateFeatureImage(token, record.id);
+      dismissToast(toastId);
+      setRowData((prev) =>
+        prev.map((r) => (r.id === record.id ? { ...r, has_feature_image: true } : r)),
+      );
+      showToast({ type: 'success', title: 'Feature image generated', message: record.title });
+    } catch (err) {
+      dismissToast(toastId);
+      console.error('Feature image generation failed:', err);
+      setErrorDialog({ title: 'Feature Image Failed', message: err.message });
+    } finally {
+      setImageRunning((prev) => {
+        const next = new Set(prev);
+        next.delete(record.id);
+        return next;
+      });
+    }
+  }, [token, showToast, dismissToast, imageRunning]);
+
+  const handleFeatureImage = useCallback((record) => {
+    if (record.has_feature_image) {
+      setRegenerateImageArticle(record);
+      return;
+    }
+    runGenerateImage(record);
+  }, [runGenerateImage]);
 
   const handlePublishSuccess = useCallback((articleId, publishedAt) => {
     setRowData((prev) =>
@@ -771,8 +974,32 @@ export default function AdminArticles() {
       },
     },
     {
+      headerName: 'Grammar',
+      width: 110,
+      sortable: false,
+      filter: false,
+      cellRenderer: GrammarStatusCell,
+      cellRendererParams: { onGrammarReview: handleGrammarReview },
+    },
+    {
+      headerName: 'Narration',
+      width: 110,
+      sortable: false,
+      filter: false,
+      cellRenderer: NarrationQaCell,
+      cellRendererParams: { onOpen: handleEdit },
+    },
+    {
+      headerName: 'Consistency',
+      width: 130,
+      sortable: false,
+      filter: false,
+      cellRenderer: ConsistencyCell,
+      cellRendererParams: { onOpen: handleEdit },
+    },
+    {
       headerName: 'Actions',
-      width: 240,
+      width: 280,
       sortable: false,
       filter: false,
       cellRenderer: ArticleActionsCellRenderer,
@@ -782,13 +1009,16 @@ export default function AdminArticles() {
         onTranslate: handleTranslate,
         onSeriesSections: handleSeriesSections,
         onFeatureImage: handleFeatureImage,
+        isGeneratingImage,
         onPublish: (record) => setPublishArticle(record),
         onDownload: handleDownload,
         onFactCheck: factCheck.run,
         isFactChecking: factCheck.isRunning,
+        onGrammarCheck: handleGrammarCheck,
+        isGrammarChecking,
       },
     },
-  ], [handleEdit, handleStatusChange, handleDownload, handleGenerateTags, handleTranslate, handleSeriesSections, handleFeatureImage, nextArticleId, factCheck]);
+  ], [handleEdit, handleStatusChange, handleDownload, handleGenerateTags, handleTranslate, handleSeriesSections, handleFeatureImage, isGeneratingImage, nextArticleId, factCheck, handleGrammarCheck, isGrammarChecking, handleGrammarReview]);
 
   useEffect(() => {
     adminService.getArticles(token)
@@ -873,12 +1103,17 @@ export default function AdminArticles() {
         onSuccess={handlePublishSuccess}
       />
 
-      <FeatureImageModal
-        open={!!featureImageArticle}
-        onClose={() => setFeatureImageArticle(null)}
-        article={featureImageArticle}
-        token={token}
-        onSuccess={handleFeatureImageSuccess}
+      <ConfirmDialog
+        open={!!regenerateImageArticle}
+        onClose={() => setRegenerateImageArticle(null)}
+        onConfirm={() => {
+          const record = regenerateImageArticle;
+          setRegenerateImageArticle(null);
+          runGenerateImage(record);
+        }}
+        title="Regenerate feature image?"
+        message="A new image will be generated and will replace the article's current feature image, on the admin and the public site."
+        confirmLabel="Regenerate image"
       />
 
       <Transition appear show={!!errorDialog} as={Fragment}>
@@ -923,6 +1158,19 @@ export default function AdminArticles() {
         subjectId={factCheck.modalRecord?.id}
         title={factCheck.modalRecord?.title}
         onCountsChange={factCheck.updateCounts}
+      />
+
+      <GrammarReviewModal
+        open={!!grammarReviewArticle}
+        onClose={() => setGrammarReviewArticle(null)}
+        token={token}
+        article={grammarReviewArticle}
+        onResolved={handleGrammarReviewResolved}
+      />
+      <GrammarResultModal
+        open={!!grammarResult}
+        onClose={() => setGrammarResult(null)}
+        result={grammarResult}
       />
 
       <ConfirmDialog

@@ -26,12 +26,20 @@ _FAKE_ADMIN = SimpleNamespace(user_id=None, admin_email="test@localhost")
 @pytest.fixture(autouse=True)
 def _bypass_admin_auth():
     """Bypass admin token validation via dependency override (#54)."""
-    from app.api.dependencies import validate_admin_token
+    from app.api.dependencies import (
+        validate_admin_or_allowlisted_driver_token,
+        validate_admin_token,
+    )
     from app.main import app
 
+    # dependency_overrides keys on the exact callable a router declares: the
+    # dashboard/instagram/admin routers now declare the allowlisted-driver
+    # variant (#444), other admin routers still the plain one. Override both.
     app.dependency_overrides[validate_admin_token] = lambda: _FAKE_ADMIN
+    app.dependency_overrides[validate_admin_or_allowlisted_driver_token] = lambda: _FAKE_ADMIN
     yield
     app.dependency_overrides.pop(validate_admin_token, None)
+    app.dependency_overrides.pop(validate_admin_or_allowlisted_driver_token, None)
 
 
 def _pending_claim(
@@ -301,11 +309,37 @@ class TestGeneratePromptEndpoint:
         assert response.status_code == 404
 
     def test_400_on_bad_scope(self, test_client):
-        assert (
-            test_client.post(self.URL, json={"subject_type": "ARTICLE"}).status_code
-            == 400
-        )
+        # EDU_MATERIAL grounding maps ABSENT to UNVERIFIABLE, so it never
+        # holds NEEDS_DEEP_RESEARCH claims and is not a scope.
+        for bad in ("EDU_MATERIAL", "BOGUS"):
+            response = test_client.post(self.URL, json={"subject_type": bad})
+            assert response.status_code == 400
+            assert "ARTICLE" in response.json()["detail"]
         assert test_client.post(self.URL, json={"subject_id": 3}).status_code == 400
+
+    def test_scoped_to_one_article(self, test_client, test_db):
+        """Article grounding queues ABSENT claims for deep research (#555), so a
+        caller can drain one article's claims on their own (#574)."""
+        mine = _pending_claim(test_db, subject_type=FactCheckSubject.ARTICLE.value, subject_id=7)
+        _pending_claim(test_db, subject_type=FactCheckSubject.ARTICLE.value, subject_id=8)
+        _pending_claim(test_db, subject_type=FactCheckSubject.RESEARCH.value, subject_id=7)
+        test_db.commit()
+        response = test_client.post(self.URL, json={"subject_type": "article", "subject_id": 7})
+        assert response.status_code == 200
+        body = response.json()
+        assert body["claim_ids"] == [mine.id]
+        assert body["pending_total"] == 1
+
+        # Type-only scope takes every article, and nothing else.
+        response = test_client.post(self.URL, json={"subject_type": "ARTICLE"})
+        assert response.status_code == 200
+        assert response.json()["pending_total"] == 2
+
+    def test_article_scope_404_when_that_article_has_nothing_pending(self, test_client, test_db):
+        _pending_claim(test_db, subject_type=FactCheckSubject.ARTICLE.value, subject_id=8)
+        test_db.commit()
+        response = test_client.post(self.URL, json={"subject_type": "ARTICLE", "subject_id": 7})
+        assert response.status_code == 404
 
     def test_returns_prompt_batch(self, test_client, test_db):
         claim = _pending_claim(test_db)
@@ -362,6 +396,28 @@ class TestUploadVerdictsEndpoint:
         test_db.expire_all()
         stored = test_db.get(FactCheckClaim, claim.id)
         assert stored.verdict == FactCheckVerdict.VERIFIED.value
+        assert stored.checked_via == "DEEP_RESEARCH"
+
+    def test_writes_article_verdicts(self, test_client, test_db):
+        """The verdicts endpoint has no subject restriction: an article's
+        deep-research claims resolve through it like any other (#574)."""
+        claim = _pending_claim(test_db, subject_type=FactCheckSubject.ARTICLE.value, subject_id=7)
+        test_db.commit()
+        response = test_client.post(
+            self.URL,
+            json={
+                "content": _verdict_doc(
+                    [f"VERDICT: {claim.id} | INACCURATE | It was 1519 | Castillero Calvo, 2004"]
+                ),
+                "claim_ids": [claim.id],
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["written"] == 1
+
+        test_db.expire_all()
+        stored = test_db.get(FactCheckClaim, claim.id)
+        assert stored.verdict == FactCheckVerdict.INACCURATE.value
         assert stored.checked_via == "DEEP_RESEARCH"
 
     def test_400_when_document_is_a_failed_run(self, test_client, test_db):

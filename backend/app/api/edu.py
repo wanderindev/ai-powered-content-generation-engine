@@ -5,17 +5,30 @@ from datetime import UTC, datetime
 from typing import Literal
 
 import sentry_sdk
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Path, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    Query,
+    UploadFile,
+)
 from sqlalchemy.orm import Session, joinedload, selectinload
 from starlette.responses import PlainTextResponse
 
 from app.api.dependencies import validate_admin_token
 from app.core.database import get_db
 from app.core.excursions import EXCURSIONS
+from app.models.crawl_job import CrawlJobType
 from app.models.edu_material import EduMaterial
 from app.models.edu_research import EduResearch
 from app.models.edu_slide import EduSlide
 from app.models.edu_suggestion import EduSuggestion
+from app.models.enums import FactCheckSubject, MaterialType
 from app.models.research import Research
 from app.schemas.dashboard import StatusUpdateResponse
 from app.schemas.edu import (
@@ -26,7 +39,6 @@ from app.schemas.edu import (
     EduMaterialContentUpdate,
     EduMaterialDetail,
     EduMaterialGenerateRequest,
-    EduMaterialGenerateResponse,
     EduMaterialListItem,
     EduNarrationGenerateRequest,
     EduNarrationGenerateResponse,
@@ -40,11 +52,9 @@ from app.schemas.edu import (
     EduResearchUploadResponse,
     EduSlideOut,
     EduSlidesAudioRequest,
-    EduSlidesAudioResponse,
     EduSlidesGenerateRequest,
     EduSlidesGenerateResponse,
     EduSlidesRenderRequest,
-    EduSlidesRenderResponse,
     EduSlidesSubsetRegenerateRequest,
     EduSlidesSubsetRegenerateResponse,
     EduSlidesUpdate,
@@ -53,13 +63,12 @@ from app.schemas.edu import (
     EduSuggestionForResearch,
     EduSuggestionListItem,
     EduSuggestionUpdateRequest,
-    EduVideoAssembleResponse,
     ExcursionCoverageItem,
     MaterialUploadResponse,
 )
-from app.services.audio_generation import generate_slide_audio
+from app.schemas.media_candidate import CrawlJobResponse
+from app.services.edu_jobs import EduJobInFlightError, create_edu_job, run_edu_job
 from app.services.edu_material_generation import (
-    generate_edu_materials,
     generate_edu_narration,
     generate_edu_slides,
     regenerate_slides_subset,
@@ -68,14 +77,25 @@ from app.services.edu_research import (
     generate_edu_research_prompt,
     validate_edu_research_document,
 )
-from app.services.guide_pdf import generate_guide_pdf
+from app.services.fact_check import (
+    GROUNDABLE_MATERIAL_TYPES,
+    FactCheckJobInFlightError,
+    create_fact_check_job,
+    run_fact_check_job,
+)
+from app.services.fact_check_gate import (
+    STEP_INTERNAL,
+    STEP_PUBLIC,
+    FactCheckGateError,
+    enforce_material_gate,
+    invalidate_material_claims,
+)
+from app.services.guide_pdf import generate_guide_pdf, guide_pdf_key
 from app.services.research_common import (
     MAX_MATERIAL_UPLOAD_BYTES,
     read_upload_bytes,
     read_upload_text,
 )
-from app.services.slide_render import render_material_slides
-from app.services.video_assembly import assemble_slide_video
 from app.utils.markdown import markdown_to_html
 
 logger = logging.getLogger(__name__)
@@ -85,6 +105,39 @@ router = APIRouter(
     tags=["edu"],
     dependencies=[Depends(validate_admin_token)],
 )
+
+
+def _enforce_fact_check_gate(db: Session, material_id: int, step: str, *, action: str) -> None:
+    """Refuse a gated step whose material carries blocking fact-check claims (#462).
+
+    Translates the service-layer gate error into a 409 — a conflict with the
+    material's current state, not a malformed request.
+    """
+    try:
+        enforce_material_gate(db, material_id, step, action=action)
+    except FactCheckGateError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+def _kickoff_edu_job(
+    db: Session, background_tasks: BackgroundTasks, job_type: CrawlJobType, params: dict
+):
+    """Create (or join an identical in-flight) edu job and schedule its runner (#346).
+
+    Returns the job row for a 202. A *different* edu job already running on the
+    same subject is a 409 naming it.
+    """
+    try:
+        job, created = create_edu_job(db, job_type, params)
+    except EduJobInFlightError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if created:
+        background_tasks.add_task(run_edu_job, job.id)
+        logger.info("Kicked off edu job %d (%s) %s", job.id, job_type.value, params)
+    else:
+        logger.info("Joined in-flight edu job %d (%s) %s", job.id, job_type.value, params)
+    return job
+
 
 VALID_TRANSITIONS = {
     "PENDING": {"APPROVED", "REJECTED"},
@@ -288,6 +341,102 @@ def update_edu_research_status(
 
 
 @router.post(
+    "/research/{research_id}/fact-check",
+    response_model=CrawlJobResponse,
+    status_code=202,
+)
+def fact_check_edu_research(
+    background_tasks: BackgroundTasks,
+    research_id: int = Path(..., description="Edu research ID"),
+    db: Session = Depends(get_db),
+):
+    """External fact-check of an edu research doc as a background job (#460).
+
+    Edu research is the root of every excursion deliverable — guides, decks,
+    narration and video all derive from it — so it is verified before material
+    is generated from it (epic #459).
+
+    Same external tier as blog research: the extract-only tier (#389) extracts
+    the doc's claims, inherits verdicts the verified KB already holds (#378),
+    and queues the rest as NEEDS_DEEP_RESEARCH for the free deep-research loop
+    (#377). Returns 202 + a job id; poll
+    GET /media-library/jobs/{id}. Re-running replaces the doc's claim rows.
+    """
+    record = db.query(EduResearch).filter(EduResearch.id == research_id).first()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Edu research not found")
+    if not record.content or not record.content.strip():
+        raise HTTPException(status_code=400, detail="Edu research has no content")
+
+    try:
+        job = create_fact_check_job(db, FactCheckSubject.EDU_RESEARCH.value, record.id)
+    except FactCheckJobInFlightError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    background_tasks.add_task(run_fact_check_job, job.id)
+    logger.info("Kicked off fact-check job %d for edu research %d", job.id, record.id)
+    return job
+
+
+@router.post(
+    "/materials/{material_id}/fact-check",
+    response_model=CrawlJobResponse,
+    status_code=202,
+)
+def fact_check_edu_material(
+    background_tasks: BackgroundTasks,
+    material_id: int = Path(..., description="Edu material ID"),
+    db: Session = Depends(get_db),
+):
+    """Ground a generated study guide or slide deck against its source research
+    (#461, #464).
+
+    The grounding tier, not the external one: the material should assert nothing
+    its ``edu_research`` does not support, exactly as a blog article is checked
+    against the research it was written from. Claims the research cannot settle
+    come back UNVERIFIABLE rather than being escalated to a web search.
+
+    **Checking the deck is how the video is checked** — the MP4 is a render of
+    the deck's narration, so a ``video`` material has nothing of its own to
+    verify and is refused. Run this before ``generate-audio`` and
+    ``assemble-video``, which spend real money on whatever the script says.
+
+    Returns 202 + a job id; poll GET /media-library/jobs/{id}. Re-running
+    replaces the material's claim rows.
+    """
+    material = db.query(EduMaterial).filter(EduMaterial.id == material_id).first()
+    if material is None:
+        raise HTTPException(status_code=404, detail="Edu material not found")
+    if material.material_type not in GROUNDABLE_MATERIAL_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"A {material.material_type} cannot be fact-checked directly; "
+                "a video is a render of its deck's narration — fact-check the deck"
+            ),
+        )
+    if material.material_type == MaterialType.GUIDE.value and not material.content_blocks:
+        raise HTTPException(
+            status_code=400,
+            detail="Guide has no structured content blocks; regenerate it before fact-checking",
+        )
+    if material.material_type == MaterialType.SLIDES.value and not material.slides:
+        raise HTTPException(
+            status_code=400,
+            detail="Deck has no slides; generate the deck before fact-checking",
+        )
+
+    try:
+        job = create_fact_check_job(db, FactCheckSubject.EDU_MATERIAL.value, material.id)
+    except FactCheckJobInFlightError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    background_tasks.add_task(run_fact_check_job, job.id)
+    logger.info("Kicked off fact-check job %d for edu material %d", job.id, material.id)
+    return job
+
+
+@router.post(
     "/research/generate-prompt",
     response_model=EduResearchPromptResponse,
 )
@@ -461,6 +610,9 @@ def list_edu_materials(
         .order_by(EduMaterial.id.desc())
         .all()
     )
+    # One cheap query instead of touching m.slides per row (which would lazy-load
+    # every slide of every deck just to test emptiness).
+    decks_with_slides = {row[0] for row in db.query(EduSlide.material_id).distinct()}
 
     return [
         EduMaterialListItem(
@@ -474,6 +626,8 @@ def list_edu_materials(
             status=m.status,
             published_at=m.published_at,
             has_spanish=bool((m.content_es or "").strip()) or bool(m.content_blocks_es),
+            has_blocks=bool(m.content_blocks),
+            has_slides=m.id in decks_with_slides,
             created_at=m.created_at,
         )
         for m in rows
@@ -487,7 +641,22 @@ def list_edu_materials(
 def get_edu_research_for_materials(
     db: Session = Depends(get_db),
 ):
-    """List APPROVED edu research that doesn't yet have materials."""
+    """List APPROVED edu research that still has study guides to generate.
+
+    A research qualifies while any of its suggestion's bands lacks an APPROVED
+    guide — the generate job (re)writes exactly those bands, so a run that lost
+    a band (e.g. a truncated 9th-12th) can be resumed from the modal instead of
+    disappearing once the first band lands. ``bands_to_generate`` names them;
+    PENDING/REJECTED guides are in it because the job overwrites them. Research
+    with no bands configured is listed only until it has materials, so the
+    modal can still say "None configured".
+    """
+    guide_status = {
+        (research_id, band): status
+        for research_id, band, status in db.query(
+            EduMaterial.research_id, EduMaterial.grade_band, EduMaterial.status
+        ).filter(EduMaterial.material_type == "guide", EduMaterial.research_id.isnot(None))
+    }
     research_with_materials = {
         r[0] for r in db.query(EduMaterial.research_id).distinct().all() if r[0] is not None
     }
@@ -500,27 +669,40 @@ def get_edu_research_for_materials(
         .all()
     )
 
-    return [
-        EduResearchForMaterials(
-            id=r.id,
-            suggestion_id=r.suggestion_id,
-            suggestion_title=r.suggestion.title if r.suggestion else "Unknown",
-            grade_bands=r.suggestion.grade_bands or [] if r.suggestion else [],
-        )
-        for r in approved_research
-        if r.id not in research_with_materials
-    ]
+    available = []
+    for r in approved_research:
+        grade_bands = (r.suggestion.grade_bands or []) if r.suggestion else []
+        to_generate = [b for b in grade_bands if guide_status.get((r.id, b)) != "APPROVED"]
+        if to_generate or (not grade_bands and r.id not in research_with_materials):
+            available.append(
+                EduResearchForMaterials(
+                    id=r.id,
+                    suggestion_id=r.suggestion_id,
+                    suggestion_title=r.suggestion.title if r.suggestion else "Unknown",
+                    grade_bands=grade_bands,
+                    bands_to_generate=to_generate,
+                )
+            )
+    return available
 
 
 @router.post(
     "/materials/generate",
-    response_model=EduMaterialGenerateResponse,
+    response_model=CrawlJobResponse,
+    status_code=202,
 )
 def generate_edu_materials_endpoint(
     body: EduMaterialGenerateRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    """Generate study guides for all grade bands from approved research."""
+    """Generate study guides for all grade bands from approved research.
+
+    Runs as a background job (#346) — a 3-band run is several minutes of LLM
+    work. Returns 202 + a job id; poll GET /media-library/jobs/{id}. On success
+    ``stats`` is an ``EduMaterialGenerateResponse``. Bands commit as they finish
+    (#90), so the materials grid fills in while the job runs.
+    """
     research = (
         db.query(EduResearch)
         .options(joinedload(EduResearch.suggestion))
@@ -534,24 +716,14 @@ def generate_edu_materials_endpoint(
     if not research.content:
         raise HTTPException(status_code=400, detail="Research has no content")
 
-    suggestion = research.suggestion
-    if suggestion is None:
+    if research.suggestion is None:
         raise HTTPException(status_code=400, detail="Research has no linked suggestion")
 
-    # generate_edu_materials commits per band (#90), so successful bands persist
-    # even if a later band fails; no router-level commit is needed.
-    materials, skipped_bands, failed_bands = generate_edu_materials(
-        research, suggestion, db, force=body.force
-    )
-
-    return EduMaterialGenerateResponse(
-        research_id=research.id,
-        suggestion_title=suggestion.title,
-        materials_created=len(materials),
-        grade_bands=[m.grade_band for m in materials],
-        material_ids=[m.id for m in materials],
-        skipped_bands=skipped_bands,
-        failed_bands=failed_bands,
+    return _kickoff_edu_job(
+        db,
+        background_tasks,
+        CrawlJobType.EDU_GENERATE_GUIDES,
+        {"research_id": research.id, "force": body.force},
     )
 
 
@@ -647,6 +819,8 @@ def generate_edu_slides_endpoint(
         raise HTTPException(status_code=400, detail="Guide's research has no content")
 
     slides, regenerated = generate_edu_slides(guide, db, force=body.force)
+    if regenerated:
+        invalidate_material_claims(db, slides.id)
     db.commit()
 
     return EduSlidesGenerateResponse(
@@ -693,6 +867,7 @@ def regenerate_edu_slides_subset_endpoint(
     positions = _validate_subset_positions(material, body.positions)
 
     result = regenerate_slides_subset(material, positions, db)
+    invalidate_material_claims(db, material.id)
     db.commit()
 
     return EduSlidesSubsetRegenerateResponse(
@@ -706,9 +881,11 @@ def regenerate_edu_slides_subset_endpoint(
 
 @router.post(
     "/materials/{material_id}/render-slides",
-    response_model=EduSlidesRenderResponse,
+    response_model=CrawlJobResponse,
+    status_code=202,
 )
 def render_edu_slides_endpoint(
+    background_tasks: BackgroundTasks,
     material_id: int = Path(..., description="Slides-material ID"),
     body: EduSlidesRenderRequest = Body(default_factory=EduSlidesRenderRequest),
     db: Session = Depends(get_db),
@@ -719,6 +896,10 @@ def render_edu_slides_endpoint(
     headless chromium, uploads the PNG to Spaces, and stores the frame URL on
     ``EduSlide.image_url`` (the per-slide artifact the video stage muxes). Pass
     ``positions`` to re-render only a subset of slides (e.g. after editing a few).
+
+    Runs as a background job (#346); returns 202 + a job id, poll
+    GET /media-library/jobs/{id}. On success ``stats`` is an
+    ``EduSlidesRenderResponse``; frames are committed as each one uploads.
     """
     material = (
         db.query(EduMaterial)
@@ -737,33 +918,24 @@ def render_edu_slides_endpoint(
         raise HTTPException(status_code=400, detail="Material has no slides; generate them first")
     positions = _validate_subset_positions(material, body.positions)
 
-    try:
-        summary = render_material_slides(material, db, positions=positions)
-    except RuntimeError as e:
-        # Browser binary missing / chromium launch failure — a deploy/env error,
-        # not bad input. Surface distinctly so it isn't read as a 4xx.
-        sentry_sdk.capture_exception(e)
-        logger.exception("Slide render engine unavailable for material id=%s", material_id)
-        raise HTTPException(status_code=500, detail="Slide render engine unavailable") from e
-
-    db.commit()
-
-    return EduSlidesRenderResponse(
-        material_id=material.id,
-        suggestion_title=material.suggestion_title,
-        grade_band=material.grade_band,
-        slides_rendered=summary["rendered"],
-        images_resolved=summary["images_resolved"],
-        images_missing=summary["images_missing"],
-        slide_image_urls=[s.image_url for s in material.slides if s.image_url],
+    return _kickoff_edu_job(
+        db,
+        background_tasks,
+        CrawlJobType.EDU_RENDER_SLIDES,
+        {
+            "material_id": material.id,
+            "positions": sorted(positions) if positions is not None else None,
+        },
     )
 
 
 @router.post(
     "/materials/{material_id}/generate-audio",
-    response_model=EduSlidesAudioResponse,
+    response_model=CrawlJobResponse,
+    status_code=202,
 )
 def generate_edu_slide_audio_endpoint(
+    background_tasks: BackgroundTasks,
     material_id: int = Path(..., description="Slides-material ID"),
     body: EduSlidesAudioRequest = Body(default_factory=EduSlidesAudioRequest),
     db: Session = Depends(get_db),
@@ -774,6 +946,10 @@ def generate_edu_slide_audio_endpoint(
     ``EduSlide.audio_url`` with its ``duration_ms`` — the per-slide audio the
     video stage muxes with the rendered frame. Pass ``positions`` to re-synth
     only a subset of slides (e.g. after editing a few narration scripts).
+
+    Runs as a background job (#346); returns 202 + a job id, poll
+    GET /media-library/jobs/{id}. On success ``stats`` is an
+    ``EduSlidesAudioResponse``; each slide's audio is committed as it uploads.
     """
     material = (
         db.query(EduMaterial)
@@ -794,25 +970,27 @@ def generate_edu_slide_audio_endpoint(
     scoped = [s for s in material.slides if positions is None or s.position in positions]
     if not any((s.narration or "").strip() for s in scoped):
         raise HTTPException(status_code=400, detail="Slides have no narration to synthesize")
+    # ElevenLabs bills per slide — never synthesize a script known to be wrong.
+    _enforce_fact_check_gate(db, material.id, STEP_INTERNAL, action="generate narration audio")
 
-    summary = generate_slide_audio(material, db, positions=positions)
-    db.commit()
-
-    return EduSlidesAudioResponse(
-        material_id=material.id,
-        suggestion_title=material.suggestion_title,
-        grade_band=material.grade_band,
-        slides_narrated=summary["narrated"],
-        skipped_no_narration=summary["skipped_no_narration"],
-        total_duration_ms=summary["total_duration_ms"],
+    return _kickoff_edu_job(
+        db,
+        background_tasks,
+        CrawlJobType.EDU_GENERATE_AUDIO,
+        {
+            "material_id": material.id,
+            "positions": sorted(positions) if positions is not None else None,
+        },
     )
 
 
 @router.post(
     "/materials/{material_id}/assemble-video",
-    response_model=EduVideoAssembleResponse,
+    response_model=CrawlJobResponse,
+    status_code=202,
 )
 def assemble_edu_slide_video_endpoint(
+    background_tasks: BackgroundTasks,
     material_id: int = Path(..., description="Slides-material ID"),
     db: Session = Depends(get_db),
 ):
@@ -821,6 +999,10 @@ def assemble_edu_slide_video_endpoint(
     Requires the deck's slides to be both rendered (#321) and narrated (#322).
     Muxes per-slide clips (hard cuts, brief hold) → one 1280x720 H.264 video,
     uploaded to Spaces as a ``video`` EduMaterial.
+
+    Runs as a background job (#346) — a full deck takes ~15-20 minutes of
+    ffmpeg. Returns 202 + a job id, poll GET /media-library/jobs/{id}. On success
+    ``stats`` is an ``EduVideoAssembleResponse``.
     """
     material = (
         db.query(EduMaterial)
@@ -846,26 +1028,10 @@ def assemble_edu_slide_video_endpoint(
                 f"{incomplete}; run render-slides and generate-audio first"
             ),
         )
+    _enforce_fact_check_gate(db, material.id, STEP_INTERNAL, action="assemble the video")
 
-    try:
-        video = assemble_slide_video(material, db)
-    except (RuntimeError, FileNotFoundError) as e:
-        # ffmpeg returned non-zero or its binary is missing — an env/processing
-        # error, not bad input. Surface distinctly so it isn't read as a 4xx.
-        sentry_sdk.capture_exception(e)
-        logger.exception("Video assembly failed for material id=%s", material_id)
-        raise HTTPException(status_code=500, detail="Video assembly failed") from e
-
-    db.commit()
-
-    return EduVideoAssembleResponse(
-        slides_material_id=material.id,
-        video_material_id=video.id,
-        suggestion_title=material.suggestion_title,
-        grade_band=material.grade_band,
-        file_url=video.file_url or "",
-        duration_ms=video.duration_ms or 0,
-        slide_count=len(material.slides),
+    return _kickoff_edu_job(
+        db, background_tasks, CrawlJobType.EDU_ASSEMBLE_VIDEO, {"material_id": material.id}
     )
 
 
@@ -893,6 +1059,7 @@ def generate_edu_guide_pdf_endpoint(
         raise HTTPException(status_code=404, detail="Edu material not found")
     if material.material_type != "guide":
         raise HTTPException(status_code=400, detail="Material is not a study guide")
+    _enforce_fact_check_gate(db, material.id, STEP_INTERNAL, action="generate the PDF")
     blocks = material.content_blocks_es if language == "es" else material.content_blocks
     content_md = material.content_es if language == "es" else material.content
     if not blocks and not (content_md or "").strip():
@@ -964,6 +1131,9 @@ async def translate_edu_guide(
             status_code=400,
             detail="Study guide already has Spanish content (pass force=true to overwrite)",
         )
+    # Translating a known-wrong guide pays DeepL to produce a second copy of the
+    # error, and a later correction would have to be applied twice.
+    _enforce_fact_check_gate(db, material.id, STEP_INTERNAL, action="translate the guide")
 
     from app.services.edu_material_generation import (
         apply_spanish_block_overrides,
@@ -1087,6 +1257,29 @@ def _load_material_with_suggestion(material_id: int, db: Session) -> EduMaterial
     return material
 
 
+def _guide_pdf_urls(material: EduMaterial) -> dict[str, str | None] | None:
+    """Both languages' PDF URLs for a guide that has rendered at least one.
+
+    file_url only remembers the last render, so the other language is probed
+    with a HEAD at its deterministic key. Storage trouble degrades to None
+    (the drawer falls back to file_url) rather than failing the detail load.
+    """
+    if material.material_type != "guide" or not material.file_url:
+        return None
+    from app.services.image_storage import ImageStorageService
+
+    try:
+        with ImageStorageService() as storage:
+            urls = {}
+            for language in ("en", "es"):
+                key = guide_pdf_key(material, language)
+                urls[language] = storage.public_url(key) if storage.object_exists(key) else None
+            return urls
+    except Exception:
+        logger.warning("Could not probe guide PDFs for material id=%s", material.id, exc_info=True)
+        return None
+
+
 def _material_detail(material: EduMaterial, db: Session) -> EduMaterialDetail:
     suggestion = material.research.suggestion if material.research else None
     # A deck's assembled MP4 lives on a sibling video material (assemble-video
@@ -1118,6 +1311,7 @@ def _material_detail(material: EduMaterial, db: Session) -> EduMaterialDetail:
         excursion_key=suggestion.excursion_key if suggestion else None,
         has_spanish=bool((material.content_es or "").strip()) or bool(material.content_blocks_es),
         file_url=material.file_url,
+        pdf_urls=_guide_pdf_urls(material),
         thumbnail_url=material.thumbnail_url,
         status=material.status,
         published_at=material.published_at,
@@ -1185,6 +1379,8 @@ def update_edu_material_content(
         setattr(material, blocks_field, blocks)
         setattr(material, md_field, blocks_to_markdown(blocks))
 
+    # The saved text is not the text the claims describe (#462).
+    invalidate_material_claims(db, material.id)
     material.updated_at = datetime.now(UTC)
     db.commit()
     db.refresh(material)
@@ -1208,8 +1404,8 @@ def update_edu_material_slides(
     Artifact fields are never accepted from the client.
     """
     from app.services.edu_material_generation import (
-        _slides_preview_text,
         normalize_slides_for_update,
+        slides_preview_text,
     )
 
     material = _load_material_with_suggestion(material_id, db)
@@ -1278,9 +1474,11 @@ def update_edu_material_slides(
             )
         )
 
-    material.content = _slides_preview_text(
+    material.content = slides_preview_text(
         [{"title": s["title"], "body": s["body"], "narration": s["narration"]} for s in slides]
     )
+    # The saved deck is not the deck the claims describe (#462).
+    invalidate_material_claims(db, material.id)
     material.updated_at = datetime.now(UTC)
     db.commit()
     db.refresh(material)
@@ -1323,6 +1521,7 @@ def generate_edu_narration_endpoint(
         )
 
     result = generate_edu_narration(material, db, force=body.force, positions=positions)
+    invalidate_material_claims(db, material.id)
     db.commit()
 
     return EduNarrationGenerateResponse(
@@ -1620,6 +1819,9 @@ def publish_edu_material(
         raise HTTPException(status_code=404, detail="Material not found")
     if material.status != "APPROVED":
         raise HTTPException(status_code=400, detail="Only approved materials can be published")
+    # The public gate is stricter: open questions block here, not just known
+    # errors. Publishing a deck also makes its assembled video live (#326).
+    _enforce_fact_check_gate(db, material.id, STEP_PUBLIC, action="publish this material")
 
     material.published_at = (body.published_at if body else None) or datetime.now(UTC)
     db.commit()

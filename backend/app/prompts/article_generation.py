@@ -147,6 +147,7 @@ GUIDELINES:
 - Do NOT include a title heading (the title is stored separately)
 - Do NOT include a references section (sources are tracked separately)
 - Do NOT use em dashes (—). Rephrase with commas, parentheses, a colon, or two separate sentences instead. (En dashes in number ranges like 1903–1914 are fine.) A rare em dash that is genuinely the clearest choice is tolerable, but avoid them by default.
+- Do NOT use bold or italic markdown (**, *, __, _) anywhere in the article, including for names, terms, foreign words, or titles of works. Carry emphasis in the sentence itself. Section headings (##) are the only markdown formatting.
 - Write in English
 {series_instruction}
 TITLE: {title}
@@ -186,26 +187,55 @@ def build_tagging_prompt(
     title: str,
     content_preview: str,
     existing_tags: list[str],
+    max_tags: int,
+    category_name: str | None = None,
 ) -> str:
-    """Build a prompt for article tagging (for Haiku)."""
+    """Build a prompt for article tagging (Sonnet)."""
     tags_list = "\n".join(f"- {tag}" for tag in existing_tags) if existing_tags else "(none)"
+    category_line = (
+        f'\nThe article already belongs to the category "{category_name}", and '
+        "categories cover Panama's historical periods.\n"
+        if category_name
+        else "\nCategories on this platform cover Panama's historical periods.\n"
+    )
 
-    return f"""You are a content tagger for a Panama history education platform.
-
-Analyze the article below and:
-1. Select relevant tags from the existing list (if any match)
-2. Suggest 1-3 new tags if the article covers topics not in the existing list
+    return f"""You are the tag curator for a Panama history education platform. Tags help \
+readers find related articles across the blog, so a tag is only useful if several \
+articles could plausibly share it.
+{category_line}
+Analyze the article below and select AT MOST {max_tags} tags total, best first — \
+fewer well-chosen tags beat many. Two or three is usually right:
+1. Prefer tags from the existing list — reuse before inventing.
+2. Suggest a new tag only when a topic CENTRAL to the article has no fitting \
+existing tag (at most 2 new).
 
 Respond with ONLY valid JSON:
 {{
   "assign": ["tag1", "tag2"],
-  "suggest": ["new tag 1"]
+  "suggest": [{{"name": "New Tag", "name_es": "Nueva Etiqueta"}}]
 }}
 
 Rules:
-- Only assign tags that genuinely apply to this article
-- Suggested new tags should be specific (e.g., "Panama Canal Treaties" not "History")
+- Hard limit: no more than {max_tags} tags across "assign" and "suggest" combined.
+- Only tag topics that are central to the article — a passing mention never earns a tag.
+- Every tag must be general enough to recur: before suggesting one, ask whether at \
+least 3 different articles about Panama's history could carry it. A detail only this \
+article would ever mention is not a tag.
+- NEVER tag a historical period or era ("Colonial Era", "19th Century", \
+"Independence Period") — the category system already covers periods.
+- People get exactly one canonical tag: the full name as history knows them \
+("Francis Drake", never "Drake" or "Sir Francis Drake"). Check the existing list \
+for the person under any variant before suggesting a new one.
+- One tag per topic — never return overlapping variants of the same subject \
+(e.g. "Portobelo", "Portobelo Fair" and "Portobelo Fair Trade Monopoly" are one \
+topic: return just "Portobelo").
+- Prefer the shortest, most reusable form of a tag.
 - Tag names should be Title Case, 1-4 words
+- Every suggested tag carries its Spanish name in "name_es", the form a Panamanian \
+reader expects: proper names stay as history knows them in Spanish ("Philip II" → \
+"Felipe II", "Henry Morgan" → "Henry Morgan", "Nombre De Dios" → "Nombre de Dios"), \
+concepts are translated ("Treasure Fleet System" → "Sistema de Flotas del Tesoro"), \
+Spanish title case with articles and prepositions in lowercase.
 
 EXISTING TAGS:
 {tags_list}

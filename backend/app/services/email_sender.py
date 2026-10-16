@@ -9,6 +9,11 @@ admin; no SMTP auth is required. Raises `EmailDeliveryError` on any failure
 Replaces the Composio GMAIL_SEND_EMAIL path that swallowed Gmail-side
 failures (issue #67) in session 04. The Composio dependency was fully
 removed in session 05 along with the Sheets-based mailing list.
+
+Under ``ENVIRONMENT=test`` (forced by ``tests/conftest.py``) a send that reaches
+the *real* ``smtplib.SMTP`` raises ``RealSendBlockedError`` instead of
+connecting (#563): the relay authorizes by sender IP, so a test run from any
+allowlisted machine would otherwise deliver real mail.
 """
 
 import logging
@@ -26,6 +31,18 @@ class EmailDeliveryError(Exception):
     """Raised when an outbound email could not be delivered to the SMTP relay."""
 
 
+class RealSendBlockedError(RuntimeError):
+    """Raised when a test run reaches the real SMTP transport (#563).
+
+    Deliberately *not* an ``EmailDeliveryError``: admin-side callers absorb
+    that one, and this must fail the test loudly rather than be logged.
+    """
+
+
+# Captured at import, before any test fixture can patch the module attribute.
+_REAL_SMTP = smtplib.SMTP
+
+
 def send_email(to: str, subject: str, body: str) -> None:
     """
     Send an HTML email via the configured SMTP relay.
@@ -35,6 +52,12 @@ def send_email(to: str, subject: str, body: str) -> None:
     do not need to re-capture.
     """
     settings = get_settings()
+
+    if settings.environment == "test" and smtplib.SMTP is _REAL_SMTP:
+        raise RealSendBlockedError(
+            f"Refusing a real SMTP send to {to} under ENVIRONMENT=test; "
+            "the conftest smtp_outbox guard was bypassed"
+        )
 
     msg = MIMEText(body, "html", "utf-8")
     msg["Subject"] = subject

@@ -26,6 +26,21 @@ def _mock_msg(text: str):
     return MagicMock(content=[MagicMock(text=text)])
 
 
+def _subtopics_then_refs_client(subtopics_msg, refs_msg):
+    """Client for a validate call that also auto-fixes references.
+
+    The sub-topic check (cap 2000) is a plain ``create``; the references call
+    (cap 8000 since #610) is at the streaming threshold, so it is streamed.
+    """
+    client = MagicMock()
+    client.messages.create.side_effect = [subtopics_msg]
+    cm = MagicMock()
+    cm.__enter__.return_value.get_final_message.return_value = refs_msg
+    cm.__exit__.return_value = False
+    client.messages.stream.return_value = cm
+    return client
+
+
 def _make_body_with_refs(refs_header: str = "## References") -> str:
     """Build a 4001-word body that includes the given references header."""
     body = "word " * 4001
@@ -140,12 +155,10 @@ class TestReferencesAutoFix:
 
     @patch("app.services.llm.get_client")
     def test_autofix_accepts_sources_header(self, mock_get_client):
-        mock_client = MagicMock()
-        mock_client.messages.create.side_effect = [
+        mock_get_client.return_value = _subtopics_then_refs_client(
             _mock_msg(json.dumps({"subtopics_found": 2, "subtopics_total": 2})),
             _mock_msg("## Sources\n- Generated Source 1"),
-        ]
-        mock_get_client.return_value = mock_client
+        )
 
         content = _make_body_without_refs()
         result = validate_research_document(content, sub_topics=["A: a", "B: b"])
@@ -155,12 +168,10 @@ class TestReferencesAutoFix:
 
     @patch("app.services.llm.get_client")
     def test_autofix_rejects_non_conforming_response(self, mock_get_client):
-        mock_client = MagicMock()
-        mock_client.messages.create.side_effect = [
+        mock_get_client.return_value = _subtopics_then_refs_client(
             _mock_msg(json.dumps({"subtopics_found": 2, "subtopics_total": 2})),
             _mock_msg("Sorry, no citations were found in the document."),
-        ]
-        mock_get_client.return_value = mock_client
+        )
 
         content = _make_body_without_refs()
         result = validate_research_document(content, sub_topics=["A: a", "B: b"])
@@ -361,13 +372,11 @@ class TestValidConjunction:
 
     @patch("app.services.llm.get_client")
     def test_refs_false_subtopics_true_valid_false(self, mock_get_client):
-        mock_client = MagicMock()
         # First: sub-topic coverage. Second: auto-fix rejected.
-        mock_client.messages.create.side_effect = [
+        mock_get_client.return_value = _subtopics_then_refs_client(
             _mock_msg(json.dumps({"subtopics_found": 2, "subtopics_total": 2})),
             _mock_msg("no references could be extracted"),
-        ]
-        mock_get_client.return_value = mock_client
+        )
 
         content = _make_body_without_refs()
         result = validate_research_document(content, sub_topics=["A: a", "B: b"])

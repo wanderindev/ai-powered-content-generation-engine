@@ -196,6 +196,21 @@ class TestBlockFragments:
         assert '<img class="g-photo" src="https://cdn/x.jpg"' in f.html
         assert '<span class="ring"></span>' in f.html
         assert '<p class="g-caption">La torre</p>' in f.html
+        # Landscape (3:2) is the default frame shape at full content width.
+        assert "aspect-ratio:3 / 2" in f.html
+        assert "width:62%" not in f.html
+
+    def test_image_aspect_wide_and_portrait_frames(self):
+        base = {"type": "image", "image_query": "tower", "media_path": "https://cdn/x.jpg"}
+        wide = _block_to_frag({**base, "aspect": "wide"}, "es", 0)
+        assert "aspect-ratio:21 / 9" in wide.html
+        # Portrait narrows and centers the figure so it fits the page budget.
+        portrait = _block_to_frag({**base, "aspect": "portrait"}, "es", 0)
+        assert "aspect-ratio:3 / 4" in portrait.html
+        assert 'style="width:62%;margin:0 auto"' in portrait.html
+        # An unknown aspect falls back to the landscape default.
+        junk = _block_to_frag({**base, "aspect": "circle"}, "es", 0)
+        assert "aspect-ratio:3 / 2" in junk.html
 
     def test_image_without_media_renders_editor_placeholder(self):
         f = _block_to_frag({"type": "image", "image_query": "colonial tower"}, "es", 0)
@@ -250,7 +265,9 @@ class TestFixedPages:
         assert "3rd-6th" in html
 
     def test_cover_with_picked_photo_gets_hero_band_and_tint(self):
-        html = _cover_page_html({"type": "cover", "media_path": "https://cdn/hero.jpg"}, "T", None, "en")
+        html = _cover_page_html(
+            {"type": "cover", "media_path": "https://cdn/hero.jpg"}, "T", None, "en"
+        )
         assert '<img src="https://cdn/hero.jpg"' in html
         assert 'class="tint"' in html
         assert "hero-solid" not in html
@@ -354,7 +371,10 @@ class TestPageUnitsHtml:
 
     def test_split_callout_rebuilds_labelled_box_on_each_page(self):
         f = _block_to_frag(
-            {"type": "callout", "terms": [{"term": f"t{j}", "definition": f"d{j}"} for j in range(3)]},
+            {
+                "type": "callout",
+                "terms": [{"term": f"t{j}", "definition": f"d{j}"} for j in range(3)],
+            },
             "es",
             0,
         )
@@ -401,7 +421,9 @@ class TestGenerateGuidePdf:
         material = _guide_material(test_db, content_es="# Hola\n\nContenido de la guía.")
         storage = _FakeStorage()
         with (
-            patch("app.services.guide_pdf.render_html_to_pdf", return_value=_minimal_pdf()) as render,
+            patch(
+                "app.services.guide_pdf.render_html_to_pdf", return_value=_minimal_pdf()
+            ) as render,
             patch("app.services.guide_pdf.ImageStorageService", return_value=storage),
         ):
             generate_guide_pdf(material, test_db, language="es")
@@ -638,3 +660,17 @@ def test_real_chromium_timeline_page_respects_footer_reserve():
             assert e["label"] in joined
     finally:
         doc.close()
+
+
+def test_guide_pdf_key_is_deterministic_per_language():
+    from app.services.guide_pdf import guide_pdf_key
+
+    material = EduMaterial(material_type="guide", research_id=7, grade_band="3rd-6th", title="t")
+    assert guide_pdf_key(material, "es") == "materials/guide/7/3rd_6th_es.pdf"
+    assert guide_pdf_key(material, "en") == "materials/guide/7/3rd_6th_en.pdf"
+    assert (
+        guide_pdf_key(
+            EduMaterial(material_type="guide", research_id=7, grade_band=None, title="t"), "en"
+        )
+        == "materials/guide/7/none_en.pdf"
+    )

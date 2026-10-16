@@ -25,9 +25,6 @@ export default function CascoMuseumsPage() {
                             <p className="mt-6 text-xl/8 text-gray-700">
                                 {t('excursions.casco_museums.details.description_1')}
                             </p>
-                            <p className="mt-6 text-base/7 text-gray-600 italic">
-                                {t('excursions.casco_museums.details.description_2')}
-                            </p>
                         </div>
                     </div>
                     <div className="lg:sticky lg:top-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
@@ -36,32 +33,46 @@ export default function CascoMuseumsPage() {
                     <div className="lg:col-start-1 lg:row-start-2">
                         <div className="max-w-xl text-base/7 text-gray-600 lg:max-w-lg">
                             <h2 className="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-                                {t('excursions.casco_museums.details.highlights_title')}
+                                {t('excursions.casco_museums.details.tours_title')}
                             </h2>
-                            <ul role="list" className="mt-8 space-y-8 text-gray-600">
-                                {getList('excursions.casco_museums.details.highlights').map((highlight, index) => (
-                                    <li key={index} className="flex gap-x-3">
-                                        <CheckCircleIcon aria-hidden="true" className="mt-1 size-5 flex-none text-indigo-600" />
-                                        <span>
-                                            <strong className="font-semibold text-gray-900">{highlight.category}:</strong> {highlight.items}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
+                            {getList('excursions.casco_museums.details.tours').map((tour, tourIndex) => (
+                                <section key={tourIndex} className="mt-10 border-t border-gray-200 pt-8">
+                                    <h3 className="text-xl font-semibold tracking-tight text-gray-900">
+                                        {tour.name}
+                                    </h3>
+                                    <p className="mt-2 text-base/7 text-gray-600 italic">
+                                        {tour.duration}
+                                    </p>
 
-                            <h2 className="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-                                {t('excursions.casco_museums.details.adaptations_title')}
-                            </h2>
-                            <ul role="list" className="mt-8 space-y-8 text-gray-600">
-                                {getList('excursions.casco_museums.details.adaptations').map((adaptation, index) => (
-                                    <li key={index} className="flex gap-x-3">
-                                        <span className="mt-1 h-2 w-2 flex-none rounded-full bg-indigo-600" />
-                                        <span>
-                                            <strong className="font-semibold text-gray-900">{adaptation.grade}:</strong> {adaptation.desc}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
+                                    <h4 className="mt-6 text-lg font-semibold text-gray-900">
+                                        {tour.highlights_title}
+                                    </h4>
+                                    <ul role="list" className="mt-4 space-y-6 text-gray-600">
+                                        {(tour.highlights || []).map((highlight, index) => (
+                                            <li key={index} className="flex gap-x-3">
+                                                <CheckCircleIcon aria-hidden="true" className="mt-1 size-5 flex-none text-indigo-600" />
+                                                <span>
+                                                    <strong className="font-semibold text-gray-900">{highlight.category}:</strong> {highlight.items}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <h4 className="mt-6 text-lg font-semibold text-gray-900">
+                                        {tour.adaptations_title}
+                                    </h4>
+                                    <ul role="list" className="mt-4 space-y-6 text-gray-600">
+                                        {(tour.adaptations || []).map((adaptation, index) => (
+                                            <li key={index} className="flex gap-x-3">
+                                                <span className="mt-1 h-2 w-2 flex-none rounded-full bg-indigo-600" />
+                                                <span>
+                                                    <strong className="font-semibold text-gray-900">{adaptation.grade}:</strong> {adaptation.desc}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+                            ))}
                         </div>
                     </div>
                 </div>

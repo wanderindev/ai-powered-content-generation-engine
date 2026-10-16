@@ -187,7 +187,7 @@
       "steps": {
         "context": {
           "title": "1. Pre-Visit: Context",
-          "desc": "We provide a virtual Zoom session to set the stage. We give background context, a vocabulary list, and \"inquiry questions\" to spark curiosity before the trip."
+          "desc": "Days before the excursion, the teacher receives two resources adapted to the group's grade level: a <video>video presentation</video> covering the main aspects of the site, to show in the classroom, and a <guide>study guide</guide> whose vocabulary and historical context can be assigned as homework or worked through in class."
         },
         "immersion": {
           "title": "2. The Excursion: Immersion",
@@ -195,27 +195,7 @@
         },
         "reflection": {
           "title": "3. Post-Visit: Reflection",
-          "desc": "We provide a grade-level adapted study guide for the classroom to synthesize learning and reinforce the newly acquired knowledge."
-        }
-      }
-    },
-    "resources": {
-      "title": "Resources for Teachers",
-      "description": "We provide everything you need to make the field trip an educational success.",
-      "cta_pdf": "Download PDF",
-      "cta_video": "Watch now",
-      "items": {
-        "guide": {
-          "title": "Download Sample Study Guide",
-          "desc": "See how our post-visit materials reinforce the concepts covered during the field trip."
-        },
-        "infographic": {
-          "title": "Download Sample Infographic",
-          "desc": "Visual aids that help students contextualize the timeline and key figures of the historical site."
-        },
-        "video": {
-          "title": "Watch Sample Zoom",
-          "desc": "A snippet of our virtual pre-visit session where we prepare the class for the excursion."
+          "desc": "The same <guide>study guide</guide> closes the cycle in the classroom: a \"test your knowledge\" section and topics for reflection synthesize what was learned and reinforce the newly acquired knowledge."
         }
       }
     },
@@ -267,44 +247,92 @@
       "title": "Casco Antiguo Museum Circuit",
       "desc": "Students actively trace Panama's evolution from Spanish colony to modern republic through guided museum exploration tailored to your curriculum.",
       "details": {
-        "description_1": "Students actively trace Panama's evolution from Spanish colony to modern republic through guided museum exploration tailored to your curriculum.",
-        "description_2": "3 hours of guided exploration available in Spanish and English",
-        "highlights_title": "Select 3 Museums",
-        "highlights": [
+        "description_1": "Students actively trace Panama's evolution from Spanish colony to modern republic through guided museum exploration tailored to your curriculum. Choose one of two visits: the Interoceanic Canal Museum on its own, or a circuit of three of Casco Antiguo's museums.",
+        "tours_title": "Two Ways to Visit",
+        "tours": [
           {
-            "category": "Interoceanic Canal Museum",
-            "items": "Engineering marvel that transformed global shipping"
+            "name": "Interoceanic Canal Museum",
+            "duration": "2 hours of guided exploration available in Spanish and English",
+            "highlights_title": "The Museum's Route",
+            "highlights": [
+              {
+                "category": "The isthmus as a land bridge",
+                "items": "The newly renovated ground floor follows the route from the joining of the continents through 1879: the animals that crossed, the first peoples, and the Spanish discovery of the South Sea"
+              },
+              {
+                "category": "Camino Real and the Gold Rush railroad",
+                "items": "Mule trains carrying Peruvian silver across the isthmus, the fairs of Portobelo, and the 1855 railroad that carried the forty-niners to California"
+              },
+              {
+                "category": "The French failure and the U.S. canal",
+                "items": "Lesseps' sea-level dream, the yellow fever and malaria that broke it, and the American lock canal that opened in 1914"
+              },
+              {
+                "category": "Life in the Canal Zone",
+                "items": "The Gold and Silver Roll, the West Indian workforce, and what a foreign enclave across the middle of the country meant for Panamanians"
+              },
+              {
+                "category": "The road to sovereignty",
+                "items": "From the flag to 9 January 1964, the 1977 Torrijos-Carter treaties, and the handover of 31 December 1999"
+              },
+              {
+                "category": "The canal today",
+                "items": "The 2016 expansion, the Panama Canal Authority, and the challenges of water and neutrality"
+              }
+            ],
+            "adaptations_title": "Grade Level Adaptations",
+            "adaptations": [
+              {
+                "grade": "3rd - 6th Grade",
+                "desc": "Follow the route across the isthmus through concrete objects and stories: the land bridge and its animals, mules and treasure on the Camino Real, the Gold Rush railroad, how a lock lifts a ship, and the story of Panama's flag."
+              },
+              {
+                "grade": "7th - 8th Grade",
+                "desc": "Trace cause and effect across the eras of the route: why the French failed and the U.S. succeeded, what life in the Canal Zone (Gold and Silver Roll) meant for Panamanians, and how the road from the flag to 9 January 1964 led to the 1977 treaties and the 1999 handover."
+              },
+              {
+                "grade": "9th - 12th Grade",
+                "desc": "Read the museum critically: analyze the 1903 and 1977 treaties as primary sources, weigh contested figures and the museum's sovereignty-centered narrative, and evaluate the canal's present-day challenges of water and neutrality."
+              }
+            ]
           },
           {
-            "category": "History Museum",
-            "items": "Colonial to republican period transition at Municipal Palace"
-          },
-          {
-            "category": "Mola Museum",
-            "items": "Indigenous artistry and cultural expression"
-          },
-          {
-            "category": "La Merced Museum",
-            "items": "Colonial religious heritage"
-          },
-          {
-            "category": "Bolívar Palace",
-            "items": "Historical documents, diplomatic gifts, and the Roberto F. Chiari Library"
-          }
-        ],
-        "adaptations_title": "Grade Level Adaptations",
-        "adaptations": [
-          {
-            "grade": "3rd - 6th Grade",
-            "desc": "Engage with interactive displays on Panama's diverse cultural heritage and learn about Panama's independence."
-          },
-          {
-            "grade": "7th - 8th Grade",
-            "desc": "Critically evaluate how Panama's strategic location shaped its historical development."
-          },
-          {
-            "grade": "9th - 12th Grade",
-            "desc": "Explore how Panama's unique position created complex political and economic relationships with global powers, particularly Spain, Colombia, and the United States."
+            "name": "Casco Antiguo Museum Circuit",
+            "duration": "2 hours of guided exploration available in Spanish and English",
+            "highlights_title": "Choose 3 of 4 Museums",
+            "highlights": [
+              {
+                "category": "History Museum",
+                "items": "Colonial to republican period transition at Municipal Palace"
+              },
+              {
+                "category": "Mola Museum",
+                "items": "Indigenous artistry and cultural expression"
+              },
+              {
+                "category": "La Merced Museum",
+                "items": "Beyond the church itself, the museum inside it holds Panama's most complete parish archives, spanning more than three centuries, with the baptism and death records of historical figures and first-hand accounts of historical events, plus a large collection of religious artifacts, a collection of historical photographs, and a monumental Belén that recreates the entire town of Bethlehem around the nativity"
+              },
+              {
+                "category": "Bolívar Palace",
+                "items": "Historical documents, diplomatic gifts, and the Roberto F. Chiari Library"
+              }
+            ],
+            "adaptations_title": "Grade Level Adaptations",
+            "adaptations": [
+              {
+                "grade": "3rd - 6th Grade",
+                "desc": "Engage with interactive displays on Panama's diverse cultural heritage and learn about Panama's independence."
+              },
+              {
+                "grade": "7th - 8th Grade",
+                "desc": "Critically evaluate how Panama's strategic location shaped its historical development."
+              },
+              {
+                "grade": "9th - 12th Grade",
+                "desc": "Explore how Panama's unique position created complex political and economic relationships with global powers, particularly Spain, Colombia, and the United States."
+              }
+            ]
           }
         ]
       }
@@ -403,9 +431,9 @@
     },
     "miraflores": {
       "title": "Miraflores Visitor Center and IMAX",
-      "desc": "Witness the engineering marvel of the Panama Canal as massive ships navigate the locks. Perfect for 4th-6th graders to observe engineering in action.",
+      "desc": "Witness the engineering marvel of the Panama Canal as massive ships navigate the locks. Perfect for 4th-8th graders to observe engineering in action.",
       "details": {
-        "description_1": "Perfect for 4th-6th graders, this field trip transforms abstract concepts of engineering and global trade into tangible, observable phenomena as ships weighing thousands of tons navigate the legendary Panama Canal locks. Students witness the \"Miraflores Ballet\" as massive gates open and close, water fills and empties, and electric \"mules\" guide vessels through precision operations that demonstrate core physical science principles.",
+        "description_1": "Perfect for 4th-8th graders, this field trip transforms abstract concepts of engineering and global trade into tangible, observable phenomena as ships weighing thousands of tons navigate the legendary Panama Canal locks. Students witness the \"Miraflores Ballet\" as massive gates open and close, water fills and empties, and electric \"mules\" guide vessels through precision operations that demonstrate core physical science principles.",
         "description_2": "2 hours of guided exploration available in Spanish and English",
         "highlights_title": "Highlights",
         "highlights": [
@@ -429,7 +457,7 @@
         "adaptations_title": "Recommended Grade Levels",
         "adaptations": [
           {
-            "grade": "4th - 6th Grade",
+            "grade": "4th - 8th Grade",
             "desc": "Educational materials incorporate science, history, and global economics in age-appropriate formats."
           }
         ]
@@ -732,6 +760,78 @@
       "description": "Transform your visit into a meaningful journey. Contact us to plan your private tour or create a custom itinerary for your group.",
       "button": "Start Planning"
     },
+    "panama_viejo_507": {
+      "title": "Panamá Viejo",
+      "desc": "Recorre uno de los sitios históricos más importantes de la ciudad y descubre las historias que permanecen entre sus ruinas.",
+      "spanish_notice": "This tour is conducted in Spanish only. If you are comfortable with Spanish or would like to experience the tour in its original language, you are very welcome to join!",
+      "hero": {
+        "badge": "Reserva tu tour de",
+        "title": "Panamá Viejo",
+        "subtitle": "Recorre uno de los sitios históricos más importantes de la ciudad y descubre las historias que permanecen entre sus ruinas.",
+        "prices": "Adultos $15  |  Jubilados $10  |  Menores $5",
+        "dates": "Sábado 15 y domingo 16 de agosto",
+        "duration": "Duración aproximada: 2 horas",
+        "type": "Grupo abierto",
+        "cta": "Reservar Ahora"
+      },
+      "details": {
+        "title": "Donde comenzó Panamá",
+        "description_1": "Recorra las inquietantes ruinas de la primera ciudad europea en la costa pacífica de América. Fundada en 1519 y destruida por el infame pirata Henry Morgan en 1671, Panamá Viejo se erige como un poderoso testimonio de la ambición colonial, la resistencia indígena y los dramáticos acontecimientos que dieron forma al Nuevo Mundo.",
+        "description_2": "Aproximadamente 2 horas, incluyendo la visita al museo y la subida a la torre. Este recorrido se realiza en español.",
+        "highlights_title": "Lo más destacado del tour",
+        "highlights": [
+          {
+            "title": "La torre de la catedral",
+            "desc": "Suba a la icónica torre del campanario, el monumento más fotografiado de Panamá, para disfrutar de vistas panorámicas impresionantes que abarcan desde las ruinas antiguas hasta el horizonte moderno, capturando 500 años de historia en una sola mirada."
+          },
+          {
+            "title": "El ataque pirata de 1671",
+            "desc": "Párese donde tuvo lugar la incursión más dramática de la historia mientras su guía relata el devastador ataque de Henry Morgan y la desesperada decisión de quemar la ciudad en lugar de entregar sus tesoros."
+          },
+          {
+            "title": "Descubrimientos arqueológicos",
+            "desc": "Explore calles, conventos y plazas excavados mientras aprende sobre el trabajo arqueológico en curso que continúa revelando secretos de la vida colonial y de los pueblos indígenas que vivieron aquí antes."
+          },
+          {
+            "title": "El museo del sitio",
+            "desc": "Vea artefactos recuperados de las ruinas, maquetas que muestran la ciudad en su apogeo y exhibiciones que dan vida a la vida cotidiana de esta próspera capital colonial."
+          }
+        ],
+        "includes_title": "Qué incluye",
+        "includes": [
+          "Guía experto en español",
+          "Entradas al sitio y al museo",
+          "Acceso a la torre"
+        ],
+        "facts_title": "Datos prácticos",
+        "facts": [
+          "Duración: aproximadamente 2 horas",
+          "Punto de encuentro: estacionamiento del Complejo Arqueológico, frente al Mercado de Artesanías",
+          "Actividad física: caminata moderada por terreno irregular (recomendamos zapatos cerrados)",
+          "El recorrido se realiza en español",
+          "No incluye transporte"
+        ]
+      },
+      "booking": {
+        "title": "Reserva Tu Espacio",
+        "subtitle": "Selecciona la fecha, horario y número de participantes",
+        "step_date": "Selecciona Fecha",
+        "step_time": "Selecciona Horario",
+        "step_participants": "Participantes",
+        "adult": "Adultos (18+)",
+        "senior": "Jubilados",
+        "child_5_17": "Menores (5 a 17 años)",
+        "child_under_5": "Menores de 5 años",
+        "free": "Gratis",
+        "senior_discount": "Descuento de jubilado",
+        "total_participants": "Total: {{count}} participantes",
+        "meeting_point": "Punto de encuentro: estacionamiento del Complejo Arqueológico, frente al Mercado de Artesanías",
+        "reserve_button": "Agregar al Carrito",
+        "added_to_cart": "¡Agregado al carrito!",
+        "add_another": "Reservar otro horario",
+        "go_to_checkout": "Ir al Checkout"
+      }
+    },
     "siete_iglesias": {
       "title": "The Route of the Seven Churches",
       "desc": "A specialized tour through the seven most significant temples of Casco Antiguo during Holy Week.",
@@ -891,7 +991,13 @@
   "blog": {
     "title": "Our Blog",
     "subtitle": "Explore the fascinating history of Panama through our in-depth articles and series.",
-    "error": "Failed to load articles. Please try again later."
+    "error": "Failed to load articles. Please try again later.",
+    "listen_available": "Listen to this article, read by the author.",
+    "sort_label": "Series order",
+    "sort_newest": "Newest first",
+    "sort_oldest": "Oldest first",
+    "related_title": "Related articles",
+    "related_subtitle": "More from the archive on connected people, places and events."
   },
   "confirm_subscription": {
     "title": "Confirm Your Subscription",
@@ -1067,7 +1173,7 @@
       "description": "Enter your admin email to receive an access link.",
       "request_access": "Request Access",
       "check_email": "Check your email for an access link.",
-      "link_valid": "The link is valid for 24 hours."
+      "link_valid": "The link is valid for 7 days."
     },
     "orders": {
       "title": "Pending Orders",
@@ -1089,6 +1195,35 @@
       "notes_placeholder": "e.g., \"Paid via Cuanto - Ref #12345\"",
       "cancel": "Cancel",
       "confirm": "Confirm Payment Received"
+    },
+    "approvals": {
+      "title": "Approvals",
+      "description": "Publish, unpublish and approve requests filed by MCP agents. Nothing runs until you approve; approving re-checks every publish precondition.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirm_approve": "Run this action now?",
+      "filter_pending": "Pending",
+      "filter_all": "All",
+      "loading": "Loading…",
+      "empty": "No requests.",
+      "auto_slot": "Server-picked slot",
+      "col_action": "Action",
+      "col_article": "Article",
+      "col_rationale": "Rationale",
+      "col_status": "Status",
+      "failed_toast": "Approved, but the action failed",
+      "error_toast": "Request failed",
+      "actions": {
+        "PUBLISH": "Publish",
+        "UNPUBLISH": "Unpublish",
+        "APPROVE_ARTICLE": "Approve article"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "EXECUTED": "Executed",
+        "FAILED": "Failed",
+        "REJECTED": "Rejected"
+      }
     }
   },
   "edu_materials": {
@@ -1298,5 +1433,58 @@
     "title": "Page not found",
     "message": "The page you're looking for doesn't exist or may have been moved.",
     "backHome": "Back to home"
+  },
+  "ask_pic": {
+    "eyebrow": "Ask Panama in Context",
+    "title": "Ask a question about Panama's history",
+    "subtitle": "Answers come only from the articles on our blog, with links to the articles they draw on. If the blog doesn't cover your question, we'll say so instead of guessing.",
+    "form": {
+      "label": "Your question",
+      "placeholder": "For example: Why was the Panama Railroad built?",
+      "counter": "{{count}} / {{max}} characters",
+      "submit": "Ask",
+      "submitting": "Searching the blog…",
+      "disclaimer": "Answers are generated automatically from our articles and may contain mistakes. Please don't include personal information in your question."
+    },
+    "loading": "Reading the blog for an answer…",
+    "answered": {
+      "heading": "Answer",
+      "sources": "From these articles",
+      "untitled": "Untitled article"
+    },
+    "not_covered": {
+      "title": "Our blog doesn't cover that yet",
+      "body": "We couldn't find an answer to that question in our articles. Try rephrasing it, or browse the blog."
+    },
+    "refused": {
+      "title": "We can't answer that question",
+      "body": "Ask Panama in Context only answers questions about Panama's history that our articles cover."
+    },
+    "invalid": {
+      "title": "Please check your question",
+      "body": "Write a question within the character limit and try again."
+    },
+    "rate_limited": {
+      "title": "You've asked a lot of questions",
+      "body": "Please wait a while before asking another one."
+    },
+    "budget": {
+      "title": "We've reached today's limit",
+      "body": "Ask Panama in Context has answered as many questions as it can today. Please come back tomorrow."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "body": "We couldn't answer your question right now. Please try again in a few minutes."
+    },
+    "unavailable": {
+      "title": "Ask Panama in Context isn't available right now",
+      "body": "This feature is currently turned off. In the meantime, all our articles are on the blog."
+    },
+    "browse_blog": "Browse the blog",
+    "callout": {
+      "title": "Have a question about Panama's history?",
+      "body": "Ask it, and get an answer drawn from our articles, with links to read more.",
+      "cta": "Ask a question"
+    }
   }
 }

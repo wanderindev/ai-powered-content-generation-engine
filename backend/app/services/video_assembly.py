@@ -18,6 +18,7 @@ import logging
 import os
 import subprocess
 import tempfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -27,6 +28,8 @@ from app.models.enums import ContentStatus, MaterialType
 from app.services.image_storage import ImageStorageService
 
 logger = logging.getLogger(__name__)
+
+ProgressCallback = Callable[[int, int, str], None]
 
 VIDEO_FPS = 30
 PAUSE_MS = 500  # silent hold appended after each slide's narration (hard cut after)
@@ -101,7 +104,11 @@ def _run_ffmpeg(cmd: list[str]) -> None:
         raise RuntimeError(f"ffmpeg failed ({cmd[-1]}): {tail}")
 
 
-def assemble_slide_video(slides_material: EduMaterial, db: Session) -> EduMaterial:
+def assemble_slide_video(
+    slides_material: EduMaterial,
+    db: Session,
+    progress: ProgressCallback | None = None,
+) -> EduMaterial:
     """Assemble a slides-material's frames + narration into one MP4 ``EduMaterial``.
 
     Every slide must already have both ``image_url`` (#321) and ``audio_url``
@@ -110,6 +117,9 @@ def assemble_slide_video(slides_material: EduMaterial, db: Session) -> EduMateri
     concats them, uploads the MP4 to Spaces, and upserts a ``video`` EduMaterial
     on ``(research_id, "video", grade_band)`` with ``file_url`` + ``duration_ms``.
     The caller commits.
+
+    ``progress(done, total, current)`` ticks once per muxed clip, then once for
+    the concat + upload (``total`` = slides + 1).
     """
     slides = slides_material.slides  # ordered by EduSlide.position
     if not slides:
@@ -137,6 +147,8 @@ def assemble_slide_video(slides_material: EduMaterial, db: Session) -> EduMateri
                 total_ms = (slide.duration_ms or 0) + PAUSE_MS
                 _run_ffmpeg(_clip_cmd(png_path, mp3_path, clip_path, total_ms))
                 clip_paths.append(clip_path)
+                if progress is not None:
+                    progress(len(clip_paths), len(slides) + 1, f"slide {slide.position}")
 
             list_path = os.path.join(tmp, "concat.txt")
             with open(list_path, "w") as f:
@@ -151,6 +163,8 @@ def assemble_slide_video(slides_material: EduMaterial, db: Session) -> EduMateri
         band_slug = (slides_material.grade_band or "none").replace("-", "_")
         key = f"materials/video/{slides_material.research_id}/{band_slug}.mp4"
         file_url = storage.upload_image(mp4_bytes, key, "video/mp4")
+        if progress is not None:
+            progress(len(slides) + 1, len(slides) + 1, "uploaded")
     finally:
         storage.close()
 

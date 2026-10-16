@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -10,7 +11,9 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import (
     admin,
+    agent_tasks,
     articles,
+    ask,
     auth,
     booking_admin,
     bookings,
@@ -20,6 +23,9 @@ from app.api import (
     edu,
     educators,
     instagram,
+    knowledge,
+    mcp_admin,
+    mcp_approvals,
     media_library,
     orders,
     public_edu,
@@ -31,10 +37,46 @@ from app.api import (
     zones,
 )
 from app.core.config import get_settings
-from app.core.observability import scrub_pii_event
+from app.core.observability import scrub_breadcrumb, scrub_pii_event
+from app.mcp.server import mcp_http, mount_mcp
 from app.services.instagram_scheduler import instagram_scheduler_loop
 
 settings = get_settings()
+
+
+def _configure_logging(level_name: str) -> None:
+    """Install a root stdout/stderr handler and raise only the ``app`` namespace.
+
+    Without this, nothing configures logging for the app: uvicorn's own config
+    touches only the ``uvicorn*`` loggers and leaves the root logger bare, so
+    every ``logger.info`` in ``app.*`` fell through to ``logging.lastResort``
+    (WARNING and above only) and was discarded before reaching ``docker logs``
+    (issue #424).
+
+    The root handler is deliberately installed at WARNING: ``basicConfig(
+    level=logging.INFO)`` would also switch on INFO for httpx, the anthropic
+    SDK, botocore and deepl, which is a real log-volume problem on a 1GB
+    droplet. Records are gated by the *originating* logger's effective level,
+    so raising ``app`` alone is enough for ``app.services.llm`` et al. to emit
+    and propagate to the root handler, while third-party loggers stay at
+    WARNING.
+
+    ``force=True`` is intentionally NOT passed: under pytest the root logger
+    already has handlers, and tearing them out would break the suite's caplog
+    assertions. There, ``basicConfig`` is a documented no-op and only the
+    ``app``-level line below takes effect — which is all the tests need.
+    """
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+    level = getattr(logging, level_name.upper(), None)
+    if not isinstance(level, int):
+        level = logging.INFO
+    logging.getLogger("app").setLevel(level)
+
+
+_configure_logging(settings.log_level)
 
 # Sentry DSN is read from the environment (set in the droplet's .env; unset in
 # CI/dev/forks). When unset, init is a no-op so non-prod runs stay silent. The
@@ -49,6 +91,7 @@ if sentry_dsn and os.environ.get("ENVIRONMENT") != "test":
         dsn=sentry_dsn,
         send_default_pii=False,
         before_send=scrub_pii_event,
+        before_breadcrumb=scrub_breadcrumb,
     )
 
 
@@ -80,7 +123,10 @@ async def lifespan(_app: FastAPI):
     scheduler_stop = asyncio.Event()
     if settings.instagram_scheduler_enabled and settings.environment != "test":
         scheduler_task = asyncio.create_task(instagram_scheduler_loop(scheduler_stop))
-    yield
+    # MCP server (#638): the SDK's Streamable HTTP session manager must be
+    # running for /mcp to answer (see app/mcp/server.py).
+    async with mcp_http.run():
+        yield
     if scheduler_task is not None:
         scheduler_stop.set()
         await scheduler_task
@@ -136,6 +182,7 @@ def root():
 # Include routers
 app.include_router(admin.router, prefix="/api/v1")
 app.include_router(articles.router, prefix="/api/v1")
+app.include_router(ask.router, prefix="/api/v1")  # public Ask PIC (#635)
 app.include_router(categories.router, prefix="/api/v1")
 app.include_router(contact.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
@@ -151,6 +198,10 @@ app.include_router(booking_admin.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(edu.router, prefix="/api/v1")
 app.include_router(instagram.router, prefix="/api/v1")
+app.include_router(agent_tasks.router, prefix="/api/v1")
+app.include_router(knowledge.router, prefix="/api/v1")
+app.include_router(mcp_admin.router, prefix="/api/v1")  # MCP audit log (#639)
+app.include_router(mcp_approvals.router, prefix="/api/v1")  # MCP approval gates (#642)
 app.include_router(webhooks.router, prefix="/api/v1")
 
 # Media library
@@ -162,3 +213,8 @@ app.include_router(public_edu.router, prefix="/api/v1")
 
 # Educator access
 app.include_router(educators.router, prefix="/api/v1")
+
+# MCP server for LLM agents (#638, epic #620): exact routes /mcp and its
+# RFC 9728 metadata URL, outside /api/v1. Token auth is its own (mcp_tokens),
+# not the admin or driver token. See docs/claude/mcp.md.
+mount_mcp(app)

@@ -98,7 +98,35 @@ class InstagramRenderResponse(BaseModel):
 
 
 class InstagramScheduleRequest(BaseModel):
-    scheduled_at: datetime
+    # Omitted / null: the server derives the time (#576) — an ARTICLE_PROMO
+    # goes out the day after its article's ``published_at`` at 17:00 UTC.
+    # Required for every other post type.
+    scheduled_at: datetime | None = None
+
+
+class InstagramVerifyRequest(BaseModel):
+    # Optional: with a rendered post, verify also creates (never publishes)
+    # a media container for its JPEG.
+    post_id: int | None = None
+
+
+class InstagramVerifyStep(BaseModel):
+    name: str
+    ok: bool
+    detail: str
+    data: dict = {}
+
+
+class InstagramVerifyResponse(BaseModel):
+    ok: bool
+    publishing_enabled: bool
+    published: bool = False  # always False: verify never calls media_publish
+    steps: list[InstagramVerifyStep]
+
+
+class InstagramPublishingStatus(BaseModel):
+    configured: bool
+    publishing_enabled: bool
 
 
 class InstagramPublishStateResponse(BaseModel):

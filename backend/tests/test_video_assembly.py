@@ -193,7 +193,10 @@ class TestAssembleSlideVideo:
 # --- POST /materials/{id}/assemble-video ------------------------------------
 
 
+@pytest.mark.usefixtures("edu_job_session")
 class TestAssembleVideoEndpoint:
+    """assemble-video validates synchronously, then runs as a background job (#346)."""
+
     URL = "/api/v1/admin/dashboard/edu/materials/{id}/assemble-video"
 
     def test_missing_material_404(self, test_client, test_db):
@@ -205,27 +208,38 @@ class TestAssembleVideoEndpoint:
 
     def test_incomplete_deck_400_without_calling_service(self, test_client, test_db):
         m = _slides_material(test_db, n=2, with_audio=False)
-        with patch("app.api.edu.assemble_slide_video") as svc:
+        with patch("app.services.edu_jobs.assemble_slide_video") as svc:
             resp = test_client.post(self.URL.format(id=m.id))
         assert resp.status_code == 400
         assert "positions" in resp.json()["detail"]
         svc.assert_not_called()
 
-    @patch("app.api.edu.assemble_slide_video")
-    def test_success_returns_video_fields(self, mock_svc, test_client, test_db):
+    @patch("app.services.edu_jobs.assemble_slide_video")
+    def test_success_job_carries_video_fields(self, mock_svc, test_client, test_db):
         m = _slides_material(test_db, n=2, durations=[1000, 1000])
         mock_svc.return_value = SimpleNamespace(
             id=4242, file_url=f"{_CDN}/materials/video/1/3rd_6th.mp4", duration_ms=3000
         )
 
         resp = test_client.post(self.URL.format(id=m.id))
-        assert resp.status_code == 200
-        body = resp.json()
+        assert resp.status_code == 202
+        job = test_client.get(f"/api/v1/media-library/jobs/{resp.json()['id']}").json()
+        assert job["job_type"] == "EDU_ASSEMBLE_VIDEO"
+        assert job["status"] == "SUCCEEDED"
+        body = job["stats"]
         assert body["slides_material_id"] == m.id
         assert body["video_material_id"] == 4242
         assert body["duration_ms"] == 3000
         assert body["slide_count"] == 2
         assert body["file_url"].endswith(".mp4")
+
+    @patch("app.services.edu_jobs.assemble_slide_video", side_effect=RuntimeError("ffmpeg failed"))
+    def test_ffmpeg_failure_fails_the_job(self, _mock_svc, test_client, test_db):
+        m = _slides_material(test_db, n=1, durations=[1000])
+        resp = test_client.post(self.URL.format(id=m.id))
+        job = test_client.get(f"/api/v1/media-library/jobs/{resp.json()['id']}").json()
+        assert job["status"] == "FAILED"
+        assert "ffmpeg failed" in job["error"]
 
 
 # --- real ffmpeg (gated) ----------------------------------------------------

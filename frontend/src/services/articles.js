@@ -48,3 +48,21 @@ export async function getArticleBySlug(slug, language = 'en') {
   }
   return response.json();
 }
+
+/**
+ * Get articles related to one article (#629): stored-embedding similarity,
+ * public articles only, the article's own series excluded.
+ * @param {number} articleId - Article id
+ * @param {string} language - Language code (en or es)
+ * @param {number} k - Number of results (the server caps it at 6)
+ * @returns {Promise<Array>} Related articles, best first
+ */
+export async function getRelatedArticles(articleId, language = 'en', k = 3) {
+  const response = await fetch(
+    `${API_BASE}/api/v1/articles/${articleId}/related?lang=${language}&k=${k}`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch related articles');
+  }
+  return response.json();
+}

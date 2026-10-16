@@ -248,7 +248,7 @@ export const bookingService = {
         return res.json();
     },
 
-    // Revoke the admin magic link server-side on logout (#57) so a 24h token
+    // Revoke the admin magic link server-side on logout (#57) so a 7-day token
     // can't be replayed from history/logs after the admin signs out.
     async adminLogout(token) {
         const res = await authFetch(token, `${API_BASE}/api/v1/auth/admin/logout`, {

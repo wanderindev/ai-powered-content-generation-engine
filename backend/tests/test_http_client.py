@@ -13,6 +13,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 from app.services.http_client import (
+    MAX_CONNECT_ATTEMPTS,
     RateLimiter,
     SSRFError,
     SSRFValidatingTransport,
@@ -120,6 +121,87 @@ class TestSSRFValidatingTransport:
                 transport.handle_request(self._req("https://upload.wikimedia.org/x.jpg"))
 
         assert parent.call_args[0][0].url.host == "208.80.154.240"
+
+    def test_falls_back_to_next_address_when_pinned_connect_is_refused(self):
+        """Pinning an IP literal costs httpcore's per-address failover (an IP
+        literal resolves to one address, so ``socket.create_connection`` has
+        nothing to walk). A multi-homed host with one dead record must still be
+        fetched — otherwise the caller sees ECONNREFUSED on a host a browser
+        reaches fine (PIC-PYTHON-FASTAPI-23 shape)."""
+        transport = SSRFValidatingTransport()
+        sentinel = object()
+        attempted: list[str] = []
+
+        def parent(request, *args, **kwargs):
+            attempted.append(request.url.host)
+            if request.url.host == "93.184.216.34":
+                raise httpx.ConnectError("[Errno 111] Connection refused", request=request)
+            return sentinel
+
+        two_records = _addrinfo("93.184.216.35") + _addrinfo("93.184.216.34")
+        with patch("app.services.http_client.socket.getaddrinfo", return_value=two_records):
+            with patch.object(httpx.HTTPTransport, "handle_request", side_effect=parent):
+                result = transport.handle_request(self._req("https://example.com/x.jpg"))
+
+        assert result is sentinel
+        # Deterministic order (sorted), and the dead record did not end the request.
+        assert attempted == ["93.184.216.34", "93.184.216.35"]
+
+    def test_connect_error_propagates_when_every_address_fails(self):
+        """Failover is not a retry loop: once the validated addresses are
+        exhausted the original transport error reaches the caller unchanged."""
+        transport = SSRFValidatingTransport()
+        two_records = _addrinfo("93.184.216.35") + _addrinfo("93.184.216.34")
+
+        def parent(request, *args, **kwargs):
+            raise httpx.ConnectError("[Errno 111] Connection refused", request=request)
+
+        with patch("app.services.http_client.socket.getaddrinfo", return_value=two_records):
+            with patch.object(
+                httpx.HTTPTransport, "handle_request", side_effect=parent
+            ) as mock_parent:
+                with pytest.raises(httpx.ConnectError, match="Connection refused"):
+                    transport.handle_request(self._req("https://example.com/x.jpg"))
+
+        assert mock_parent.call_count == 2
+
+    def test_connect_attempts_are_bounded(self):
+        """``media_http_timeout`` applies per connect attempt and import-url runs
+        on the request path, so a many-record host must not multiply the wait
+        without limit."""
+        transport = SSRFValidatingTransport()
+        many = sum((_addrinfo(f"93.184.216.{n}") for n in range(30, 38)), [])
+
+        def parent(request, *args, **kwargs):
+            raise httpx.ConnectError("[Errno 111] Connection refused", request=request)
+
+        with patch("app.services.http_client.socket.getaddrinfo", return_value=many):
+            with patch.object(
+                httpx.HTTPTransport, "handle_request", side_effect=parent
+            ) as mock_parent:
+                with pytest.raises(httpx.ConnectError):
+                    transport.handle_request(self._req("https://example.com/x.jpg"))
+
+        assert mock_parent.call_count == MAX_CONNECT_ATTEMPTS
+
+    def test_sni_is_preserved_across_the_failover(self):
+        transport = SSRFValidatingTransport()
+        two_records = _addrinfo("93.184.216.35") + _addrinfo("93.184.216.34")
+
+        def parent(request, *args, **kwargs):
+            if request.url.host == "93.184.216.34":
+                raise httpx.ConnectError("refused", request=request)
+            return object()
+
+        with patch("app.services.http_client.socket.getaddrinfo", return_value=two_records):
+            with patch.object(
+                httpx.HTTPTransport, "handle_request", side_effect=parent
+            ) as mock_parent:
+                transport.handle_request(self._req("https://example.com/x.jpg"))
+
+        sent = mock_parent.call_args[0][0]
+        assert sent.extensions.get("sni_hostname") == "example.com"
+        assert sent.headers["Host"] == "example.com"
 
     def test_ipv6_only_host_still_pins_when_no_ipv4_available(self):
         transport = SSRFValidatingTransport()

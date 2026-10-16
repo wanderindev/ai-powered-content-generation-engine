@@ -160,14 +160,29 @@ def _bullet_li(text: str, icon: str = "check-circle-solid", size: int = 20) -> s
     return f'<li><span class="mk">{_icon(icon, size)}</span><div>{_lead_html(text)}</div></li>'
 
 
+# Photo frame shapes for image/map blocks: aspect-ratio, plus a reduced figure
+# width for portrait so a full-page-height image can't blow the page budget
+# (664px content width at 3/4 would be 885px tall — taller than USABLE_H).
+# "landscape" is the default: most media-library photos are regular 3:2-ish,
+# and the old fixed 260px band (~2.55:1) cropped their subject out.
+_FIGURE_ASPECTS: dict[str, tuple[str, str | None]] = {
+    "landscape": ("3 / 2", None),
+    "wide": ("21 / 9", None),
+    "portrait": ("3 / 4", "62%"),
+}
+
+
 def _figure_html(b: dict, lang: str) -> str:
     """A picked photo in the kit's ring frame, or the editor placeholder."""
     caption = b.get("caption")
     if b.get("media_path"):
         cap = f'<p class="g-caption">{_esc(caption)}</p>' if caption else ""
+        ratio, width = _FIGURE_ASPECTS.get(b.get("aspect") or "", _FIGURE_ASPECTS["landscape"])
+        fig_style = f' style="width:{width};margin:0 auto"' if width else ""
         return (
-            f'<div class="g-figure"><img class="g-photo" src="{_esc(b["media_path"])}" '
-            f'alt="{_esc(caption)}" style="height:260px"><span class="ring"></span></div>{cap}'
+            f'<div class="g-figure"{fig_style}><img class="g-photo" src="{_esc(b["media_path"])}" '
+            f'alt="{_esc(caption)}" style="aspect-ratio:{ratio}">'
+            f'<span class="ring"></span></div>{cap}'
         )
     s = _strings(lang)
     cap = f'<p class="c">{_esc(caption)}</p>' if caption else ""
@@ -709,6 +724,17 @@ def render_html_to_pdf(html: str) -> bytes:
 # --- Orchestrator --------------------------------------------------------------
 
 
+def guide_pdf_key(material: EduMaterial, language: str) -> str:
+    """Stable Spaces key for a guide's PDF in one language.
+
+    Deterministic on purpose: each render overwrites the same object, and the
+    admin detail derives both languages' URLs from it (the row stores only the
+    most recently rendered ``file_url``).
+    """
+    band_slug = (material.grade_band or "none").replace("-", "_")
+    return f"materials/guide/{material.research_id}/{band_slug}_{language}.pdf"
+
+
 def generate_guide_pdf(material: EduMaterial, db: Session, language: str = "es") -> EduMaterial:
     """Render a guide material into a branded PDF and store it on ``file_url``.
 
@@ -736,9 +762,9 @@ def generate_guide_pdf(material: EduMaterial, db: Session, language: str = "es")
 
     storage = ImageStorageService()
     try:
-        band_slug = (material.grade_band or "none").replace("-", "_")
-        key = f"materials/guide/{material.research_id}/{band_slug}_{language}.pdf"
-        material.file_url = storage.upload_image(pdf_bytes, key, "application/pdf")
+        material.file_url = storage.upload_image(
+            pdf_bytes, guide_pdf_key(material, language), "application/pdf"
+        )
     finally:
         storage.close()
 

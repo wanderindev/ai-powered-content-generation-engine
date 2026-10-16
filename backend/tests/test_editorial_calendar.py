@@ -9,6 +9,17 @@ from app.models.instagram_post import InstagramPost
 URL = "/api/v1/admin/dashboard/editorial-calendar"
 
 
+def _month_url(dt: datetime) -> str:
+    """Query the month the timestamp actually falls in.
+
+    Seeds are relative to ``now`` (the live/future distinction needs real time),
+    so near the UTC month rollover ``now ± a few hours`` can land in two
+    different months — asking for ``now``'s month for everything made the suite
+    fail for a few hours around each month boundary (#488).
+    """
+    return f"{URL}?year={dt.year}&month={dt.month}"
+
+
 def _seed_article(test_db, category_factory, *, title, published_at, status="APPROVED"):
     category = category_factory()
     suggestion = ArticleSuggestion(
@@ -76,20 +87,25 @@ class TestEditorialCalendar:
             publish_error="token expired",
         )
 
-        resp = test_client.get(f"{URL}?year={now.year}&month={now.month}")
-        assert resp.status_code == 200
-        body = resp.json()
+        def article_row(a):
+            resp = test_client.get(_month_url(a.published_at))
+            assert resp.status_code == 200
+            return {r["id"]: r for r in resp.json()["articles"]}[a.id]
 
-        articles = {a["id"]: a for a in body["articles"]}
-        assert articles[live.id]["is_live"] is True
-        assert articles[future.id]["is_live"] is False
+        def ig_row(p):
+            when = p.published_at or p.scheduled_at
+            resp = test_client.get(_month_url(when))
+            assert resp.status_code == 200
+            return {r["id"]: r for r in resp.json()["instagram_posts"]}[p.id]
 
-        ig = {p["id"]: p for p in body["instagram_posts"]}
-        assert ig[scheduled.id]["state"] == "scheduled"
-        assert ig[published.id]["state"] == "published"
+        assert article_row(live)["is_live"] is True
+        assert article_row(future)["is_live"] is False
+
+        assert ig_row(scheduled)["state"] == "scheduled"
+        assert ig_row(published)["state"] == "published"
         # A published post keys off published_at, not its original scheduled slot.
-        assert ig[published.id]["when"] != ig[scheduled.id]["when"]
-        assert ig[failed.id]["state"] == "failed"
+        assert ig_row(published)["when"] != ig_row(scheduled)["when"]
+        assert ig_row(failed)["state"] == "failed"
 
     def test_other_months_are_excluded(self, test_db, test_client, admin_token, category_factory):
         now = datetime.now(UTC)
@@ -115,7 +131,7 @@ class TestEditorialCalendar:
             published_at=now - timedelta(hours=1),
             status="PENDING",
         )
-        resp = test_client.get(f"{URL}?year={now.year}&month={now.month}")
+        resp = test_client.get(_month_url(pending.published_at))
         articles = {a["id"]: a for a in resp.json()["articles"]}
         assert articles[pending.id]["is_live"] is False
 

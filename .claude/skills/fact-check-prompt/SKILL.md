@@ -1,21 +1,29 @@
 ---
 name: fact-check-prompt
-description: Generate a deep-research verification prompt for fact-check claims marked NEEDS_DEEP_RESEARCH (optionally scoped to one suggestion or research document). The prompt is saved to ai_generated_content/fact_check_prompts/ for the user to paste into Claude's deep research UI.
+description: Generate a deep-research verification prompt for fact-check claims marked NEEDS_DEEP_RESEARCH (optionally scoped to one subject — a suggestion, research document, edu research document or article). The prompt is saved to ai_generated_content/fact_check_prompts/ for the user to paste into Claude's deep research UI.
 ---
 
 # Fact-Check Verification Prompt Generation
 
 Hybrid tier 2 of the fact-checking pipeline (epic #373, issue #377). The
-extract-only default mode (#389) queues every claim the verified-claims KB
-cannot resolve as `NEEDS_DEEP_RESEARCH` — as does the web-search tier (#376,
-now an API-only escape hatch) for claims it cannot confidently resolve; this
-skill compiles those claims into a verification prompt for Claude's
+extract-only external tier (#389) queues every claim the verified-claims KB
+cannot resolve as `NEEDS_DEEP_RESEARCH` (the web-search tier, #376, was
+removed in #751); this skill compiles those claims into a verification prompt for Claude's
 deep-research UI. One template serves every subject level (suggestions,
-research documents) because the input is just a claims list.
+research documents, articles) because the input is just a claims list.
 
 All file formats in this workflow are strict and non-interactive so an
 automation (e.g. the pic-extension research driver) can run the loop without
 a human in the middle.
+
+**Default path: the PIC MCP server** (`pic` in the repo's `.mcp.json`, tool
+`mcp__pic__get_deep_research_batch`, scope `pipeline`; see
+`docs/claude/mcp.md`). It compiles the prompt server-side from the same
+template, so this skill never sees a database credential and every call lands
+in the `mcp_tool_calls` audit log. **Fallback: direct SQL** (the section at the
+end) — use it only when the MCP server is unreachable or `PIC_MCP_TOKEN` is not
+set (the tool call then fails with a 401 / connection error). Say in the report
+which path was used.
 
 ## Trigger
 
@@ -23,15 +31,87 @@ a human in the middle.
 
 ## Arguments
 
-- **subject_type** (optional): `SUGGESTION` or `RESEARCH`. With **subject_id**,
-  scopes the prompt to that one subject.
+- **subject_type** (optional): `SUGGESTION`, `RESEARCH`, `EDU_RESEARCH` or
+  `ARTICLE` (article grounding queues claims its research does not cover as
+  `NEEDS_DEEP_RESEARCH`, #555). With **subject_id**, scopes the prompt to that
+  one subject.
 - If omitted, collect ALL pending `NEEDS_DEEP_RESEARCH` claims across every
   subject — suggestions yield few claims each, so batching them into one
   prompt is the normal mode.
 
-## Procedure
+## Procedure (MCP — default)
 
-### 1. Collect Pending Claims
+### 1. Get the Batch
+
+```bash
+mkdir -p ai_generated_content/fact_check_prompts/processed \
+         ai_generated_content/fact_check_documents/processed
+```
+
+Call `mcp__pic__get_deep_research_batch` — with no arguments for the unscoped
+batch, or `subject_type="<TYPE>", subject_id=<ID>` when the skill was given
+them. The result:
+
+```
+{"nothing_pending", "pending_total", "batch_id", "claim_ids", "claim_count",
+ "prompt_text", "limited_by_size", "truncated"}
+```
+
+- `nothing_pending: true` → report "No claims pending deep research" and
+  stop. Suggest running a fact-check first (`POST
+  /api/v1/admin/dashboard/suggestions/{id}/fact-check` or
+  `.../research/{id}/fact-check`) if the operator expected claims here.
+- An `insufficient_scope:` error means the token lacks `pipeline` (a read-only
+  token); a 401 / connection error means no usable token or server. Either
+  way, stop and report it, or use the SQL fallback if the operator asked for it.
+- `truncated: true` means one claim alone exceeded the result cap and the
+  prompt was clipped: do **not** save it; report it and use the SQL fallback
+  for that batch.
+
+### 2. Save the Prompt — One Batch per Run
+
+Write `prompt_text` **verbatim** (it already starts with
+`REF: fact_check_<batch_id>` and lists `CLAIM <id> (<type>): <text>` lines) to:
+
+```
+ai_generated_content/fact_check_prompts/fact_check_<batch_id>_prompt.md
+```
+
+**Do not call the tool again for a second batch in the same run.** The batch is
+stateless: it is always the oldest pending claims, so a second call before this
+batch's verdicts are submitted returns the *same* claims under a new
+`batch_id`. When `pending_total > claim_count`, the rest rides along in the
+next run, after `/fact-check-process` has submitted this one. (A second batch
+in the same run is possible only by scoping it to a *different* subject.)
+
+`limited_by_size: true` just means the batch holds fewer than 25 claims to fit
+the result cap; nothing is lost.
+
+### 3. Report to User
+
+Display:
+- The path of the saved prompt, its `claim_count`, and `pending_total`
+  (how many claims are still queued after this batch).
+- The path used (MCP).
+- The next steps:
+  1. Open the prompt file
+  2. Paste or attach it in Claude UI with deep research enabled
+  3. Download the result to
+     `ai_generated_content/fact_check_documents/fact_check_<BATCH_ID>_verdicts.md`
+  4. Run `/fact-check-process` to write the verdicts back to the database
+
+---
+
+## Fallback: Direct SQL (pre-MCP path)
+
+Use only when the MCP path is unavailable (see the top of this file). It needs
+a production `DATABASE_URL` in the shell and bypasses the MCP audit log. The
+prompt template below is also the contract `_DEEP_RESEARCH_PROMPT` in
+`backend/app/services/fact_check.py` emits —
+`tests/test_fact_check_deep_research.py::TestPromptSkillLockstep` checks the
+two stay verbatim-identical, so edit both together.
+
+### SQL 1. Collect Pending Claims
 
 ```bash
 psql "$DATABASE_URL" -t -A -F '|' \
@@ -44,19 +124,19 @@ psql "$DATABASE_URL" -t -A -F '|' \
 With arguments, add `AND subject_type = '<TYPE>' AND subject_id = <ID>`.
 
 If no rows are returned, report "No claims pending deep research" and stop.
-Suggest running a fact-check first (`POST
-/api/v1/admin/dashboard/suggestions/{id}/fact-check` or
-`.../research/{id}/fact-check` — extract-only `mode=deep_research` by
-default) if the operator expected claims here.
 
-### 2. Batch the Claims
+### SQL 2. Batch the Claims
 
 Split the rows into batches of **at most 25 claims** per prompt file (a deep
 research run's internal search budget exhausts before ~30 claims). Each batch gets an id of the form
 `<YYYYMMDD_HHMMSS>` (append `_b2`, `_b3`, … for subsequent batches from the
-same run): `BATCH=$(date +%Y%m%d_%H%M%S)`.
+same run): `BATCH=$(date +%Y%m%d_%H%M%S)`. (Unlike the MCP path, the SQL path
+can write several batches in one run, because it sees every pending row at
+once. Note that the MCP `submit_fact_check_verdicts` tool only accepts a plain
+`YYYYMMDD_HHMMSS` `batch_id`, so a `_b2` file processed through MCP is
+submitted without one.)
 
-### 3. Generate the Verification Prompt
+### SQL 3. Generate the Verification Prompt
 
 One file per batch. **Claims are numbered by their `fact_check_claims.id`**
 (the DB primary key), never by list position — that is what makes processing
@@ -140,7 +220,7 @@ be read by the processor and the run is discarded. Put narrative in "## Notes"
 after the verdict lines.
 ```
 
-### 4. Save the Prompt(s)
+### SQL 4. Save the Prompt(s)
 
 ```bash
 mkdir -p ai_generated_content/fact_check_prompts/processed \
@@ -152,14 +232,6 @@ Write each batch to:
 ai_generated_content/fact_check_prompts/fact_check_<BATCH_ID>_prompt.md
 ```
 
-### 5. Report to User
-
-Display:
-- The file path(s) of the saved prompt(s) and how many claims each covers,
-  grouped by subject (`SUGGESTION 12: 4 claims, RESEARCH 7: 11 claims, ...`)
-- The next steps:
-  1. Open the prompt file
-  2. Paste or attach it in Claude UI with deep research enabled
-  3. Download the result to
-     `ai_generated_content/fact_check_documents/fact_check_<BATCH_ID>_verdicts.md`
-  4. Run `/fact-check-process` to write the verdicts back to the database
+Then report as in step 3 of the MCP procedure, grouping the claims by subject
+(`SUGGESTION 12: 4 claims, RESEARCH 7: 11 claims, ...`) and saying the SQL
+fallback was used.

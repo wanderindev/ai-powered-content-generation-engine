@@ -255,7 +255,10 @@ class TestSweepStaleCaches:
 # --- POST /materials/{id}/generate-audio ------------------------------------
 
 
+@pytest.mark.usefixtures("edu_job_session")
 class TestGenerateAudioEndpoint:
+    """generate-audio validates synchronously, then runs as a background job (#346)."""
+
     URL = "/api/v1/admin/dashboard/edu/materials/{id}/generate-audio"
 
     def test_missing_material_404(self, test_client, test_db):
@@ -274,16 +277,16 @@ class TestGenerateAudioEndpoint:
 
     def test_no_narration_400_without_calling_service(self, test_client, test_db):
         m = _slides_material(test_db, [None, "  "])
-        with patch("app.api.edu.generate_slide_audio") as svc:
+        with patch("app.services.edu_jobs.generate_slide_audio") as svc:
             resp = test_client.post(self.URL.format(id=m.id))
         assert resp.status_code == 400
         svc.assert_not_called()
 
-    @patch("app.api.edu.generate_slide_audio")
+    @patch("app.services.edu_jobs.generate_slide_audio")
     def test_success_returns_counts(self, mock_svc, test_client, test_db):
         m = _slides_material(test_db, ["Hola.", "Adiós.", None])
 
-        def fake(material, db, positions=None):
+        def fake(material, db, positions=None, progress=None):
             for slide in material.slides:
                 if slide.narration and slide.narration.strip():
                     slide.audio_url = f"https://cdn.example/a/{slide.position}.mp3"
@@ -293,13 +296,16 @@ class TestGenerateAudioEndpoint:
         mock_svc.side_effect = fake
 
         resp = test_client.post(self.URL.format(id=m.id))
-        assert resp.status_code == 200
-        body = resp.json()
+        assert resp.status_code == 202
+        job = test_client.get(f"/api/v1/media-library/jobs/{resp.json()['id']}").json()
+        assert job["job_type"] == "EDU_GENERATE_AUDIO"
+        assert job["status"] == "SUCCEEDED"
+        body = job["stats"]
         assert body["slides_narrated"] == 2
         assert body["skipped_no_narration"] == 1
         assert body["total_duration_ms"] == 4000
 
-    @patch("app.api.edu.generate_slide_audio")
+    @patch("app.services.edu_jobs.generate_slide_audio")
     def test_positions_threaded_to_service(self, mock_svc, test_client, test_db):
         m = _slides_material(test_db, ["Uno.", "Dos.", "Tres."])
         mock_svc.return_value = {
@@ -308,20 +314,20 @@ class TestGenerateAudioEndpoint:
             "skipped_no_narration": 0,
         }
         resp = test_client.post(self.URL.format(id=m.id), json={"positions": [2, 2, 1]})
-        assert resp.status_code == 200
+        assert resp.status_code == 202
         # Schema dedups/sorts; endpoint validates ⊆ 1..N and passes a set.
         assert mock_svc.call_args.kwargs["positions"] == {1, 2}
 
     def test_out_of_range_positions_422(self, test_client, test_db):
         m = _slides_material(test_db, ["Uno.", "Dos."])
-        with patch("app.api.edu.generate_slide_audio") as svc:
+        with patch("app.services.edu_jobs.generate_slide_audio") as svc:
             resp = test_client.post(self.URL.format(id=m.id), json={"positions": [5]})
         assert resp.status_code == 422
         svc.assert_not_called()
 
     def test_subset_with_no_narrated_target_400(self, test_client, test_db):
         m = _slides_material(test_db, ["Uno.", None])
-        with patch("app.api.edu.generate_slide_audio") as svc:
+        with patch("app.services.edu_jobs.generate_slide_audio") as svc:
             resp = test_client.post(self.URL.format(id=m.id), json={"positions": [2]})
         assert resp.status_code == 400
         svc.assert_not_called()

@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -19,7 +20,11 @@ __all__ = ["Article", "ContentStatus"]
 
 class Article(Base):
     __tablename__ = "articles"
-    __table_args__ = (status_check("articles", "outline_status", ContentStatus),)
+    __table_args__ = (
+        status_check("articles", "outline_status", ContentStatus),
+        UniqueConstraint("slug", name="uq_articles_slug"),
+        UniqueConstraint("slug_es", name="uq_articles_slug_es"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     research_id: Mapped[int] = mapped_column(ForeignKey("research.id"))
@@ -28,13 +33,42 @@ class Article(Base):
 
     # English content (original)
     title: Mapped[str] = mapped_column(String(255))
+    # Persisted slugs (#474). String(255) mirrors the title columns — slugifying
+    # never lengthens a string. The insert defaults derive both from the titles in
+    # the same INSERT, so a plain ``Article(title=...)`` construction still works;
+    # *edits* are explicit and go through ``app.services.article_slugs``, which
+    # freezes the slug once the article is live.
+    slug: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default=lambda ctx: generate_slug(ctx.get_current_parameters()["title"]),
+    )
     content: Mapped[str | None] = mapped_column(Text)
     excerpt: Mapped[str | None] = mapped_column(Text)
 
     # Spanish content (translated via DeepL)
     title_es: Mapped[str | None] = mapped_column(String(255))
+    # NULL when there is no Spanish title. The ES->EN fallback lives in the
+    # response layer, not in the column.
+    slug_es: Mapped[str | None] = mapped_column(
+        String(255),
+        default=lambda ctx: (
+            generate_slug(t) if (t := ctx.get_current_parameters().get("title_es")) else None
+        ),
+    )
     content_es: Mapped[str | None] = mapped_column(Text)
     excerpt_es: Mapped[str | None] = mapped_column(Text)
+    # Diego-voice narration of the Spanish article (ElevenLabs, generated from
+    # the admin drawer; DO Spaces URL). Spanish-only surface by design.
+    audio_url_es: Mapped[str | None] = mapped_column(String(500))
+    # Ordered per-segment narration manifest ({hash, key, is_heading,
+    # duration_ms} dicts) — lets a regeneration re-synthesize only edited
+    # paragraphs (see app/services/article_audio.py).
+    audio_manifest_es: Mapped[list | None] = mapped_column(JSONB)
+    # Voice check of the last narration run (#601): pitch baseline, re-taken
+    # high-pitch segments, segments to listen to, OK / FIXED / NEEDS_REVIEW.
+    # Overwritten on every run (see app/services/article_audio.py).
+    audio_qa_es: Mapped[dict | None] = mapped_column(JSONB)
 
     ai_summary: Mapped[str | None] = mapped_column(Text)
     outline: Mapped[str | None] = mapped_column(Text)
@@ -52,6 +86,10 @@ class Article(Base):
     approved_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Last successful grammar-check pass per language (issue #409). Stamped even
+    # when the proofread returned no fixes — "checked" is the fact recorded.
+    grammar_checked_en_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    grammar_checked_es_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -65,18 +103,6 @@ class Article(Base):
     )
     series_children: Mapped[list["Article"]] = relationship(back_populates="series_parent")
     tags: Mapped[list["Tag"]] = relationship(secondary="article_tags", back_populates="articles")
-
-    @property
-    def slug(self) -> str:
-        """Generate URL-friendly slug from English title."""
-        return generate_slug(self.title)
-
-    @property
-    def slug_es(self) -> str:
-        """Generate URL-friendly slug from Spanish title."""
-        if not self.title_es:
-            return self.slug  # Fallback to English slug
-        return generate_slug(self.title_es)
 
     @property
     def is_series_parent(self) -> bool:

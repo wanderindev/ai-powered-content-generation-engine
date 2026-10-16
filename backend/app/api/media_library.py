@@ -12,7 +12,7 @@ import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 from PIL import Image as PILImage
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import validate_admin_token
@@ -31,12 +31,26 @@ from app.schemas.media_candidate import (
     MediaCandidateDetail,
     MediaCandidateItem,
     MediaImportRequest,
+    MediaUpdateRequest,
     ReviewRequest,
     ScoreRequest,
 )
 from app.services.crawl_jobs import active_job, run_crawl_job
 from app.services.image_storage import ImageStorageService, make_storage_key
 from app.services.loc import get_best_image_url
+from app.services.media_metadata import (
+    alt_is_default,
+    media_text_input,
+    merge_search_terms,
+    try_generate_search_metadata,
+)
+from app.services.media_search import (
+    apply_ranked_search,
+    candidate_search_vector,
+    candidate_trigram_text,
+    media_search_vector,
+    media_trigram_text,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +165,12 @@ def list_candidates(
     status: str | None = Query(None, description="Filter by status: PENDING, APPROVED, REJECTED"),
     source: str | None = Query(None, description="Filter by source: WIKIMEDIA, LOC"),
     min_score: float | None = Query(None, ge=0, le=1, description="Minimum relevance score"),
-    search: str | None = Query(None, description="Search in title and description"),
+    search: str | None = Query(
+        None,
+        description=(
+            "Ranked search over the candidate's title, tags, source categories and description"
+        ),
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
 ):
@@ -165,17 +184,20 @@ def list_candidates(
     if min_score is not None:
         query = query.where(MediaCandidate.relevance_score >= min_score)
     if search:
-        # Tokenized AND across title+description (same semantics as /media, so
-        # a query behaves identically in the library grid and the image picker).
-        haystack = func.concat_ws(" ", MediaCandidate.title, MediaCandidate.description)
-        for token in search.split():
-            query = query.where(haystack.ilike(f"%{token}%"))
+        # Ranked search (#590) — the same helper as /media and /public-media,
+        # so a query behaves alike in the library grid and the image picker.
+        query, total = apply_ranked_search(
+            db,
+            query,
+            search,
+            vector=candidate_search_vector(),
+            trigram_text=candidate_trigram_text(),
+        )
+    else:
+        count_query = select(func.count()).select_from(query.subquery())
+        total = db.execute(count_query).scalar() or 0
 
-    # Count total
-    count_query = select(func.count()).select_from(query.subquery())
-    total = db.execute(count_query).scalar() or 0
-
-    # Order by relevance (scored first, then by score desc), then by crawled_at
+    # Then by relevance (scored first, then by score desc), then by crawled_at
     query = query.order_by(
         MediaCandidate.relevance_score.desc().nulls_last(),
         MediaCandidate.crawled_at.desc().nulls_last(),
@@ -251,6 +273,7 @@ def approve_candidate(
 
     # Download the image and upload to DO Spaces
     media_record = None
+    item = None
     try:
         key = make_storage_key(candidate.source, candidate.external_id)
 
@@ -294,6 +317,9 @@ def approve_candidate(
         )
         db.add(media_record)
         db.flush()
+        # Snapshot for search-terms generation (#589), taken while the row is
+        # loaded so the LLM call below needs no ORM access.
+        item = media_text_input(media_record, candidate)
 
         candidate.media_id = media_record.id
         logger.info(
@@ -311,6 +337,18 @@ def approve_candidate(
     candidate.review_notes = request.notes
     candidate.reviewed_at = now
     db.commit()
+
+    if item is not None:
+        # The approval is committed (connection back in the pool) before the
+        # Haiku call — CLAUDE.md "Connection Pool". A failure leaves
+        # search_terms NULL for the backfill.
+        meta = try_generate_search_metadata(item)
+        if meta:
+            media_record.search_terms = meta["search_terms"]
+            if meta["alt_text"]:
+                media_record.alt_text = meta["alt_text"]
+            db.commit()
+
     db.refresh(candidate)
 
     return _enrich_detail(candidate, db)
@@ -342,7 +380,13 @@ def reject_candidate(
 @router.get("/media")
 def list_media(
     db: Session = Depends(get_db),
-    search: str | None = Query(None, description="Search in title, caption and search terms"),
+    search: str | None = Query(
+        None,
+        description=(
+            "Ranked search over title, alt text, caption, search terms, credit "
+            "and the candidate's description/tags"
+        ),
+    ),
     source: str | None = Query(
         None, description="Filter by source, comma-separated: WIKIMEDIA,LOC"
     ),
@@ -365,19 +409,27 @@ def list_media(
         feature_ids = select(Article.feature_image_id).where(Article.feature_image_id.is_not(None))
         query = query.where(Media.id.notin_(feature_ids))
     if search:
-        # Match the library's discoverability: titles are terse English
-        # LOC/Wikimedia captions, so topical and Spanish queries only hit via
-        # caption and the bilingual Haiku search_terms (what /public-media uses).
-        # Tokenized AND, not a phrase match — "Casco Antiguo wall" must find an
-        # image whose combined text has the words anywhere, in any order.
-        haystack = func.concat_ws(" ", Media.title, Media.caption, Media.search_terms)
-        for token in search.split():
-            query = query.where(haystack.ilike(f"%{token}%"))
-
-    count_query = select(func.count()).select_from(query.subquery())
-    total = db.execute(count_query).scalar() or 0
-
-    query = query.order_by(Media.created_at.desc())
+        # Ranked search (#590). The candidate is outer-joined so a crawled
+        # image is also found by its description / tags / categories; LOCAL
+        # imports have no candidate. No media_id has more than one candidate,
+        # so the join does not duplicate rows.
+        query = query.outerjoin(MediaCandidate, MediaCandidate.media_id == Media.id)
+        query, total = apply_ranked_search(
+            db,
+            query,
+            search,
+            vector=media_search_vector(),
+            trigram_text=media_trigram_text(),
+        )
+        query = query.order_by(
+            MediaCandidate.relevance_score.desc().nulls_last(),
+            Media.created_at.desc(),
+            Media.id.desc(),
+        )
+    else:
+        count_query = select(func.count()).select_from(query.subquery())
+        total = db.execute(count_query).scalar() or 0
+        query = query.order_by(Media.created_at.desc())
     offset = (page - 1) * page_size
     query = query.offset(offset).limit(page_size)
 
@@ -403,6 +455,12 @@ def _media_item(m: Media) -> dict:
         "attribution": m.attribution,
         "width": m.width,
         "height": m.height,
+        "caption": m.caption,
+        "alt_text": m.alt_text,
+        "license_url": m.license_url,
+        "source_url": m.source_url,
+        "search_terms": m.search_terms,
+        "created_at": m.created_at.isoformat() if m.created_at else None,
     }
 
 
@@ -419,20 +477,45 @@ def import_media_from_url(
     derived from the decoded bytes, SVG rejected), re-hosted on DO Spaces with
     a generated thumbnail. ``source="LOCAL"`` marks editor-imported images
     (unused by the crawl pipelines).
+
+    The editor's metadata (#589) is stored as given; ``source_url`` is the
+    source *page* when one is supplied (the image URL otherwise), so dedupe
+    also matches the URL-hash prefix of the stored filename. Bilingual search
+    terms + alt text are then generated by Haiku after the row is committed —
+    best-effort: on failure the image is still imported and ``search_terms``
+    holds only the operator's keywords (or NULL).
     """
     url = request.url.strip()
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         raise HTTPException(status_code=400, detail="URL must be http(s)")
 
-    # Re-importing the same URL returns the existing row instead of a duplicate.
+    url_hash = sha1(url.encode()).hexdigest()[:12]
+
+    # Re-importing the same URL returns the existing row unchanged (no new
+    # metadata applied). source_url may hold the source page instead of the
+    # image URL, so also match the URL-hash prefix the Spaces key embeds.
     existing = (
-        db.execute(select(Media).where(Media.source_url == url, Media.media_type == "IMAGE"))
+        db.execute(
+            select(Media).where(
+                or_(
+                    Media.source_url == url,
+                    and_(
+                        Media.source == "LOCAL",
+                        Media.filename.startswith(f"{url_hash}_", autoescape=True),
+                    ),
+                ),
+                Media.media_type == "IMAGE",
+            )
+        )
         .scalars()
         .first()
     )
     if existing:
         return _media_item(existing)
+    # End the read transaction before the download so it does not pin a pool
+    # slot through external I/O (CLAUDE.md "Connection Pool").
+    db.commit()
 
     try:
         with ImageStorageService() as storage:
@@ -444,7 +527,7 @@ def import_media_from_url(
             safe_stem = re.sub(r"[^A-Za-z0-9_-]+", "_", stem).strip("_")[:80] or "image"
             # Hash prefix keys the object by URL: unique across same-named
             # files, stable if the same URL is ever re-fetched.
-            key = f"media/local/{sha1(url.encode()).hexdigest()[:12]}_{safe_stem}{ext}"
+            key = f"media/local/{url_hash}_{safe_stem}{ext}"
 
             cdn_url = storage.upload_image(image_bytes, key, content_type)
             thumbnail_url = storage.generate_thumbnail(image_bytes, key)
@@ -452,8 +535,13 @@ def import_media_from_url(
         # Oversized body / undecodable bytes / disallowed format (e.g. SVG).
         raise HTTPException(status_code=400, detail=str(e)) from e
     except httpx.HTTPError as e:
+        # Sentry scrubs the request body (#9), so this log line is the only
+        # record of *which* URL an editor could not import — same idiom as
+        # proxy_image below.
+        logger.warning("URL import could not fetch %s: %s", url[:200], e)
         raise HTTPException(status_code=502, detail=f"Could not fetch the image: {e}") from e
 
+    title = (request.title or safe_stem.replace("_", " "))[:255]
     media_record = Media(
         filename=key.rsplit("/", 1)[-1],
         original_filename=PurePosixPath(parsed.path).name or key.rsplit("/", 1)[-1],
@@ -463,18 +551,93 @@ def import_media_from_url(
         mime_type=content_type,
         media_type="IMAGE",
         source="LOCAL",
-        title=(request.title or safe_stem.replace("_", " "))[:255],
-        alt_text=(request.title or safe_stem.replace("_", " "))[:255],
-        source_url=url,
+        title=title,
+        alt_text=request.alt_text or title,
+        caption=request.caption,
+        attribution=request.attribution,
+        license=request.license,
+        license_url=request.license_url,
+        source_url=request.source_page_url or url,
+        # Provisional: the operator's keywords survive a generation failure.
+        search_terms=merge_search_terms(request.keywords),
         width=width,
         height=height,
     )
     db.add(media_record)
+    db.flush()
+    item = media_text_input(media_record, keywords=request.keywords)
+    # The image is durable now; commit before the Haiku call so it holds no
+    # pool slot (CLAUDE.md "Connection Pool"). No ORM access until it returns.
     db.commit()
+    meta = try_generate_search_metadata(item)
+    if meta:
+        media_record.search_terms = merge_search_terms(request.keywords, meta["search_terms"])
+        if not request.alt_text and meta["alt_text"]:
+            media_record.alt_text = meta["alt_text"]
+        db.commit()
     db.refresh(media_record)
 
     logger.info("Imported media from URL %s as media_id=%d", url, media_record.id)
     return _media_item(media_record)
+
+
+_REGEN_FIELDS = ("title", "caption", "attribution")
+
+
+@router.patch("/media/{media_id}")
+def update_media(
+    media_id: int,
+    body: MediaUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """Edit a media row's metadata (#589); only the keys sent are applied.
+
+    Changing the title, caption or credit regenerates the bilingual search
+    terms (current terms fed in, so operator keywords carry forward) unless
+    the body sets ``search_terms`` itself. A generated alt text replaces only
+    a default one (blank or equal to the title), never one the operator set.
+    A generation failure leaves ``search_terms`` unchanged.
+    """
+    media = db.get(Media, media_id)
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    changes = body.model_dump(exclude_unset=True)
+    if "title" in changes and changes["title"] is None:
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+
+    old = {f: getattr(media, f) for f in _REGEN_FIELDS}
+    old_title = media.title
+    for key, value in changes.items():
+        setattr(media, key, value)
+
+    regenerate = "search_terms" not in changes and any(
+        f in changes and changes[f] != old[f] for f in _REGEN_FIELDS
+    )
+    if regenerate:
+        candidate = (
+            db.execute(select(MediaCandidate).where(MediaCandidate.media_id == media.id))
+            .scalars()
+            .first()
+        )
+        item = media_text_input(media, candidate, keywords=media.search_terms)
+        replace_alt = "alt_text" not in changes and alt_is_default(
+            media.alt_text, old_title, media.title
+        )
+        # Commit before the Haiku call (CLAUDE.md "Connection Pool"); no ORM
+        # access in between.
+        db.commit()
+        meta = try_generate_search_metadata(item)
+        if meta:
+            media.search_terms = meta["search_terms"]
+            if replace_alt and meta["alt_text"]:
+                media.alt_text = meta["alt_text"]
+            db.commit()
+    else:
+        db.commit()
+
+    db.refresh(media)
+    return _media_item(media)
 
 
 ALLOWED_IMAGE_HOSTS = {

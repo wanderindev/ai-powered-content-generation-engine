@@ -6,6 +6,7 @@ import MediaPickerModal from './MediaPickerModal';
 import GuideBlocksEditor from './GuideBlocksEditor';
 import SlideDeckEditor from './SlideDeckEditor';
 import RegenerateRangeModal from './RegenerateRangeModal';
+import { cacheBustUrl } from '../../utils/cacheBust';
 import TagInput from './TagInput';
 import { adminService } from '../../services/admin';
 
@@ -169,6 +170,170 @@ function stateSnapshot(fields, tags) {
   return JSON.stringify({ fields, tagIds: tags.map((t) => t.id).sort() });
 }
 
+function formatTimestamp(ms) {
+  const s = Math.floor((ms || 0) / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// Narration voice check (#601): the last run's pitch QA. High pitch is
+// necessary but not sufficient for "not Diego", so flagged paragraphs are
+// worded as ones to listen to, not as wrong. Timestamps seek the player.
+function NarrationVoiceCheck({ qa, onSeek }) {
+  const retried = qa.retried || [];
+  const unresolved = qa.unresolved || [];
+  const fixed = retried.filter((r) => r.resolved).length;
+  const alarm = qa.status === 'NEEDS_REVIEW' && retried.length === 0 && unresolved.length > 0;
+
+  if (unresolved.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-gray-500">
+        Voice check:{' '}
+        {fixed > 0
+          ? `${fixed} paragraph${fixed === 1 ? '' : 's'} re-taken (high pitch).`
+          : qa.measured
+            ? `all ${qa.measured} measured paragraphs within ${qa.threshold_pct}% of the voice's pitch.`
+            : 'could not measure any paragraph.'}
+      </p>
+    );
+  }
+
+  const pct = qa.measured ? Math.round((qa.suspects / qa.measured) * 100) : 0;
+  return (
+    <div className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-900">
+      <p className="font-medium">
+        {alarm
+          ? `⚠ ${qa.suspects} of ${qa.measured} paragraphs high-pitched (${pct}%), not auto-fixed.`
+          : `⚠ ${unresolved.length} paragraph${unresolved.length === 1 ? '' : 's'} still high-pitched after re-takes${fixed > 0 ? ` (${fixed} re-taken fine)` : ''}.`}{' '}
+        Listen to these — high pitch can still be Diego:
+      </p>
+      <ul className="mt-1 max-h-40 overflow-y-auto">
+        {unresolved.map((u) => (
+          <li key={u.position} className="truncate">
+            <button
+              type="button"
+              onClick={() => onSeek(u.start_ms)}
+              className="font-mono text-indigo-700 hover:underline"
+              title="Play from here"
+            >
+              {formatTimestamp(u.start_ms)}
+            </button>{' '}
+            #{u.position} (+{u.pct}%) — “{u.text}”
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Cross-article consistency findings (#631, shadow mode): claims of this
+// article the judge found contradicting another article's checked facts or
+// the verified-claims KB. Records only — no verdict or publish gate reads
+// them. Dismiss = not a real contradiction; Mark resolved = fixed in one of
+// the articles. Every value renders as plain text.
+function ConsistencyFindings({ articleId, token }) {
+  const [findings, setFindings] = useState(null);
+  const [error, setError] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Async IIFE so no setState runs in the effect's synchronous body
+    // (react-hooks/set-state-in-effect).
+    (async () => {
+      try {
+        const data = await adminService.getConsistencyFindings(token, articleId);
+        if (!cancelled) setFindings(data.findings || []);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [articleId, token]);
+
+  const close = async (finding, resolution) => {
+    setBusyId(finding.id);
+    setError(null);
+    try {
+      await adminService.resolveConsistencyFinding(token, articleId, finding.id, resolution);
+      setFindings((prev) => (prev || []).filter((f) => f.id !== finding.id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (error && findings === null) {
+    return <p className="mt-4 text-xs text-gray-400">Consistency check unavailable.</p>;
+  }
+  if (!findings || findings.length === 0) return null;
+
+  return (
+    <div className="mt-4 mb-2 rounded-md border border-rose-200 bg-rose-50 p-3">
+      <p className="text-sm font-medium text-rose-900">
+        Possible contradictions with other articles ({findings.length})
+      </p>
+      <p className="text-xs text-rose-800">
+        Shadow mode: found after the last fact-check, never blocks publishing.
+      </p>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      <ul className="mt-2 space-y-2">
+        {findings.map((f) => (
+          <li key={f.id} className="rounded-md bg-white p-2 text-xs text-gray-700 ring-1 ring-rose-100">
+            <p><span className="font-semibold">This article:</span> {f.claim_text}</p>
+            <p className="mt-1">
+              <span className="font-semibold">
+                {f.other_source_type === 'VERIFIED_CLAIM' ? 'Verified-claims KB' : 'Other article'}
+                {f.other_article_id && (
+                  <>
+                    {' ('}
+                    {f.other_article_slug ? (
+                      <a
+                        href={`/en/articles/${f.other_article_slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-700 hover:underline"
+                      >
+                        {f.other_article_title || `#${f.other_article_id}`}
+                      </a>
+                    ) : (
+                      f.other_article_title || `#${f.other_article_id}`
+                    )}
+                    {')'}
+                  </>
+                )}
+                :
+              </span>{' '}
+              {f.other_text}
+            </p>
+            <p className="mt-1 text-gray-500">
+              {f.verdict}: {f.explanation}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                disabled={busyId === f.id}
+                onClick={() => close(f, 'DISMISSED')}
+                className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-100 disabled:opacity-50"
+              >
+                Dismiss
+              </button>
+              <button
+                type="button"
+                disabled={busyId === f.id}
+                onClick={() => close(f, 'RESOLVED')}
+                className="rounded-md bg-rose-600 px-2 py-1 text-xs font-semibold text-white hover:bg-rose-500 disabled:opacity-50"
+              >
+                Mark resolved
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ArticleEditor({ record, token, onClose, requestCloseRef }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -178,6 +343,13 @@ function ArticleEditor({ record, token, onClose, requestCloseRef }) {
   const [hasSpanish, setHasSpanish] = useState(false);
   const [tags, setTags] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [audioUrlEs, setAudioUrlEs] = useState(null);
+  const [audioBusy, setAudioBusy] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(null);
+  const [audioError, setAudioError] = useState(null);
+  const [audioChoice, setAudioChoice] = useState(null); // segments diff, pending scope choice
+  const [audioQa, setAudioQa] = useState(null); // voice check of the last run (#601)
+  const audioRef = useRef(null);
   const editorRef = useRef(null);
   const [fields, setFields] = useState({
     en: { title: '', excerpt: '', contentHtml: '' },
@@ -212,6 +384,8 @@ function ArticleEditor({ record, token, onClose, requestCloseRef }) {
       .then((data) => {
         const spanishAvailable = data.title_es != null;
         setHasSpanish(spanishAvailable);
+        setAudioUrlEs(data.audio_url_es || null);
+        setAudioQa(data.audio_qa_es || null);
         const loadedTags = data.tags || [];
         const loadedFields = {
           en: {
@@ -301,6 +475,63 @@ function ArticleEditor({ record, token, onClose, requestCloseRef }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const runAudioGeneration = async (mode) => {
+    setAudioChoice(null);
+    setAudioBusy(true);
+    setAudioError(null);
+    setAudioProgress(null);
+    try {
+      const result = await adminService.generateArticleAudio(token, record.id, {
+        mode,
+        onProgress: (job) => setAudioProgress(job.current_unit),
+      });
+      // Only ever replace the URL with a real one (#594): a response that
+      // lacks it (e.g. a stale bundle reading a job object) must not wipe the
+      // player, or the next click would skip the chooser as a "first" run.
+      if (result?.audio_url_es) setAudioUrlEs(result.audio_url_es);
+      // The job stats carry only a summary of the voice check; the segment
+      // list with timestamps is on the article (audio_qa_es).
+      try {
+        const detail = await adminService.getArticleDetail(token, record.id);
+        setAudioQa(detail.audio_qa_es || null);
+      } catch {
+        // Non-fatal: the narration itself succeeded.
+      }
+    } catch (err) {
+      setAudioError(err.message);
+    } finally {
+      setAudioBusy(false);
+      setAudioProgress(null);
+    }
+  };
+
+  const handleGenerateAudio = async () => {
+    setAudioError(null);
+    setAudioChoice(null);
+    if (isDirty()) {
+      setAudioError('Save your changes first — audio is generated from the saved article.');
+      return;
+    }
+    // Always ask the server before spending (#594): local `audioUrlEs` can be
+    // wiped by an unexpected response, and a full run is a paid ElevenLabs
+    // narration of every segment. Diff the saved text against the stored
+    // per-segment audio; only when the server confirms there is no narration
+    // at all (no audio, no manifest) go straight to a full run — otherwise the
+    // user picks the scope.
+    let status;
+    try {
+      status = await adminService.getArticleAudioSegments(token, record.id);
+    } catch (err) {
+      setAudioError(err.message);
+      return;
+    }
+    if (!status.has_audio && !status.has_manifest) {
+      runAudioGeneration('all');
+      return;
+    }
+    setAudioChoice(status);
   };
 
   if (loading) {
@@ -418,6 +649,100 @@ function ArticleEditor({ record, token, onClose, requestCloseRef }) {
             />
           </div>
         </div>
+
+        {/* Cross-article consistency findings (#631); claims are English */}
+        {lang === 'en' && record?.id && (
+          <ConsistencyFindings articleId={record.id} token={token} />
+        )}
+
+        {/* Narration audio (Spanish only) */}
+        {lang === 'es' && hasSpanish && (
+          <div className="mt-4 mb-2 rounded-md border border-gray-200 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Narration audio (Diego)</p>
+                <p className="text-xs text-gray-500">
+                  ElevenLabs reads the saved Spanish content. Save your edits first, then
+                  {audioUrlEs ? ' regenerate' : ' generate'} — it takes a few minutes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateAudio}
+                disabled={audioBusy}
+                className="shrink-0 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+              >
+                {audioBusy
+                  ? `Generating…${audioProgress ? ` ${audioProgress}` : ''}`
+                  : audioUrlEs ? 'Regenerate audio' : 'Generate audio'}
+              </button>
+            </div>
+            {audioError && <p className="mt-2 text-xs text-red-600">{audioError}</p>}
+            {audioChoice && !audioBusy && (
+              <div className="mt-3 rounded-md bg-gray-50 p-3">
+                {audioChoice.changed_positions.length === 0 ? (
+                  <p className="text-xs text-gray-600">
+                    No text changes since the last generation — the stored audio already
+                    matches the article.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs font-medium text-gray-700">
+                      Changed since the last generation ({audioChoice.changed_positions.length} of{' '}
+                      {audioChoice.segments.length} segments):
+                    </p>
+                    <ul className="mt-1 max-h-32 overflow-y-auto text-xs text-gray-600">
+                      {audioChoice.segments.filter((s) => s.changed).map((s) => (
+                        <li key={s.position} className="truncate">
+                          #{s.position}{s.is_heading ? ' (heading)' : ''} — “{s.preview}”
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <div className="mt-2 flex gap-2">
+                  {audioChoice.changed_positions.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => runAudioGeneration('changed')}
+                      className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+                    >
+                      Only changed ({audioChoice.changed_positions.length})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => runAudioGeneration('all')}
+                    className="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-100"
+                  >
+                    Whole article ({audioChoice.segments.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAudioChoice(null)}
+                    className="rounded-md px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {audioUrlEs && !audioBusy && (
+              <audio ref={audioRef} controls preload="none" src={audioUrlEs} className="mt-3 w-full" />
+            )}
+            {audioUrlEs && !audioBusy && audioQa && (
+              <NarrationVoiceCheck
+                qa={audioQa}
+                onSeek={(ms) => {
+                  const el = audioRef.current;
+                  if (!el) return;
+                  el.currentTime = ms / 1000;
+                  el.play().catch(() => {});
+                }}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <MediaPickerModal
@@ -912,7 +1237,7 @@ function EduSuggestionEditor({ record, token, onClose, requestCloseRef }) {
   }
 
   const inputClass = 'w-full rounded-md border-0 px-3 py-1.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600';
-  const allGradeBands = ['3rd-6th', '4th-6th', '7th-8th', '9th-12th'];
+  const allGradeBands = ['3rd-6th', '4th-8th', '7th-8th', '9th-12th'];
 
   return (
     <>
@@ -1108,6 +1433,12 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
   const [confirmClose, setConfirmClose] = useState(false);
   const [regenModal, setRegenModal] = useState(null); // { key, ...modal props } | null
   const [data, setData] = useState(null);
+  // Re-stamped on every data load / re-sync so the artifact links below always
+  // bypass the browser's cached copy of a file that was regenerated in place.
+  const [loadedAt, setLoadedAt] = useState(() => Date.now());
+  useEffect(() => {
+    setLoadedAt(Date.now());
+  }, [data]);
   const [lang, setLang] = useState('en');
   const [title, setTitle] = useState('');
   const [blocksEn, setBlocksEn] = useState(null);
@@ -1193,7 +1524,11 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
     setNotice(null);
     try {
       const res = await adminService.generateEduGuidePdf(token, record.id, pdfLang);
-      setData((d) => ({ ...d, file_url: res.file_url || d.file_url }));
+      setData((d) => ({
+        ...d,
+        file_url: res.file_url || d.file_url,
+        pdf_urls: res.file_url ? { ...(d.pdf_urls || { en: null, es: null }), [pdfLang]: res.file_url } : d.pdf_urls,
+      }));
       setNotice(`${pdfLang.toUpperCase()} PDF regenerated.`);
     } catch (err) {
       setError(err.message);
@@ -1219,6 +1554,15 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
       setBusy(null);
     }
   };
+
+  // Render, audio and video run as background jobs (#346); show the job's
+  // per-slide progress in the notice line while the drawer waits on it.
+  const progressNotice = (label) => (job) =>
+    setNotice(
+      job.units_total
+        ? `${label}… ${job.units_done}/${job.units_total}`
+        : `${label}… started`,
+    );
 
   const deckHasNarration = slidesEditable && slides.some((s) => (s.narration || '').trim());
   const deckFullyRendered = slidesEditable && slides.every((s) => s.image_url && s.audio_url);
@@ -1250,14 +1594,22 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
   const handleAudio = (positions = null) =>
     runDeckAction(
       'audio',
-      () => adminService.generateEduSlideAudio(token, record.id, { positions }),
+      () =>
+        adminService.generateEduSlideAudio(token, record.id, {
+          positions,
+          onProgress: progressNotice('Synthesizing audio'),
+        }),
       (res) => `Audio synthesized for ${res.slides_narrated} slide(s) (${Math.round((res.total_duration_ms || 0) / 60000)} min).`,
     );
 
   const handleRender = (positions = null) =>
     runDeckAction(
       'render',
-      () => adminService.renderEduSlides(token, record.id, { positions }),
+      () =>
+        adminService.renderEduSlides(token, record.id, {
+          positions,
+          onProgress: progressNotice('Rendering frames'),
+        }),
       (res) =>
         res.images_missing > 0
           ? `Rendered ${res.slides_rendered} frame(s) — ${res.images_missing} slide(s) still have no picked photo.`
@@ -1333,7 +1685,10 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
   const handleVideo = () =>
     runDeckAction(
       'video',
-      () => adminService.assembleEduVideo(token, record.id),
+      () =>
+        adminService.assembleEduVideo(token, record.id, {
+          onProgress: progressNotice('Assembling video'),
+        }),
       // The detail re-sync picks up video_url, so the "Open video" link above
       // appears as soon as this notice does.
       (res) => `Video assembled (${Math.round((res.duration_ms || 0) / 60000)} min) — use "Open video" above.`,
@@ -1428,10 +1783,30 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
           {slidesEditable && (
             <p><span className="font-medium text-gray-700">Status:</span> {data?.status}</p>
           )}
-          {data?.file_url && (
+          {data?.material_type === 'guide' && data?.pdf_urls ? (
+            <p className="flex gap-4">
+              {['es', 'en'].map((l) =>
+                data.pdf_urls[l] ? (
+                  <a
+                    key={l}
+                    href={cacheBustUrl(data.pdf_urls[l], loadedAt)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
+                    Open PDF ({l.toUpperCase()})
+                  </a>
+                ) : (
+                  <span key={l} className="text-gray-400">
+                    No {l.toUpperCase()} PDF yet
+                  </span>
+                ),
+              )}
+            </p>
+          ) : data?.file_url && (
             <p>
               <a
-                href={data.file_url}
+                href={cacheBustUrl(data.file_url, loadedAt)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-indigo-600 hover:text-indigo-500"
@@ -1447,7 +1822,7 @@ function EduMaterialEditor({ record, token, onClose, requestCloseRef }) {
           {data?.video_url && (
             <p>
               <a
-                href={data.video_url}
+                href={cacheBustUrl(data.video_url, loadedAt)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-indigo-600 hover:text-indigo-500"

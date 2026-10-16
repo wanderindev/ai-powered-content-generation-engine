@@ -4,7 +4,11 @@ uvicorn[standard]>=0.27.0
 python-multipart>=0.0.6
 
 # Database
-sqlalchemy>=2.0.25
+# Capped below 2.1: SQLAlchemy 2.1 (2026-09-24) resolves a bare
+# `postgresql://` URL to the psycopg 3 driver, which is not installed, so
+# create_engine fails at import time (CI and a fresh prod image alike).
+# Lift the cap only as a deliberate upgrade (psycopg 3 or `+psycopg2` URLs).
+sqlalchemy>=2.0.25,<2.1
 asyncpg>=0.29.0
 psycopg2-binary>=2.9.9
 
@@ -57,12 +61,25 @@ PyMuPDF>=1.24.0
 # ffmpeg system package installed in the Dockerfiles) — epic #316
 elevenlabs>=1.0.0
 pydub>=0.25.1
+# Narration voice check (#601): FFT-autocorrelation pitch per segment,
+# ~4 ms per second of audio (pure Python would be ~100x slower).
+numpy>=1.26.0
+
+# pgvector (#621, epic #617): the SQLAlchemy `Vector` column type for the RAG
+# knowledge layer. Pure Python (numpy is already above); no psycopg2
+# registration is needed for the SQLAlchemy type.
+pgvector>=0.3.6
 
 # Headless slide rendering (structured slides → 1280x720 PNG frames, #321).
 # The chromium browser binary is installed separately via `playwright install`
 # in the Dockerfiles (the pip package only ships the driver). CI runs pip only,
 # so the real-render test skips there and runs under scripts/run-tests.sh --build.
 playwright>=1.44.0
+
+# MCP server (#638, epic #620): the official SDK's v2 `MCPServer`, mounted
+# at /mcp. Capped below 3 because 2.0 already moved the import path once
+# (`mcp.server.fastmcp` no longer exists); a major bump is a deliberate port.
+mcp>=2.3,<3
 
 # Error tracking
 sentry-sdk[fastapi]>=2.0.0

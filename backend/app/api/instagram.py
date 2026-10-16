@@ -1,8 +1,11 @@
 """Instagram social pipeline admin API endpoints.
 
-Drafting, rendering and scheduling live here; the actual Graph API publisher
-and the due-post scheduler are a separate slice (``services/instagram.py``) —
-until it lands, publish-now answers 503 so the admin UI degrades gracefully.
+Drafting, rendering and scheduling live here; the Graph API publisher and the
+due-post scheduler live in ``services/instagram.py`` /
+``services/instagram_scheduler.py``. Publish-now answers 503 without
+credentials and 409 while the ``instagram_publishing_enabled`` kill switch is
+off (#576, the default). ``POST /verify`` exercises the live account without
+ever posting, and works with the switch off.
 """
 
 import logging
@@ -11,7 +14,8 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.dependencies import validate_admin_token
+from app.api.dependencies import validate_admin_or_allowlisted_driver_token
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.article import Article
 from app.models.enums import ContentStatus, InstagramPostType, InstagramTemplateVariant
@@ -22,19 +26,28 @@ from app.schemas.instagram import (
     InstagramPostDetail,
     InstagramPostListItem,
     InstagramPostUpdate,
+    InstagramPublishingStatus,
     InstagramPublishStateResponse,
     InstagramRenderResponse,
     InstagramScheduleRequest,
     InstagramStatusUpdateRequest,
+    InstagramVerifyRequest,
+    InstagramVerifyResponse,
+    InstagramVerifyStep,
     PromotableArticle,
     SabiasQueGenerateRequest,
 )
 from app.services.ig_html import sanitize_fact
 from app.services.ig_render import render_instagram_post
-from app.services.instagram import InstagramPublisher, publish_post
+from app.services.instagram import InstagramPublisher, publish_post, verify_instagram
 from app.services.instagram_generation import (
     generate_article_promo_post,
     generate_sabias_que_posts,
+)
+from app.services.instagram_scheduler import (
+    PROMO_DAYS_AFTER_PUBLISH,  # noqa: F401 — moved to the scheduler in #588, re-exported
+    PROMO_PUBLISH_TIME_UTC,  # noqa: F401 — moved to the scheduler in #588, re-exported
+    promo_time_for,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +55,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/admin/dashboard/instagram",
     tags=["instagram"],
-    dependencies=[Depends(validate_admin_token)],
+    dependencies=[Depends(validate_admin_or_allowlisted_driver_token)],
+)
+
+PUBLISHING_OFF_DETAIL = (
+    "Instagram publishing is turned off (INSTAGRAM_PUBLISHING_ENABLED). Nothing "
+    "was posted; use verify to test the integration without posting."
 )
 
 VALID_TRANSITIONS = {
@@ -50,6 +68,22 @@ VALID_TRANSITIONS = {
     "APPROVED": {"PENDING", "REJECTED"},
     "REJECTED": {"PENDING", "APPROVED"},
 }
+
+
+def _derived_schedule_time(db: Session, post: InstagramPost) -> datetime:
+    """Server-side ``scheduled_at`` for a schedule call that sent none (#576)."""
+    if post.post_type != InstagramPostType.ARTICLE_PROMO.value:
+        raise HTTPException(
+            status_code=400,
+            detail="scheduled_at is required (only article promos derive their time)",
+        )
+    article = db.get(Article, post.article_id) if post.article_id else None
+    if article is None or article.published_at is None:
+        raise HTTPException(
+            status_code=409,
+            detail="The promoted article has no publish date yet; set it before scheduling",
+        )
+    return promo_time_for(article.published_at)
 
 
 def _get_post(db: Session, post_id: int) -> InstagramPost:
@@ -295,13 +329,19 @@ def render_post_image(
 @router.patch("/posts/{post_id}/schedule", response_model=InstagramPublishStateResponse)
 def schedule_instagram_post(
     post_id: int = Path(..., description="Instagram post ID"),
-    body: InstagramScheduleRequest = ...,
+    body: InstagramScheduleRequest | None = None,
     db: Session = Depends(get_db),
 ):
     """Queue an approved, rendered post for publication at ``scheduled_at``.
 
-    A past timestamp means "due now — next scheduler tick". Re-scheduling a
+    A past timestamp means "due now — next scheduler tick" (which, while the
+    publishing kill switch is off, only means "queued"). Re-scheduling a
     FAILED post clears its error (that is the operator's retry path).
+
+    Without ``scheduled_at`` the server derives it: an ARTICLE_PROMO goes out
+    the day after its article's ``published_at`` at 17:00 UTC (409 while the
+    article has no publish date). That is the agent driver's call, and a
+    replay converges on the same time. Other post types must send a time.
     """
     post = _get_post(db, post_id)
     _require_unpublished(post)
@@ -310,7 +350,11 @@ def schedule_instagram_post(
     if not post.image_url:
         raise HTTPException(status_code=400, detail="Render the post image before scheduling")
 
-    post.scheduled_at = body.scheduled_at
+    scheduled_at = body.scheduled_at if body is not None else None
+    if scheduled_at is None:
+        scheduled_at = _derived_schedule_time(db, post)
+
+    post.scheduled_at = scheduled_at
     post.publish_error = None
     post.publishing_started_at = None
     db.commit()
@@ -341,7 +385,8 @@ def publish_instagram_post_now(
 ):
     """Publish immediately via the Graph API (sync — network call in-request).
 
-    503 while credentials are unconfigured. On failure the row is parked with
+    503 while credentials are unconfigured; 409 while the
+    ``instagram_publishing_enabled`` kill switch is off. On failure the row is parked with
     ``publish_error`` and the detail is surfaced; publish-now clears a prior
     error first (it *is* the retry).
     """
@@ -355,6 +400,8 @@ def publish_instagram_post_now(
     with InstagramPublisher() as publisher:
         if not publisher.enabled:
             raise HTTPException(status_code=503, detail="Instagram publishing is not configured")
+        if not publisher.publishing_enabled:
+            raise HTTPException(status_code=409, detail=PUBLISHING_OFF_DETAIL)
         post.publish_error = None
         post.publishing_started_at = datetime.now(UTC)
         db.commit()
@@ -362,3 +409,65 @@ def publish_instagram_post_now(
 
     db.refresh(post)
     return _publish_state(post)
+
+
+# --- Integration status / verification (#576) ---
+
+
+@router.get("/publishing-status", response_model=InstagramPublishingStatus)
+def get_publishing_status():
+    """Whether credentials exist and the publishing kill switch is on.
+
+    The admin UI disables publish-now from this instead of letting the click
+    fail with a 409.
+    """
+    with InstagramPublisher() as publisher:
+        return InstagramPublishingStatus(
+            configured=publisher.enabled,
+            publishing_enabled=publisher.publishing_enabled,
+        )
+
+
+@router.post("/verify", response_model=InstagramVerifyResponse)
+def verify_instagram_integration(
+    body: InstagramVerifyRequest | None = None,
+    db: Session = Depends(get_db),
+):
+    """Check the live integration end to end **without posting** (#576).
+
+    Reports the account username, the token's validity / scope / expiry
+    (Sentry-warned when it is close) and, with a rendered ``post_id``, creates
+    the media container for its JPEG and polls it to ``FINISHED``. It never
+    calls ``media_publish``, so it works — and is meant to be run — with the
+    publishing kill switch off. 503 without credentials. Admin-only: it is not
+    on the driver allowlist.
+    """
+    image_url = caption = None
+    if body is not None and body.post_id is not None:
+        post = _get_post(db, body.post_id)
+        if not post.image_url:
+            raise HTTPException(status_code=400, detail="Render the post image before verifying")
+        image_url, caption = post.image_url, post.caption
+    # Release the pooled connection before the Graph API round-trips (the
+    # container poll alone can take up to 30s) — see the Connection Pool rule.
+    db.close()
+
+    with InstagramPublisher() as publisher:
+        if not publisher.enabled:
+            raise HTTPException(status_code=503, detail="Instagram publishing is not configured")
+        steps = verify_instagram(
+            publisher,
+            get_settings().instagram_token_warn_days,
+            image_url=image_url,
+            caption=caption,
+        )
+        publishing_enabled = publisher.publishing_enabled
+
+    return InstagramVerifyResponse(
+        ok=all(step.ok for step in steps),
+        publishing_enabled=publishing_enabled,
+        steps=[
+            InstagramVerifyStep(name=st.name, ok=st.ok, detail=st.detail, data=st.data)
+            for st in steps
+        ],
+    )

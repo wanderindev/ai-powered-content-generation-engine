@@ -15,6 +15,61 @@ async function authFetch(token, url, options = {}) {
   });
 }
 
+// The long edu pipeline steps (guide generation, render-slides, generate-audio,
+// assemble-video, #346) and article narration (#547) run as background jobs:
+// the POST returns 202 + a crawl_jobs row, and the step's result arrives as the job's `stats` — the same
+// body the endpoint returned when it was synchronous, so callers see no shape
+// change. `onProgress(job)` fires on every poll with `units_done` /
+// `units_total` / `current_unit`. Re-issuing an identical request while the job
+// runs (e.g. after a reload) joins it instead of starting a second one.
+// The error `detail` of a failed response, or null. A 422 carries a list of
+// validation errors, flattened to "field: message".
+async function errorDetail(res) {
+  const detail = await res.json().then((d) => d.detail).catch(() => null);
+  if (Array.isArray(detail)) {
+    return detail.map((e) => `${(e.loc || []).slice(-1)[0] || 'field'}: ${e.msg}`).join('; ');
+  }
+  return detail || null;
+}
+
+const EDU_JOB_POLL_MS = 3000;
+const EDU_JOB_MAX_WAIT_MS = 60 * 60 * 1000; // the server's STALE_AFTER
+const EDU_JOB_MAX_POLL_ERRORS = 5; // tolerate a few network blips mid-job
+
+async function runBackgroundJob(token, url, { body, onProgress, errorMessage }) {
+  const options = { method: 'POST' };
+  if (body !== undefined) {
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify(body);
+  }
+  const res = await authFetch(token, url, options);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || errorMessage);
+  }
+  let job = await res.json();
+  const deadline = Date.now() + EDU_JOB_MAX_WAIT_MS;
+  let pollErrors = 0;
+  while (job.status !== 'SUCCEEDED' && job.status !== 'FAILED') {
+    if (Date.now() > deadline) {
+      throw new Error(`Job ${job.id} is still running — reload later to see its result`);
+    }
+    onProgress?.(job);
+    await new Promise((resolve) => setTimeout(resolve, EDU_JOB_POLL_MS));
+    try {
+      job = await adminService.getCrawlJob(token, job.id);
+      pollErrors = 0;
+    } catch (err) {
+      pollErrors += 1;
+      if (pollErrors >= EDU_JOB_MAX_POLL_ERRORS) throw err;
+    }
+  }
+  if (job.status === 'FAILED') {
+    throw new Error(job.error ? `${errorMessage}: ${job.error}` : errorMessage);
+  }
+  return job.stats;
+}
+
 export const adminService = {
   async getDashboardStats(token) {
     const res = await authFetch(token, `${API_BASE}/api/v1/admin/dashboard/stats`);
@@ -87,6 +142,28 @@ export const adminService = {
   async getArticleDetail(token, id) {
     const res = await authFetch(token, `${API_BASE}/api/v1/admin/dashboard/articles/${id}`);
     if (!res.ok) throw new Error('Failed to fetch article detail');
+    return res.json();
+  },
+
+  async generateArticleAudio(token, id, { mode = 'all', onProgress } = {}) {
+    // Several minutes server-side: ElevenLabs narrates the Spanish article, so
+    // it runs as a background job (#547) and resolves with the job's stats.
+    // mode 'changed' re-synthesizes only edited paragraphs and reuses the rest.
+    return runBackgroundJob(token,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${id}/generate-audio`,
+      { body: { mode }, onProgress, errorMessage: 'Audio generation failed' },
+    );
+  },
+
+  async getArticleAudioSegments(token, id) {
+    // Diff of the saved Spanish text vs the stored narration manifest.
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${id}/audio-segments`,
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || 'Failed to check audio segments');
+    }
     return res.json();
   },
 
@@ -311,31 +388,17 @@ export const adminService = {
 
   // --- Feature Image ---
 
-  async generateImagePrompt(token, articleId) {
+  // One call: Sonnet writes the watercolor prompt, Gemini paints it, the
+  // backend stores it under a fresh URL (#419, #580). Always regenerates.
+  // Errors: 503 (no Gemini key), Gemini's own status, 400 (no content).
+  async generateFeatureImage(token, articleId) {
     const res = await authFetch(token,
-      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/image-prompt`,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/generate-image`,
       { method: 'POST' },
     );
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to generate image prompt');
-    }
-    return res.json();
-  },
-
-  async uploadFeatureImage(token, articleId, file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await authFetch(token,
-      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/upload-image`,
-      {
-        method: 'POST',
-        body: formData,
-      },
-    );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to upload feature image');
+      throw new Error(err.detail || `Failed to generate feature image (HTTP ${res.status})`);
     }
     return res.json();
   },
@@ -350,6 +413,136 @@ export const adminService = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Failed to translate article');
+    }
+    return res.json();
+  },
+
+  // Grammar check (#409/#410) — lives on the /admin router, NOT /admin/dashboard.
+  // Synchronous: returns the applied/skipped FIND→REPLACE fixes in seconds.
+  async grammarCheckArticle(token, articleId, language) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/articles/${articleId}/grammar-check?language=${language}`,
+      { method: 'POST' },
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Grammar check failed');
+    }
+    return res.json();
+  },
+
+  // Grammarly meaning-check review diffs (#518): paragraphs Sonnet could not
+  // vouch for after a grammar-apply, written but flagged for a human.
+  async getGrammarReviewDiffs(token, articleId) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/grammar-review`,
+    );
+    if (!res.ok) throw new Error('Failed to load grammar review diffs');
+    return res.json();
+  },
+
+  async resolveGrammarReviewDiff(token, articleId, diffId) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/grammar-review/${diffId}/resolve`,
+      { method: 'POST' },
+    );
+    if (!res.ok) throw new Error('Failed to resolve grammar review diff');
+    return res.json();
+  },
+
+  // Cross-article consistency findings (#631, shadow mode): claims that
+  // contradict another article's checked facts or the verified-claims KB.
+  // Records only — nothing here changes a verdict or gates publishing.
+  async getConsistencyFindings(token, articleId) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/consistency-findings`,
+    );
+    if (!res.ok) throw new Error('Failed to load consistency findings');
+    return res.json();
+  },
+
+  // resolution: 'DISMISSED' (not a real contradiction) or 'RESOLVED' (fixed).
+  async resolveConsistencyFinding(token, articleId, findingId, resolution) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/articles/${articleId}/consistency-findings/${findingId}/resolve`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolution }),
+      },
+    );
+    if (!res.ok) throw new Error('Failed to update consistency finding');
+    return res.json();
+  },
+
+  // --- Weekly-series agent tasks (#420) ---
+  // The router accepts the admin magic-link token as well as the driver's
+  // service token, so authFetch is all the admin UI needs.
+
+  async getAgentTasks(token, goalKey) {
+    const qs = goalKey ? `?goal_key=${encodeURIComponent(goalKey)}` : '';
+    const res = await authFetch(token, `${API_BASE}/api/v1/admin/dashboard/agent-tasks${qs}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to fetch agent tasks');
+    }
+    return res.json();
+  },
+
+  async planWeek(token) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/agent-tasks/plan-week`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to plan the week');
+    }
+    return res.json();
+  },
+
+  // --- MCP approval requests (#642) ---
+  // Admin-only (plain admin token gate): an MCP agent can only *request* a
+  // publish / unpublish / approve; these run or decline it.
+
+  async getMcpApprovals(token, status) {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    const res = await authFetch(token, `${API_BASE}/api/v1/admin/dashboard/mcp/approvals${qs}`);
+    if (!res.ok) {
+      throw new Error((await errorDetail(res)) || 'Failed to fetch approval requests');
+    }
+    return res.json();
+  },
+
+  // decision is 'approve' (executes; the result is EXECUTED or FAILED) or 'reject'.
+  async decideMcpApproval(token, requestId, decision) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/mcp/approvals/${requestId}/${decision}`,
+      { method: 'POST' },
+    );
+    if (!res.ok) {
+      throw new Error((await errorDetail(res)) || `Failed to ${decision} request`);
+    }
+    return res.json();
+  },
+
+  // action is 'retry' (FAILED only) or 'skip' (PENDING/READY/FAILED).
+  async agentTaskAction(token, taskId, action) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/agent-tasks/${taskId}/action`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      },
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to ${action} task`);
     }
     return res.json();
   },
@@ -417,37 +610,25 @@ export const adminService = {
   },
 
   // `positions` (1-based) re-renders only a subset; omit it for the whole deck.
-  async renderEduSlides(token, materialId, { positions = null } = {}) {
-    const res = await authFetch(token,
+  // Background job (#346) — resolves with the render summary when it finishes.
+  async renderEduSlides(token, materialId, { positions = null, onProgress } = {}) {
+    return runBackgroundJob(token,
       `${API_BASE}/api/v1/admin/dashboard/edu/materials/${materialId}/render-slides`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(positions ? { positions } : {}),
-      },
+      { body: positions ? { positions } : {}, onProgress, errorMessage: 'Failed to render slides' },
     );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to render slides');
-    }
-    return res.json();
   },
 
   // `positions` (1-based) re-synths only a subset; omit it for the whole deck.
-  async generateEduSlideAudio(token, materialId, { positions = null } = {}) {
-    const res = await authFetch(token,
+  // Background job (#346) — resolves with the audio summary when it finishes.
+  async generateEduSlideAudio(token, materialId, { positions = null, onProgress } = {}) {
+    return runBackgroundJob(token,
       `${API_BASE}/api/v1/admin/dashboard/edu/materials/${materialId}/generate-audio`,
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(positions ? { positions } : {}),
+        body: positions ? { positions } : {},
+        onProgress,
+        errorMessage: 'Failed to generate slide audio',
       },
     );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to generate slide audio');
-    }
-    return res.json();
   },
 
   // Re-roll the CONTENT of a subset of an existing deck's slides in place
@@ -468,16 +649,12 @@ export const adminService = {
     return res.json();
   },
 
-  async assembleEduVideo(token, materialId) {
-    const res = await authFetch(token,
+  // Background job (#346) — a full deck takes ~15-20 minutes of ffmpeg.
+  async assembleEduVideo(token, materialId, { onProgress } = {}) {
+    return runBackgroundJob(token,
       `${API_BASE}/api/v1/admin/dashboard/edu/materials/${materialId}/assemble-video`,
-      { method: 'POST' },
+      { onProgress, errorMessage: 'Failed to assemble video' },
     );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to assemble video');
-    }
-    return res.json();
   },
 
   async translateEduGuide(token, materialId, { force = false, formality } = {}) {
@@ -731,15 +908,30 @@ export const adminService = {
 
   // Import an external image URL into the media library (re-hosted on Spaces
   // with a thumbnail); returns the same item shape as getMediaList items.
-  async importMediaFromUrl(token, url, title) {
+  // metadata: { title, caption, attribution, source_page_url, license,
+  // license_url, keywords, alt_text } — all optional (#589).
+  async importMediaFromUrl(token, url, metadata = {}) {
     const res = await authFetch(token, `${API_BASE}/api/v1/media-library/media/import-url`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, title: title || null }),
+      body: JSON.stringify({ url, ...metadata }),
     });
     if (!res.ok) {
-      const detail = await res.json().then((d) => d.detail).catch(() => null);
-      throw new Error(detail || 'Failed to import image');
+      throw new Error((await errorDetail(res)) || 'Failed to import image');
+    }
+    return res.json();
+  },
+
+  // Partial metadata update of a media row (#589): send only changed fields;
+  // null clears one. Returns the updated item.
+  async updateMedia(token, id, changes) {
+    const res = await authFetch(token, `${API_BASE}/api/v1/media-library/media/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(changes),
+    });
+    if (!res.ok) {
+      throw new Error((await errorDetail(res)) || 'Failed to update image');
     }
     return res.json();
   },
@@ -926,20 +1118,16 @@ export const adminService = {
     return res.json();
   },
 
-  async generateEduMaterials(token, researchId) {
-    const res = await authFetch(token,
+  // Background job (#346) — one study guide per grade band, several minutes.
+  async generateEduMaterials(token, researchId, { onProgress } = {}) {
+    return runBackgroundJob(token,
       `${API_BASE}/api/v1/admin/dashboard/edu/materials/generate`,
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ research_id: researchId }),
+        body: { research_id: researchId },
+        onProgress,
+        errorMessage: 'Failed to generate edu materials',
       },
     );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to generate edu materials');
-    }
-    return res.json();
   },
 
   async getEduGuidesForSlides(token) {
@@ -1168,6 +1356,32 @@ export const adminService = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Failed to unschedule post');
+    }
+    return res.json();
+  },
+
+  // { configured, publishing_enabled } — publishing is off by default (#576).
+  async getInstagramPublishingStatus(token) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/instagram/publishing-status`);
+    if (!res.ok) throw new Error('Failed to fetch Instagram publishing status');
+    return res.json();
+  },
+
+  // Never posts: checks the account + token and, with a post, creates (but
+  // never publishes) a media container for its rendered JPEG.
+  async verifyInstagram(token, postId = null) {
+    const res = await authFetch(token,
+      `${API_BASE}/api/v1/admin/dashboard/instagram/verify`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postId ? { post_id: postId } : {}),
+      },
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to verify Instagram');
     }
     return res.json();
   },

@@ -74,7 +74,15 @@ function LinesField({ label, items, onChange, placeholder }) {
   );
 }
 
-function ImageSlot({ block, onPatch, onPick }) {
+// Photo frame shapes the PDF renderer supports; "landscape" is the default and
+// is stored implicitly (the aspect key is removed).
+const ASPECT_OPTIONS = [
+  { value: 'landscape', label: 'Landscape (3:2)' },
+  { value: 'wide', label: 'Wide banner (21:9)' },
+  { value: 'portrait', label: 'Portrait (3:4)' },
+];
+
+function ImageSlot({ block, onPatch, onPick, showAspect = false }) {
   return (
     <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-3">
       <p className="text-xs text-gray-500 mb-2">
@@ -101,6 +109,24 @@ function ImageSlot({ block, onPatch, onPick }) {
           >
             <XMarkIcon className="h-3.5 w-3.5" /> Clear
           </button>
+          {showAspect && (
+            <label className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
+              Frame
+              <select
+                className="rounded border-gray-300 py-1 pl-2 pr-7 text-xs"
+                value={block.aspect || 'landscape'}
+                onChange={(e) =>
+                  onPatch({ aspect: e.target.value === 'landscape' ? undefined : e.target.value })
+                }
+              >
+                {ASPECT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       ) : (
         <button
@@ -325,7 +351,7 @@ function BlockFields({ block, onPatch, onPick }) {
     case 'map':
       return (
         <div className="space-y-3">
-          <ImageSlot block={block} onPatch={onPatch} onPick={onPick} />
+          <ImageSlot block={block} onPatch={onPatch} onPick={onPick} showAspect />
           <Field label="Caption">
             <input
               className={inputCls}
@@ -343,7 +369,7 @@ function BlockFields({ block, onPatch, onPick }) {
     case 'image':
       return (
         <div className="space-y-3">
-          <ImageSlot block={block} onPatch={onPatch} onPick={onPick} />
+          <ImageSlot block={block} onPatch={onPatch} onPick={onPick} showAspect />
           <Field label="Caption">
             <input
               className={inputCls}

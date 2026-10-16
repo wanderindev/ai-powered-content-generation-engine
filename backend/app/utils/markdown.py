@@ -1,3 +1,5 @@
+import re
+
 import markdown
 import nh3
 
@@ -190,3 +192,75 @@ def strip_bio_links(content: str) -> str:
 
     # Replace with just the link text
     return re.sub(pattern, r"\1", content)
+
+
+# --- Inline emphasis stripping (#540) ----------------------------------------
+# Article bodies carry no bold or italics: Grammarly drops a run whenever it
+# rewords the text inside it, and the meaning check reads markdown, so a lost
+# ``*`` looks like a changed paragraph and a sound suggestion gets reverted or
+# filed for review. The emphasis Opus added was decoration anyway, applied
+# inconsistently across articles. The helper removes the markers and keeps the
+# words; anything that is not emphasis is shielded first so it survives
+# byte-for-byte.
+_EMPHASIS_PROTECT_RE = re.compile(
+    r"\\[\\`*_{}\[\]()#+\-.!]"  # backslash escapes (markdownify writes \* for a literal *)
+    r"|(`+).+?\1"  # inline code spans
+    r"|\]\([^)\s]*(?:\s+\"[^\"]*\")?\)"  # link / image targets
+    r"|<[a-zA-Z][a-zA-Z0-9+.-]*:[^>\s]+>"  # autolinks
+    r"|https?://[^\s)\]>]+"  # bare URLs
+)
+_EMPHASIS_PATTERNS = (
+    # Longest markers first so ***x*** does not leave a stray pair behind. A
+    # run's content may not contain its own marker, so an opener that cannot
+    # close (``**Note:**text``) is left alone rather than paired with a later
+    # run's closer.
+    re.compile(r"(?<![\w*])\*\*\*(?=[^\s*])([^*]+?)(?<=[^\s*])\*\*\*(?![\w*])"),
+    re.compile(r"(?<![\w*])\*\*(?=[^\s*])((?:(?!\*\*).)+?)(?<=[^\s*])\*\*(?![\w*])"),
+    re.compile(r"(?<![\w_])__(?=[^\s_])((?:(?!__).)+?)(?<=[^\s_])__(?![\w_])"),
+    re.compile(r"(?<![\w*])\*(?=[^\s*])([^*]+?)(?<=[^\s*])\*(?![\w*])"),
+    # Intra-word underscores (snake_case) may sit inside an _italic_ run.
+    re.compile(r"(?<![\w_])_(?=[^\s_])((?:(?<=\w)_(?=\w)|[^_])+?)(?<=[^\s_])_(?![\w_])"),
+)
+_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+_RULE_RE = re.compile(r"^\s*([*_-])(?:\s*\1){2,}\s*$")
+
+
+def _strip_line_emphasis(line: str) -> str:
+    shielded: list[str] = []
+
+    def _shield(match: re.Match) -> str:
+        shielded.append(match.group(0))
+        return f"\ue000{len(shielded) - 1}\ue001"
+
+    text = _EMPHASIS_PROTECT_RE.sub(_shield, line)
+    previous = None
+    # Repeat to a fixed point so nested runs (**bold *italic* bold**) unwrap fully.
+    while previous != text:
+        previous = text
+        for pattern in _EMPHASIS_PATTERNS:
+            text = pattern.sub(r"\1", text)
+    return re.sub(r"\ue000(\d+)\ue001", lambda m: shielded[int(m.group(1))], text)
+
+
+def strip_inline_emphasis(content: str) -> str:
+    """Remove markdown bold / italic markers from ``content``, keeping the text.
+
+    Handles ``***x***``, ``**x**``, ``__x__``, ``*x*`` and ``_x_`` (nested runs
+    too). Leaves alone: list markers, horizontal rules (``* * *``, ``***``),
+    fenced and inline code, backslash-escaped ``\\*`` / ``\\_``, link and image
+    targets, bare URLs, intra-word underscores (``snake_case``) and a lone or
+    spaced ``*`` (``5 * 3``). Emphasis never spans lines in stored articles
+    (one paragraph per line), so matching is per line. Idempotent.
+    """
+    if not content:
+        return content
+    lines = content.split("\n")
+    in_fence = False
+    for i, line in enumerate(lines):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence or _RULE_RE.match(line):
+            continue
+        lines[i] = _strip_line_emphasis(line)
+    return "\n".join(lines)

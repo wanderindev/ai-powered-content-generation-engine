@@ -1,6 +1,7 @@
 """Tests for the media library — wikimedia service, LOC service, scoring, and API endpoints."""
 
 import json
+import logging
 from datetime import UTC, datetime, timezone
 from unittest.mock import MagicMock, patch
 
@@ -14,6 +15,15 @@ from app.services.wikimedia import (
     _clean_html,
     _make_thumbnail_url,
 )
+
+
+@pytest.fixture(autouse=True)
+def _no_search_terms_generation():
+    """No test here reaches Haiku: write-time generation (#589) is stubbed to
+    "no result" unless a test overrides it."""
+    with patch("app.api.media_library.try_generate_search_metadata", return_value=None) as m:
+        yield m
+
 
 # ── Utility function tests ──────────────────────────────────────────────
 
@@ -696,7 +706,7 @@ class TestListMediaEndpoint:
         assert response.json()["total"] == 0
 
     def test_search_tokenizes_across_fields_any_order(self, test_client, test_db, admin_token):
-        """Multi-word queries AND word-by-word across the combined fields, not
+        """Multi-word queries match word-by-word across the combined fields, not
         as one phrase — 'Casco Antiguo wall' must find an image titled 'City
         wall' whose search_terms say 'casco antiguo' (the phrase never occurs)."""
         self._seed_media(
@@ -717,11 +727,14 @@ class TestListMediaEndpoint:
             assert data["total"] == 1, term
             assert data["items"][0]["title"] == "City wall fortifications"
 
-        # A token with no match anywhere still excludes the row (AND semantics).
+        # OR semantics (#590): a token with no match anywhere no longer empties
+        # the result — the row still ranks on the words that do match.
         response = test_client.get(
             f"/api/v1/media-library/media?token={admin_token}&search=casco zeppelin"
         )
-        assert response.json()["total"] == 0
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["title"] == "City wall fortifications"
 
 
 def _tiny_jpeg() -> bytes:
@@ -808,15 +821,19 @@ class TestImportMediaFromUrl:
         assert response.status_code == 400
         assert "too large" in response.json()["detail"]
 
-    def test_fetch_failure_is_502(self, test_client, admin_token):
+    def test_fetch_failure_is_502(self, test_client, admin_token, caplog):
         ctx, storage = self._mock_storage()
         storage.download_image.side_effect = httpx.ConnectError("dns blocked")
         with patch("app.api.media_library.ImageStorageService", ctx):
-            response = test_client.post(
-                f"/api/v1/media-library/media/import-url?token={admin_token}",
-                json={"url": self.URL},
-            )
+            with caplog.at_level(logging.WARNING, logger="app.api.media_library"):
+                response = test_client.post(
+                    f"/api/v1/media-library/media/import-url?token={admin_token}",
+                    json={"url": self.URL},
+                )
         assert response.status_code == 502
+        # Sentry scrubs the request body (#9), so the log line is the only record
+        # of which URL failed — without it the 502 is undiagnosable.
+        assert self.URL in caplog.text
 
     def test_imported_media_appears_in_picker_listing(self, test_client, test_db, admin_token):
         """The picker filters source=WIKIMEDIA,LOC,LOCAL — imports must show up."""
@@ -831,6 +848,251 @@ class TestImportMediaFromUrl:
         )
         assert response.json()["total"] == 1
         assert response.json()["items"][0]["title"] == "Casco wall"
+
+
+class TestMediaMetadataWrites:
+    """#589 — metadata on link imports, PATCH /media/{id}, terms at approve."""
+
+    URL = "https://example.org/photos/Casco%20wall.jpg"
+    PAGE = "https://example.org/gallery/casco"
+    IMPORT = "/api/v1/media-library/media/import-url"
+    FULL = {
+        "title": "Casco wall",
+        "caption": "The sea wall of Casco Antiguo",
+        "attribution": "Jane Doe",
+        "source_page_url": "https://example.org/gallery/casco",
+        "license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "keywords": "Casco, muralla",
+    }
+
+    def _import(self, test_client, body, ctx=None):
+        ctx = ctx or TestImportMediaFromUrl._mock_storage(None)[0]
+        with patch("app.api.media_library.ImageStorageService", ctx):
+            return test_client.post(self.IMPORT, json=body)
+
+    def _row(self, test_db, mid):
+        test_db.expire_all()
+        return test_db.get(Media, mid)
+
+    def test_import_stores_every_metadata_field(self, test_client, test_db, admin_token):
+        response = self._import(test_client, {"url": self.URL, **self.FULL})
+        assert response.status_code == 201
+        item = response.json()
+        row = self._row(test_db, item["id"])
+        assert row.title == "Casco wall"
+        assert row.caption == "The sea wall of Casco Antiguo"
+        assert row.attribution == "Jane Doe"
+        assert row.license == "CC BY 4.0"
+        assert row.license_url == self.FULL["license_url"]
+        assert row.source_url == self.PAGE
+        assert row.search_terms == "Casco, muralla"
+        assert row.alt_text == "Casco wall"
+        assert item["caption"] == row.caption and item["source_url"] == self.PAGE
+
+    def test_import_merges_generated_terms_and_replaces_default_alt(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        _no_search_terms_generation.return_value = {
+            "search_terms": "casco, sea wall, muralla de mar",
+            "alt_text": "Stone sea wall at dusk",
+        }
+        item = self._import(test_client, {"url": self.URL, **self.FULL}).json()
+        row = self._row(test_db, item["id"])
+        assert row.search_terms == "Casco, muralla, sea wall, muralla de mar"
+        assert row.alt_text == "Stone sea wall at dusk"
+        sent = _no_search_terms_generation.call_args.args[0]
+        assert sent.keywords == "Casco, muralla" and sent.credit == "Jane Doe"
+
+    def test_import_preserves_operator_alt_text(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        _no_search_terms_generation.return_value = {"search_terms": "x", "alt_text": "Generated"}
+        item = self._import(
+            test_client, {"url": self.URL, "title": "T", "alt_text": "Operator alt"}
+        ).json()
+        assert self._row(test_db, item["id"]).alt_text == "Operator alt"
+
+    def test_llm_failure_still_imports(self, test_client, test_db, admin_token):
+        from app.services.media_metadata import try_generate_search_metadata
+
+        with (
+            patch(
+                "app.api.media_library.try_generate_search_metadata", try_generate_search_metadata
+            ),
+            patch(
+                "app.services.media_metadata.get_settings",
+                return_value=MagicMock(anthropic_api_key="k"),
+            ),
+            patch(
+                "app.services.media_metadata.create_message", side_effect=RuntimeError("down")
+            ) as cm,
+        ):
+            with_kw = self._import(test_client, {"url": self.URL, "keywords": "Casco"})
+            without_kw = self._import(test_client, {"url": "https://example.org/other.jpg"})
+        assert cm.call_count == 2
+        assert with_kw.status_code == 201 and without_kw.status_code == 201
+        assert self._row(test_db, with_kw.json()["id"]).search_terms == "Casco"
+        assert self._row(test_db, without_kw.json()["id"]).search_terms is None
+
+    def test_reimport_with_source_page_dedupes_on_hashed_filename(
+        self, test_client, test_db, admin_token
+    ):
+        ctx, storage = TestImportMediaFromUrl._mock_storage(None)
+        first = self._import(test_client, {"url": self.URL, **self.FULL}, ctx).json()
+        second = self._import(test_client, {"url": self.URL, "title": "Other"}, ctx).json()
+        assert second["id"] == first["id"]
+        assert second["title"] == "Casco wall"  # existing row returned unchanged
+        storage.download_image.assert_called_once()
+
+    @pytest.mark.parametrize("field", ["source_page_url", "license_url"])
+    def test_non_http_url_field_is_422(self, test_client, admin_token, field):
+        response = test_client.post(self.IMPORT, json={"url": self.URL, field: "javascript:x"})
+        assert response.status_code == 422
+
+    def _seed_media(self, test_db, **overrides):
+        values = {
+            "filename": "abc_x.jpg",
+            "original_filename": "x.jpg",
+            "file_path": "https://cdn.example.com/x.jpg",
+            "file_size": 10,
+            "mime_type": "image/jpeg",
+            "media_type": "IMAGE",
+            "source": "LOCAL",
+            "title": "Old title",
+            "alt_text": "Old title",
+            "attribution": "Jane",
+            "search_terms": "old, terms",
+        }
+        values.update(overrides)
+        m = Media(**values)
+        test_db.add(m)
+        test_db.commit()
+        return m.id
+
+    def test_patch_partial_update_without_regeneration(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        mid = self._seed_media(test_db, caption="Same")
+        # Only caption, unchanged value → nothing to regenerate.
+        response = test_client.patch(f"/api/v1/media-library/media/{mid}", json={"caption": "Same"})
+        assert response.status_code == 200
+        response = test_client.patch(f"/api/v1/media-library/media/{mid}", json={"license": "PD"})
+        assert response.status_code == 200
+        _no_search_terms_generation.assert_not_called()
+        row = self._row(test_db, mid)
+        assert row.license == "PD" and row.caption == "Same"
+        assert row.title == "Old title" and row.attribution == "Jane"
+        assert row.search_terms == "old, terms"
+
+    def test_patch_caption_change_leaves_other_fields_alone(
+        self, test_client, test_db, admin_token
+    ):
+        mid = self._seed_media(test_db)
+        test_client.patch(f"/api/v1/media-library/media/{mid}", json={"caption": "New cap"})
+        row = self._row(test_db, mid)
+        assert row.caption == "New cap" and row.title == "Old title"
+        # Generation returned nothing (stub) → terms unchanged.
+        assert row.attribution == "Jane" and row.search_terms == "old, terms"
+
+    def test_patch_title_regenerates_and_replaces_default_alt(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        _no_search_terms_generation.return_value = {"search_terms": "new, terms", "alt_text": "Gen"}
+        mid = self._seed_media(test_db)
+        item = test_client.patch(
+            f"/api/v1/media-library/media/{mid}", json={"title": "New title"}
+        ).json()
+        _no_search_terms_generation.assert_called_once()
+        sent = _no_search_terms_generation.call_args.args[0]
+        assert sent.title == "New title" and sent.keywords == "old, terms"
+        assert item["search_terms"] == "new, terms"
+        assert item["alt_text"] == "Gen"
+
+    def test_patch_title_keeps_alt_text_sent_in_body(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        _no_search_terms_generation.return_value = {"search_terms": "new", "alt_text": "Gen"}
+        mid = self._seed_media(test_db)
+        item = test_client.patch(
+            f"/api/v1/media-library/media/{mid}",
+            json={"title": "New title", "alt_text": "Mine"},
+        ).json()
+        assert item["alt_text"] == "Mine" and item["search_terms"] == "new"
+
+    def test_patch_title_keeps_non_default_alt(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        _no_search_terms_generation.return_value = {"search_terms": "new", "alt_text": "Gen"}
+        mid = self._seed_media(test_db, alt_text="Operator alt")
+        item = test_client.patch(
+            f"/api/v1/media-library/media/{mid}", json={"title": "New title"}
+        ).json()
+        assert item["alt_text"] == "Operator alt"
+
+    def test_patch_search_terms_verbatim_without_generation(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        mid = self._seed_media(test_db)
+        item = test_client.patch(
+            f"/api/v1/media-library/media/{mid}",
+            json={"title": "New title", "search_terms": "hand, written"},
+        ).json()
+        _no_search_terms_generation.assert_not_called()
+        assert item["search_terms"] == "hand, written" and item["title"] == "New title"
+
+    def test_patch_null_clears_field(self, test_client, test_db, admin_token):
+        mid = self._seed_media(test_db)
+        test_client.patch(f"/api/v1/media-library/media/{mid}", json={"attribution": None})
+        assert self._row(test_db, mid).attribution is None
+
+    def test_patch_null_title_is_400_and_unknown_id_404(self, test_client, test_db, admin_token):
+        mid = self._seed_media(test_db)
+        response = test_client.patch(f"/api/v1/media-library/media/{mid}", json={"title": None})
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Title cannot be empty"
+        response = test_client.patch("/api/v1/media-library/media/999999", json={"caption": "x"})
+        assert response.status_code == 404
+
+    def test_approve_writes_search_terms(
+        self, test_client, test_db, admin_token, _no_search_terms_generation
+    ):
+        _no_search_terms_generation.return_value = {
+            "search_terms": "canal, Canal de Panamá",
+            "alt_text": "Steam shovels in the Culebra Cut",
+        }
+        candidate = MediaCandidate(
+            source="WIKIMEDIA",
+            external_id="File:Cut.jpg",
+            external_url="https://upload.wikimedia.org/x/Cut.jpg",
+            title="Culebra Cut",
+            description="Excavation, 1910",
+            tags=["canal"],
+            status="PENDING",
+            crawled_at=datetime.now(UTC),
+        )
+        test_db.add(candidate)
+        test_db.commit()
+        storage = MagicMock()
+        storage.download_and_upload.return_value = (
+            "https://cdn.example.com/cut.jpg",
+            100,
+            "image/jpeg",
+            "https://cdn.example.com/thumbs/cut.jpg",
+        )
+        ctx = MagicMock()
+        ctx.return_value.__enter__ = MagicMock(return_value=storage)
+        ctx.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("app.api.media_library.ImageStorageService", ctx):
+            response = test_client.post(
+                f"/api/v1/media-library/candidates/{candidate.id}/approve", json={}
+            )
+        assert response.status_code == 200
+        row = self._row(test_db, response.json()["media_id"])
+        assert row.search_terms == "canal, Canal de Panamá"
+        assert row.alt_text == "Steam shovels in the Culebra Cut"
+        sent = _no_search_terms_generation.call_args.args[0]
+        assert sent.description == "Excavation, 1910" and sent.tags == ["canal"]
 
 
 # ── Wikimedia: batched metadata fetching ─────────────────────────────────

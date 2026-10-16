@@ -1,0 +1,3300 @@
+{
+  "version": 1,
+  "description": "Curated by the operator 2026-10-10 (#653): every draft checked against its source article; all 56 kept.",
+  "curation": {
+    "drafts_file": "2026-10-10-drafts.json",
+    "drafted": 56,
+    "kept": 56,
+    "edited": 0,
+    "dropped": 0,
+    "by_type": {
+      "factual": 24,
+      "cross-lingual": 10,
+      "multi-article": 6,
+      "unanswerable": 16
+    },
+    "by_language": {
+      "en": 28,
+      "es": 28
+    },
+    "drafts_generated_at": "2026-10-10T13:03:58+00:00",
+    "reader": {
+      "drafts_file": "2026-10-12-reader.json",
+      "drafts_generated_at": "2026-10-12T18:41:10+00:00",
+      "method": "drafted and verified by Opus (#693); no per-item manual review",
+      "model": "claude-opus-5-5",
+      "drafted": 172,
+      "kept": 74,
+      "fixed": 89,
+      "dropped": 7,
+      "dropped_before_verification": 0,
+      "verdicts": {
+        "drop": 9,
+        "fix": 89,
+        "keep": 74
+      },
+      "questions_added": 165,
+      "by_type": {
+        "reader": 150,
+        "unanswerable": 15
+      },
+      "by_language": {
+        "en": 84,
+        "es": 81
+      },
+      "cost_usd": 5.12
+    },
+    "manual_edits": [
+      {
+        "date": "2026-10-13",
+        "ticket": 714,
+        "ids": [
+          "r052",
+          "r061"
+        ],
+        "fields": [
+          "reference_answer",
+          "key_facts"
+        ],
+        "change": "Francisco Velarde y Mercado -> Francisco Valverde y Mercado",
+        "why": "Every cited source spells Portobelo's founder Valverde (verified_claims 1764 and 5958, research 32 fn. 5); the operator corrected articles 205, 208 and 230 to \"Francisco Valverde y Mercado\" and the golden set follows the corpus."
+      },
+      {
+        "date": "2026-10-13",
+        "ticket": 730,
+        "ids": [
+          "r049"
+        ],
+        "fields": [
+          "reference_answer",
+          "key_facts"
+        ],
+        "change": "Puerto del Príncipe -> Puerto Príncipe",
+        "why": "The corpus spelled Morgan's 1668 target (today Camagüey, Cuba) two ways; the operator chose \"Puerto Príncipe\", the form articles 148 and 232 already used, and scripts.fix_puerto_principe conformed article 149, its claims, the KB and research 34. The golden set follows the corpus."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "d001",
+      "language": "en",
+      "question": "Which explorer's decision to survey the Panamanian coast the year after Bastidas's voyage was probably shaped by news of Bastidas's gold and pearl trading?",
+      "type": "factual",
+      "expected_article_ids": [
+        25
+      ],
+      "expected_section": "Legacy of the First Discovery",
+      "reference_answer": "Christopher Columbus likely decided to explore the same coastline the following year because he knew of Bastidas's findings."
+    },
+    {
+      "id": "d002",
+      "language": "en",
+      "question": "Why did John Oxenham decide to withdraw from Nombre de Dios even though the English had seen the silver bars?",
+      "type": "factual",
+      "expected_article_ids": [
+        68
+      ],
+      "expected_section": "Tactical Retreat > The Decision to Withdraw",
+      "reference_answer": "He chose to save the wounded Drake, who was weakening, because Spanish reinforcements would arrive by daybreak and the rain had compromised their weapons."
+    },
+    {
+      "id": "d003",
+      "language": "en",
+      "question": "How long did Morgan's overland crossing of the isthmus take, and what did it show about the Spanish view of the South Sea?",
+      "type": "factual",
+      "expected_article_ids": [
+        239
+      ],
+      "expected_section": "The Phantom Occupation: The Nightmare of an English Pacific",
+      "reference_answer": "The crossing took about ten days and showed that the premise of the Pacific as a protected Spanish lake (mare clausum) was false."
+    },
+    {
+      "id": "d004",
+      "language": "en",
+      "question": "What did Panquiaco, son of cacique Comagre, do in 1512 to draw the Spaniards' attention to the sea beyond the western mountains?",
+      "type": "factual",
+      "expected_article_ids": [
+        37
+      ],
+      "expected_section": "Knowledge Keepers: Indigenous Guides and Informants > The Strategic Informant: Panquiaco (Bab Giakwa)",
+      "reference_answer": "He knocked over the scales used to weigh gold while Balboa's men argued, then told them of another sea to the west and kingdoms rich in gold."
+    },
+    {
+      "id": "d005",
+      "language": "en",
+      "question": "What was the Audiencia of Panama made responsible for implementing after 1542 regarding indigenous peoples?",
+      "type": "factual",
+      "expected_article_ids": [
+        64
+      ],
+      "expected_section": "Indigenous Relations and Colonial Order > Protection and Control",
+      "reference_answer": "It was responsible for implementing the New Laws of 1542, which reformed the encomienda system and improved protection of indigenous peoples."
+    },
+    {
+      "id": "d006",
+      "language": "en",
+      "question": "Which Spanish engineer who designed Portobelo's fortifications also proposed a canal across the isthmus?",
+      "type": "factual",
+      "expected_article_ids": [
+        43
+      ],
+      "expected_section": "Legacy: Panama's Enduring Role as a Global Crossroads > The Seeds of the Panama Canal",
+      "reference_answer": "Juan Bautista Antonelli."
+    },
+    {
+      "id": "d007",
+      "language": "en",
+      "question": "In which years did early chroniclers say Panama's Audiencia was founded and then replaced by the Audiencias of Lima and Guatemala?",
+      "type": "factual",
+      "expected_article_ids": [
+        66
+      ],
+      "expected_section": "Early Historical Accounts: A Forgotten Footnote > Colonial Chroniclers and Their Limited Focus",
+      "reference_answer": "It was founded in 1538 and replaced in 1543."
+    },
+    {
+      "id": "d008",
+      "language": "en",
+      "question": "Around what date did Morgan withdraw from the ruins of Panama City in 1671?",
+      "type": "factual",
+      "expected_article_ids": [
+        240
+      ],
+      "expected_section": "Introduction: From Alarm to Action",
+      "reference_answer": "Around February 24, 1671."
+    },
+    {
+      "id": "d009",
+      "language": "en",
+      "question": "How did Morgan make English and French privateers cooperate after taking command of the buccaneers?",
+      "type": "factual",
+      "expected_article_ids": [
+        149
+      ],
+      "expected_section": "Morgan's Leadership Style and Vision > Building Pirate Infrastructure",
+      "reference_answer": "He cultivated relationships with the French buccaneers of Tortuga, fostering cooperation between English Jamaica and French Tortuga."
+    },
+    {
+      "id": "d010",
+      "language": "en",
+      "question": "Which Spanish captain commanded the garrison at Natá de los Caballeros when Urracá besieged it?",
+      "type": "factual",
+      "expected_article_ids": [
+        52
+      ],
+      "expected_section": "Building an Indigenous Coalition (1527) > Siege of Natá",
+      "reference_answer": "Captain Francisco de Compañón."
+    },
+    {
+      "id": "d011",
+      "language": "en",
+      "question": "When did Balboa die, and how was he executed?",
+      "type": "factual",
+      "expected_article_ids": [
+        32
+      ],
+      "expected_section": "Conclusion: Success Becomes Vulnerability",
+      "reference_answer": "He was beheaded in January 1519 after being arrested by Pedrarias on charges of treason."
+    },
+    {
+      "id": "d012",
+      "language": "en",
+      "question": "How wide was the Camino de Cruces, and how did it compare to the Camino Real?",
+      "type": "factual",
+      "expected_article_ids": [
+        206
+      ],
+      "expected_section": "Two Trails Across the Spine of the Americas",
+      "reference_answer": "It was about eight feet wide, broader and better cobblestoned than the roughly four-foot-wide Camino Real, so it could handle heavier loads."
+    },
+    {
+      "id": "d013",
+      "language": "es",
+      "question": "Según Exquemelin, ¿cuántas bajas sufrieron los bucaneros de Morgan en la batalla de Matasnillos?",
+      "type": "factual",
+      "expected_article_ids": [
+        237
+      ],
+      "expected_section": "La aritmética de una derrota",
+      "reference_answer": "Exquemelin estima unos 15 muertos y 40 heridos, aunque otros historiadores sugieren entre 50 y 100 bajas."
+    },
+    {
+      "id": "d014",
+      "language": "es",
+      "question": "¿Qué le pidió el gobernador español de Santa Catalina a Morgan antes de rendirse?",
+      "type": "factual",
+      "expected_article_ids": [
+        233
+      ],
+      "expected_section": "La batalla simulada",
+      "reference_answer": "Le pidió simular una batalla para que pareciera que la guarnición había resistido y él conservara algo de honor."
+    },
+    {
+      "id": "d015",
+      "language": "es",
+      "question": "¿Qué dos ventajas geográficas del Camino de Cruces atrajeron después a los constructores del Canal de Panamá?",
+      "type": "factual",
+      "expected_article_ids": [
+        55
+      ],
+      "expected_section": "Conclusión: el ingenio del sistema dual de Panamá",
+      "reference_answer": "El estrecho istmo y el navegable río Chagres."
+    },
+    {
+      "id": "d016",
+      "language": "es",
+      "question": "¿Por qué era indispensable el mercurio para la producción de plata en Potosí?",
+      "type": "factual",
+      "expected_article_ids": [
+        209
+      ],
+      "expected_section": "Mercurio: el motor invisible",
+      "reference_answer": "Era el ingrediente esencial del proceso de amalgamación; sin él, los minerales de baja ley de la montaña no eran rentables."
+    },
+    {
+      "id": "d017",
+      "language": "es",
+      "question": "¿Qué ciudades y fortificaciones formaban el «triángulo estratégico» defensivo de Panamá hacia 1600?",
+      "type": "factual",
+      "expected_article_ids": [
+        59
+      ],
+      "expected_section": "La frontera militarizada de Panamá",
+      "reference_answer": "La ciudad de Panamá, Portobelo y San Lorenzo."
+    },
+    {
+      "id": "d018",
+      "language": "es",
+      "question": "¿Cuánto medían de ancho las calles de la capital planificada en la península de Ancón y por qué estaban orientadas como estaban?",
+      "type": "factual",
+      "expected_article_ids": [
+        243
+      ],
+      "expected_section": "La cuadrícula sobre el terreno",
+      "reference_answer": "Medían entre 8 y 10 metros y se orientaban para aprovechar las brisas marinas de la Bahía de Panamá."
+    },
+    {
+      "id": "d019",
+      "language": "es",
+      "question": "¿Quién ordenó la construcción del Camino de Cruces y entre qué años se construyó?",
+      "type": "factual",
+      "expected_article_ids": [
+        227
+      ],
+      "expected_section": "Cruzando el istmo: el Camino Real y el Camino de Cruces",
+      "reference_answer": "El gobernador Pedro de los Ríos, entre 1527 y 1530."
+    },
+    {
+      "id": "d020",
+      "language": "es",
+      "question": "¿Qué pueblos indígenas dominantes del este de Panamá fueron exterminados en una sola generación tras la llegada de Pedrarias?",
+      "type": "factual",
+      "expected_article_ids": [
+        40
+      ],
+      "expected_section": "Genocidio en Darién > La destrucción de las sociedades indígenas",
+      "reference_answer": "Los pueblos Cueva y Coiba."
+    },
+    {
+      "id": "d021",
+      "language": "es",
+      "question": "¿En qué fecha entraron las fuerzas españolas en Cuzco en 1533?",
+      "type": "factual",
+      "expected_article_ids": [
+        48
+      ],
+      "expected_section": "La marcha hacia Cuzco y el colapso imperial > La toma de la capital imperial",
+      "reference_answer": "El 15 de noviembre de 1533."
+    },
+    {
+      "id": "d022",
+      "language": "es",
+      "question": "¿Qué consejo dio Balboa a Enciso en el golfo de Urabá y por qué?",
+      "type": "factual",
+      "expected_article_ids": [
+        31
+      ],
+      "expected_section": "Introducción: Un desembarco desesperado en costas hostiles",
+      "reference_answer": "Les instó a cruzar a la costa occidental, porque allí los nativos no usaban flechas envenenadas y la tierra era fértil."
+    },
+    {
+      "id": "d023",
+      "language": "es",
+      "question": "¿Hacia qué lugar dirigió Panquiaco la atención de los españoles al verlos pelear por el oro?",
+      "type": "factual",
+      "expected_article_ids": [
+        33
+      ],
+      "expected_section": "Acomodación estratégica: alianzas por necesidad > La información como poder: redes de inteligencia indígenas",
+      "reference_answer": "Hacia el «otro mar», el océano Pacífico, y los ricos reinos del sur."
+    },
+    {
+      "id": "d024",
+      "language": "es",
+      "question": "¿En qué año comenzó la segunda vida de la Audiencia de Panamá y qué territorio se le concedió?",
+      "type": "factual",
+      "expected_article_ids": [
+        65
+      ],
+      "expected_section": "Prototipo administrativo y modelo colonial > Perfeccionamiento del modelo de gobierno",
+      "reference_answer": "Comenzó en 1565, con un territorio significativamente reducido centrado en el istmo y sus alrededores."
+    },
+    {
+      "id": "d025",
+      "language": "en",
+      "question": "How did silver from Peru's Potosí mines reach the Atlantic coast and then Spain by way of Panama?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        67
+      ],
+      "expected_section": "El sistema del tesoro español > El conducto de plata de Perú",
+      "search_languages": [
+        "es"
+      ],
+      "reference_answer": "Silver went by ship to Panama City, was carried by mule caravans along the Camino Real across the isthmus to Nombre de Dios, and was stored until the treasure fleet carried it across the Atlantic to Spain."
+    },
+    {
+      "id": "d026",
+      "language": "en",
+      "question": "What model for founding colonial cities did Santa María la Antigua set that conquistadors like Cortés and Pizarro later followed?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        35
+      ],
+      "expected_section": "La vida después de Santa María: prototipo colonial y precedente",
+      "search_languages": [
+        "es"
+      ],
+      "reference_answer": "The model was conquest followed by founding a city with a plaza, a church and a cabildo (town council)."
+    },
+    {
+      "id": "d027",
+      "language": "en",
+      "question": "What detail of San Lorenzo's construction undermined its strong defensive position against Bradley's attack in 1670?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        234
+      ],
+      "expected_section": "La fortaleza del promontorio",
+      "search_languages": [
+        "es"
+      ],
+      "reference_answer": "The palisade walls were covered with a thatched roof of palm leaves, which made them vulnerable to fire."
+    },
+    {
+      "id": "d028",
+      "language": "en",
+      "question": "Why was Panama City founded in 1519 at the narrowest part of the isthmus, and how wide was the isthmus there?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        41
+      ],
+      "expected_section": "Ajedrez geopolítico: motivaciones estratégicas detrás del cambio hacia el Pacífico > Posicionamiento para la expansión imperial",
+      "search_languages": [
+        "es"
+      ],
+      "reference_answer": "The site had the shortest distance between the Atlantic and Pacific, about 80 kilometers, which let Spain control the route between the seas, block European rivals, and project power north, south and west."
+    },
+    {
+      "id": "d029",
+      "language": "en",
+      "question": "What were the two main routes across the isthmus for the silver mule caravans, and how did they differ?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        56
+      ],
+      "expected_section": "Las grandes caravanas de mulas: un tesoro en el camino",
+      "search_languages": [
+        "es"
+      ],
+      "reference_answer": "The Camino Real ran overland from Panama City directly to Nombre de Dios (later Portobelo), while the Camino de Cruces combined a shorter land trip to the river port of Venta de Cruces with a boat journey down the Chagres River to the Caribbean coast."
+    },
+    {
+      "id": "d030",
+      "language": "es",
+      "question": "¿Con qué caciques se alió Vasco Núñez de Balboa en Darién antes de cruzar el istmo, y qué hizo con ellos para sellar esa alianza?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        36
+      ],
+      "expected_section": "Indigenous Intelligence: The Origins of Balboa's Quest > Strategic Alliances and Preparations",
+      "search_languages": [
+        "en"
+      ],
+      "reference_answer": "Balboa se alió con Careta, cacique de Coyba (cuya hija tomó como compañera), y con Comogre, y bautizó a ambos jefes como cristianos para simbolizar su vínculo con la Corona española."
+    },
+    {
+      "id": "d031",
+      "language": "es",
+      "question": "¿Cómo cayó el fuerte de San Lorenzo en enero de 1671, cuando los defensores españoles parecían estar ganando la batalla?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        236
+      ],
+      "expected_section": "Blood at San Lorenzo",
+      "search_languages": [
+        "en"
+      ],
+      "reference_answer": "Un incendio prendió en las empalizadas de madera y el techo de paja, llegó al polvorín y la explosión destruyó la defensa, de modo que la guarnición fue aniquilada y los bucaneros tomaron el fuerte."
+    },
+    {
+      "id": "d032",
+      "language": "es",
+      "question": "¿Qué derechos obtuvo Gran Bretaña respecto a Portobelo en el Tratado de Utrecht de 1713?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        229
+      ],
+      "expected_section": "War, Reform, and Last Attempts",
+      "search_languages": [
+        "en"
+      ],
+      "reference_answer": "Gran Bretaña obtuvo el asiento de negros y el derecho a enviar un barco mercante de 500 toneladas al año a Portobelo, el navío de permiso."
+    },
+    {
+      "id": "d033",
+      "language": "es",
+      "question": "¿Cuándo se celebró la última feria de Portobelo y en qué año se abolió el sistema de galeones?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        228
+      ],
+      "expected_section": "The Window Closes",
+      "search_languages": [
+        "en"
+      ],
+      "reference_answer": "La última feria se celebró en 1737, con seis barcos mercantes y dos navíos de guerra, y el sistema de galeones fue abolido en 1741."
+    },
+    {
+      "id": "d034",
+      "language": "es",
+      "question": "¿Qué territorio abarcaba la jurisdicción de la Audiencia de Panamá restablecida según el decreto de 1563?",
+      "type": "cross-lingual",
+      "expected_article_ids": [
+        63
+      ],
+      "expected_section": "A More Focused Domain: The New Jurisdiction > Realistic Boundaries",
+      "search_languages": [
+        "en"
+      ],
+      "reference_answer": "Se extendía desde el golfo de Fonseca en el norte hasta el puerto de Buenaventura en el sur, e incluía Panamá, Veragua, partes de Nicaragua y porciones de la costa pacífica de Colombia."
+    },
+    {
+      "id": "d035",
+      "language": "en",
+      "question": "Which Spanish figure was executed in 1519 by the governor Pedrarias Dávila, and what happened to Nicaragua's Indigenous population after conquerors from Panama arrived there in the 1520s?",
+      "type": "multi-article",
+      "expected_article_ids": [
+        46,
+        36
+      ],
+      "reference_answer": "Balboa was executed in 1519 on treason charges by Pedrarias Dávila, and the Nicaraguan conquest of 1524-1526 led to violence, forced labor, disease and a catastrophic demographic collapse of the native peoples within a generation."
+    },
+    {
+      "id": "d036",
+      "language": "en",
+      "question": "How did Thomas Gage's account of silver piled in Portobelo's streets relate to the way silver was actually stored around the Customs House during the trade fairs, and what did England do with the intelligence he gave?",
+      "type": "multi-article",
+      "expected_article_ids": [
+        228,
+        206
+      ],
+      "reference_answer": "Gage described silver ingots stacked openly in the streets, which matches accounts of bars piled five feet high around the Casa Real de la Aduana during the fairs; his book and plan for Cromwell fed the Western Design and the English seizure of Jamaica in 1655."
+    },
+    {
+      "id": "d037",
+      "language": "en",
+      "question": "What was the lasting fear Spanish officials took from Morgan's 1671 attack, and how did it show up in the way the new Panama City was founded and built after 1673?",
+      "type": "multi-article",
+      "expected_article_ids": [
+        239,
+        244
+      ],
+      "reference_answer": "Officials concluded that Panama could be taken again, so they moved the capital to the defensible Ancón Peninsula, refounded it in January 1673 with walls, and built it in calicanto stone, clay tile and other fire-resistant materials rather than timber and thatch."
+    },
+    {
+      "id": "d038",
+      "language": "es",
+      "question": "¿Por qué el conde de Molina consideraba el saqueo de Panamá una violación del tratado de 1670, y cómo respondió finalmente Londres con Henry Morgan?",
+      "type": "multi-article",
+      "expected_article_ids": [
+        241,
+        242
+      ],
+      "reference_answer": "Molina sostenía que el tratado ya estaba ratificado y que un soberano responde por sus súbditos, de modo que el ataque violaba un acuerdo entre coronas; sin embargo, Londres solo encarceló brevemente a Morgan, luego lo nombró caballero y lo envió a Jamaica como vicegobernador."
+    },
+    {
+      "id": "d039",
+      "language": "es",
+      "question": "¿Qué papel tuvieron los incendios o accidentes en la caída de Nombre de Dios en 1596 y del fuerte de San Lorenzo en 1671?",
+      "type": "multi-article",
+      "expected_article_ids": [
+        205,
+        232
+      ],
+      "reference_answer": "En Nombre de Dios un gran incendio a finales de 1596 destruyó mercancías por 750 000 pesos y volvió inevitable el traslado a Portobelo; en San Lorenzo una flecha encendida prendió el techo de paja sobre el polvorín, y la explosión destruyó el fuerte."
+    },
+    {
+      "id": "d040",
+      "language": "es",
+      "question": "¿Por qué la Audiencia de Panamá tuvo dificultades para aplicar las Leyes Nuevas de 1542, y cómo ven hoy los historiadores su función dentro del imperio español?",
+      "type": "multi-article",
+      "expected_article_ids": [
+        61,
+        66
+      ],
+      "reference_answer": "La Audiencia quedó atrapada entre los mandatos reales y la oposición de los colonos encomenderos, por lo que equilibró la ley con medidas prácticas; los historiadores actuales la estudian como un nodo de una red imperial que conectaba el Atlántico y el Pacífico y regulaba el flujo de información, personas y recursos."
+    },
+    {
+      "id": "d041",
+      "language": "en",
+      "question": "How did the 1999 handover of the Panama Canal Zone to Panamanian control affect the national economy?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d042",
+      "language": "en",
+      "question": "What are the traditional dances and costumes featured in Panama's Carnival celebrations in Las Tablas?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d043",
+      "language": "en",
+      "question": "What was the role of Manuel Noriega in Panamanian politics during the 1980s?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d044",
+      "language": "en",
+      "question": "How does the Panama Papers leak affect Panama's reputation as a financial center?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d045",
+      "language": "en",
+      "question": "What is the best way to cook a perfect risotto?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d046",
+      "language": "en",
+      "question": "How does the offside rule work in soccer?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d047",
+      "language": "en",
+      "question": "What caused the fall of the Western Roman Empire?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d048",
+      "language": "en",
+      "question": "How do I train a neural network to classify images?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d049",
+      "language": "es",
+      "question": "¿Cómo se construyó el Canal de Panamá bajo la dirección de Estados Unidos entre 1904 y 1914?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d050",
+      "language": "es",
+      "question": "¿Qué es la pollera panameña y cómo se confecciona?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d051",
+      "language": "es",
+      "question": "¿Cuál fue el papel de Omar Torrijos en la negociación de los tratados del Canal?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d052",
+      "language": "es",
+      "question": "¿Qué especies de aves se pueden observar en el Parque Nacional Soberanía?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_panama"
+    },
+    {
+      "id": "d053",
+      "language": "es",
+      "question": "¿Cómo se calcula la órbita de un planeta alrededor del Sol?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d054",
+      "language": "es",
+      "question": "¿Cuáles son las mejores recetas para preparar una paella valenciana?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d055",
+      "language": "es",
+      "question": "¿Quién ganó la Copa Mundial de la FIFA en 2010?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "d056",
+      "language": "es",
+      "question": "¿Cómo funciona la fotosíntesis en las plantas?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "off_topic"
+    },
+    {
+      "id": "op01",
+      "language": "en",
+      "question": "When did Vasco Nunez de Balboa arrive to mainland Panama?",
+      "type": "reader",
+      "expected_article_ids": [
+        30,
+        31,
+        32,
+        50
+      ],
+      "reference_answer": "In 1510, with Martín Fernández de Enciso's relief expedition to the Gulf of Urabá (he had sailed the coast earlier, with Rodrigo de Bastidas in 1501).",
+      "subtype": "distractor",
+      "key_facts": [
+        "1510",
+        "Enciso"
+      ],
+      "source": "operator",
+      "notes": "operator question kept as typed; verifier said drop: Ambiguous: Balboa first reached the region with Bastidas in 1501 but landed and settled with Enciso in 1510, so several answers are defensible."
+    },
+    {
+      "id": "op03",
+      "language": "en",
+      "question": "When did Balboa discover the South Sea?",
+      "type": "reader",
+      "expected_article_ids": [
+        29,
+        31,
+        32,
+        36,
+        38,
+        39
+      ],
+      "reference_answer": "He first sighted the South Sea (Pacific) from a peak in Darién on September 25, 1513, and four days later reached the shore and claimed it for Spain.",
+      "subtype": "period_term",
+      "key_facts": [
+        "1513",
+        "25"
+      ],
+      "source": "operator"
+    },
+    {
+      "id": "op05",
+      "language": "en",
+      "question": "When did Balboa discover the Pacific?",
+      "type": "reader",
+      "expected_article_ids": [
+        29,
+        31,
+        32,
+        36,
+        38,
+        39,
+        50
+      ],
+      "reference_answer": "He first saw the Pacific from a peak in Darién on September 25, 1513, and four days later waded into it to claim the South Sea for Spain.",
+      "subtype": "when",
+      "key_facts": [
+        "1513",
+        "25"
+      ],
+      "source": "operator"
+    },
+    {
+      "id": "op02",
+      "language": "es",
+      "question": "¿Cuándo llegó Vasco Núñez de Balboa a tierra firme en Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        30,
+        31,
+        32,
+        50
+      ],
+      "reference_answer": "En 1510, con la expedición de socorro de Martín Fernández de Enciso al golfo de Urabá (antes había recorrido la costa con Rodrigo de Bastidas en 1501).",
+      "subtype": "distractor",
+      "key_facts": [
+        "1510",
+        "Enciso"
+      ],
+      "source": "operator",
+      "notes": "operator question kept as typed; verifier said drop: Ambiguous: Balboa visited the Gulf of Urabá with Bastidas in 1501 and arrived with Enciso in 1510, so several answers are defensible."
+    },
+    {
+      "id": "op04",
+      "language": "es",
+      "question": "¿Cuándo descubrió Balboa el Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        29,
+        31,
+        32,
+        36,
+        38,
+        39,
+        50
+      ],
+      "reference_answer": "Lo avistó desde una cima del Darién el 25 de septiembre de 1513 y, cuatro días después, llegó a la costa y reclamó el Mar del Sur para España.",
+      "subtype": "period_term",
+      "key_facts": [
+        "1513",
+        "25"
+      ],
+      "source": "operator"
+    },
+    {
+      "id": "op06",
+      "language": "es",
+      "question": "¿Cuándo descubrió Balboa el Pacífico?",
+      "type": "reader",
+      "expected_article_ids": [
+        29,
+        31,
+        32,
+        36,
+        38,
+        39,
+        50
+      ],
+      "reference_answer": "Lo avistó desde una cima del Darién el 25 de septiembre de 1513 y, cuatro días después, llegó a la costa y reclamó el Mar del Sur para España.",
+      "subtype": "when",
+      "key_facts": [
+        "1513",
+        "25"
+      ],
+      "source": "operator"
+    },
+    {
+      "id": "r001",
+      "language": "en",
+      "question": "What Spanish port did Bastidas sail from on his voyage to Panama?",
+      "type": "reader",
+      "expected_article_ids": [
+        25
+      ],
+      "reference_answer": "Bastidas left from Cádiz in October 1500 with two ships, the San Antón and the Santa María de Gracia.",
+      "subtype": "where",
+      "key_facts": [
+        "Cádiz"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r002",
+      "language": "en",
+      "question": "Who did Columbus leave in charge at Belén?",
+      "type": "reader",
+      "expected_article_ids": [
+        26
+      ],
+      "reference_answer": "Columbus left his younger brother Bartholomew Columbus with about 80 men to build the settlement and look for gold.",
+      "subtype": "who",
+      "key_facts": [
+        "Bartholomew Columbus",
+        "80"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r003",
+      "language": "en",
+      "question": "Where did many Guna move to keep away from the Spanish?",
+      "type": "reader",
+      "expected_article_ids": [
+        27,
+        42
+      ],
+      "reference_answer": "Many Guna communities moved from the mainland to the San Blas Islands, which helped them keep much of their autonomy during the colonial period.",
+      "subtype": "where",
+      "key_facts": [
+        "San Blas"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r004",
+      "language": "en",
+      "question": "Which chief forced Columbus to abandon his settlement at Belén?",
+      "type": "reader",
+      "expected_article_ids": [
+        28,
+        29,
+        33
+      ],
+      "reference_answer": "The Quibían of Veragua escaped Spanish captivity and led about 400 warriors against Santa María de Belén in 1503, forcing the Spanish to abandon it.",
+      "subtype": "who",
+      "key_facts": [
+        "Quibían"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r005",
+      "language": "en",
+      "question": "Who wrote to Charles V about a ditch from the Chagres to the South Sea?",
+      "type": "reader",
+      "expected_article_ids": [
+        29
+      ],
+      "reference_answer": "Gaspar de Espinosa wrote to Charles V in 1533 describing a ditch from the Chagres to the South Sea.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Gaspar de Espinosa",
+        "1533"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r006",
+      "language": "en",
+      "question": "How long did Pizarro's men wait for help at San Sebastián before leaving?",
+      "type": "reader",
+      "expected_article_ids": [
+        30
+      ],
+      "reference_answer": "Pizarro agreed with the remaining settlers to abandon San Sebastián de Urabá if no help arrived within fifty days.",
+      "subtype": "how_long",
+      "key_facts": [
+        "fifty"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r007",
+      "language": "en",
+      "question": "Who shared the mayor post with Balboa in Darién's first town council?",
+      "type": "reader",
+      "expected_article_ids": [
+        31,
+        32
+      ],
+      "reference_answer": "The town council elected Balboa and Martín Zamudio as joint alcaldes, though Balboa became the de facto leader.",
+      "subtype": "who",
+      "key_facts": [
+        "Martín Zamudio"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r008",
+      "language": "en",
+      "question": "When did King Ferdinand officially make Balboa interim governor?",
+      "type": "reader",
+      "expected_article_ids": [
+        32
+      ],
+      "reference_answer": "On December 23, 1511, the King formally recognized Balboa as interim governor and captain general.",
+      "subtype": "when",
+      "key_facts": [
+        "1511"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r010",
+      "language": "en",
+      "question": "Which of Pedrarias's daughters was Balboa married to?",
+      "type": "reader",
+      "expected_article_ids": [
+        34,
+        39
+      ],
+      "reference_answer": "In 1516 Pedrarias arranged a proxy marriage between Balboa and his daughter María de Peñalosa, who stayed in Spain.",
+      "subtype": "who",
+      "key_facts": [
+        "María de Peñalosa",
+        "1516"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r011",
+      "language": "en",
+      "question": "When did Colombia open a park at the Santa María la Antigua site?",
+      "type": "reader",
+      "expected_article_ids": [
+        35
+      ],
+      "reference_answer": "Colombia established its first archaeological and historical park at Santa María de la Antigua del Darién in 2019.",
+      "subtype": "when",
+      "key_facts": [
+        "2019"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r012",
+      "language": "en",
+      "question": "Who first told Balboa there was another sea past the mountains?",
+      "type": "reader",
+      "expected_article_ids": [
+        32,
+        36
+      ],
+      "reference_answer": "Panquiaco, the eldest son of Cacique Comogre, told Balboa that another sea with rich kingdoms lay beyond the mountains to the south.",
+      "subtype": "first",
+      "key_facts": [
+        "Panquiaco",
+        "Comogre"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r013",
+      "language": "en",
+      "question": "Which chief fought Balboa in the mountains before he saw the Pacific?",
+      "type": "reader",
+      "expected_article_ids": [
+        36,
+        37
+      ],
+      "reference_answer": "Cacique Torecha of Quarequá chose to resist and ambushed Balboa's expedition in 1513. He died in the fighting.",
+      "subtype": "who",
+      "key_facts": [
+        "Torecha"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r014",
+      "language": "en",
+      "question": "What name did Spain give the isthmus colony after Balboa's discovery?",
+      "type": "reader",
+      "expected_article_ids": [
+        38
+      ],
+      "reference_answer": "The isthmus was reorganized as a crown colony and renamed Castilla del Oro (Golden Castile).",
+      "subtype": "period_term",
+      "key_facts": [
+        "Castilla del Oro"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r015",
+      "language": "en",
+      "question": "Who arrested Balboa on the way to meet Pedrarias?",
+      "type": "reader",
+      "expected_article_ids": [
+        39,
+        40
+      ],
+      "reference_answer": "Francisco Pizarro, Balboa's former lieutenant who was now loyal to Pedrarias, intercepted and arrested him on Pedrarias's orders.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Francisco Pizarro"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r016",
+      "language": "en",
+      "question": "Which friendly cacique did Pedrarias attack right after arriving?",
+      "type": "reader",
+      "expected_article_ids": [
+        40
+      ],
+      "reference_answer": "One of Pedrarias's first targets was Cacique Ponquiaco, who had helped the Spanish with information and resources. Pedrarias still ordered a raid on his community.",
+      "subtype": "who",
+      "key_facts": [
+        "Ponquiaco"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r017",
+      "language": "en",
+      "question": "Which Spaniard got to the village of Panamá before Pedrarias did?",
+      "type": "reader",
+      "expected_article_ids": [
+        41,
+        42
+      ],
+      "reference_answer": "Gaspar de Espinosa, the alcalde mayor, led a reconnaissance party in early 1519 and reached the village of Panamá ahead of Pedrarias.",
+      "subtype": "first",
+      "key_facts": [
+        "Espinosa"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r018",
+      "language": "en",
+      "question": "How long did Urracá fight off the Spanish?",
+      "type": "reader",
+      "expected_article_ids": [
+        42,
+        52
+      ],
+      "reference_answer": "Urracá resisted the Spanish for about nine years, nearly a decade, until 1531. One article dates his campaign from 1522 and another from about 1520.",
+      "subtype": "how_long",
+      "key_facts": [
+        "1531"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r019",
+      "language": "en",
+      "question": "How long was the Camino Real between Panama City and the Caribbean?",
+      "type": "reader",
+      "expected_article_ids": [
+        43,
+        206
+      ],
+      "reference_answer": "The Camino Real stretched approximately 95 kilometers across the isthmus from Panama City to the Caribbean, first to Nombre de Dios and later to Portobelo.",
+      "subtype": "how_long",
+      "key_facts": [
+        "95"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r020",
+      "language": "en",
+      "question": "Who founded the free Black town of Santiago del Príncipe?",
+      "type": "reader",
+      "expected_article_ids": [
+        44
+      ],
+      "reference_answer": "It was founded by a band of cimarrones led by Luis de Mozambique after Spanish authorities pardoned them in 1570, near Nombre de Dios.",
+      "subtype": "who",
+      "key_facts": [
+        "Luis de Mozambique",
+        "1570"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r021",
+      "language": "en",
+      "question": "Who led the first Spanish voyage from Panama up to Nicaragua?",
+      "type": "reader",
+      "expected_article_ids": [
+        41,
+        45,
+        46,
+        49
+      ],
+      "reference_answer": "Gil González Dávila led the pioneering expedition in 1522, sailing from the Pearl Islands with four small ships toward Costa Rica and Nicaragua.",
+      "subtype": "first",
+      "key_facts": [
+        "Gil González Dávila",
+        "1522"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r022",
+      "language": "en",
+      "question": "Where did Gil González build his ships before sailing north?",
+      "type": "reader",
+      "expected_article_ids": [
+        45,
+        46
+      ],
+      "reference_answer": "Lacking suitable ships, Gil González and his pilot Andrés Niño built brigantines from scratch at the Pearl Islands off Panama's coast.",
+      "subtype": "where",
+      "key_facts": [
+        "Pearl Islands"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r023",
+      "language": "en",
+      "question": "How long were Pizarro and his men stuck on Gorgona Island?",
+      "type": "reader",
+      "expected_article_ids": [
+        47
+      ],
+      "reference_answer": "Pizarro and his thirteen companions waited on Gorgona Island for seven months before a relief ship arrived.",
+      "subtype": "how_long",
+      "key_facts": [
+        "seven"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r024",
+      "language": "en",
+      "question": "What was the first Spanish town founded in Peru?",
+      "type": "reader",
+      "expected_article_ids": [
+        48
+      ],
+      "reference_answer": "Pizarro founded San Miguel de Piura near the northern Peruvian coast in 1532. It was the first Spanish town in Peru.",
+      "subtype": "first",
+      "key_facts": [
+        "San Miguel de Piura",
+        "1532"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r025",
+      "language": "en",
+      "question": "Who really paid for Pizarro's expeditions to Peru?",
+      "type": "reader",
+      "expected_article_ids": [
+        49
+      ],
+      "reference_answer": "The true financier was Gaspar de Espinosa. The priest Hernando de Luque only served as a frontman for him.",
+      "subtype": "who",
+      "key_facts": [
+        "Gaspar de Espinosa"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r026",
+      "language": "en",
+      "question": "In what town was Balboa beheaded?",
+      "type": "reader",
+      "expected_article_ids": [
+        34,
+        50
+      ],
+      "reference_answer": "Balboa was beheaded in the town of Acla in 1519, a few months before Panama City was founded.",
+      "subtype": "where",
+      "key_facts": [
+        "Acla"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r027",
+      "language": "en",
+      "question": "When did Spain set up the legal rules for the encomienda?",
+      "type": "reader",
+      "expected_article_ids": [
+        50,
+        51
+      ],
+      "reference_answer": "The Spanish Crown established the encomienda's legal framework in 1512 with the Laws of Burgos, which were amended in 1513.",
+      "subtype": "when",
+      "key_facts": [
+        "1512",
+        "Burgos"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r028",
+      "language": "en",
+      "question": "Where did the Spanish trick Urracá into peace talks and capture him?",
+      "type": "reader",
+      "expected_article_ids": [
+        52
+      ],
+      "reference_answer": "Urracá was invited to peace talks at the Spanish outpost of Natá de los Caballeros in 1522 and was seized there on arrival.",
+      "subtype": "where",
+      "key_facts": [
+        "Natá"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r029",
+      "language": "en",
+      "question": "When was the first notable slave rebellion in Panama?",
+      "type": "reader",
+      "expected_article_ids": [
+        53,
+        69
+      ],
+      "reference_answer": "In 1525 Panama saw what is described as the first notable slave rebellion in the Spanish Americas, though it was quickly suppressed.",
+      "subtype": "first",
+      "key_facts": [
+        "1525"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r030",
+      "language": "en",
+      "question": "When did the Spanish crown order money spent on building the Camino Real?",
+      "type": "reader",
+      "expected_article_ids": [
+        54
+      ],
+      "reference_answer": "In February 1524 a royal decree ordered Pedrarias and colonial officials to spend treasury funds on building the Camino Real, with the Crown contributing up to 3,000 pesos.",
+      "subtype": "when",
+      "key_facts": [
+        "1524"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r031",
+      "language": "en",
+      "question": "Which viceroy pushed for a better road to Cruces in 1569?",
+      "type": "reader",
+      "expected_article_ids": [
+        55
+      ],
+      "reference_answer": "In 1569 Viceroy Francisco de Toledo ordered a better road built from Panama City to Cruces. This turned the Camino de Cruces into a formal road.",
+      "subtype": "who",
+      "key_facts": [
+        "Francisco de Toledo",
+        "1569"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r032",
+      "language": "en",
+      "question": "When did the big trade fairs at Nombre de Dios begin?",
+      "type": "reader",
+      "expected_article_ids": [
+        56,
+        207,
+        227
+      ],
+      "reference_answer": "The fairs at Nombre de Dios began around 1544. They were timed to the arrival of the Spanish treasure fleet.",
+      "subtype": "when",
+      "key_facts": [
+        "1544"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r033",
+      "language": "en",
+      "question": "Who originally founded Nombre de Dios, and in what year?",
+      "type": "reader",
+      "expected_article_ids": [
+        57
+      ],
+      "reference_answer": "Nombre de Dios was originally founded in 1510 by Diego de Nicuesa. It was later refounded in 1519 by Diego de Albites.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Diego de Nicuesa",
+        "1510"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r034",
+      "language": "en",
+      "question": "Where did the maroon leader Felipillo set up his community?",
+      "type": "reader",
+      "expected_article_ids": [
+        58
+      ],
+      "reference_answer": "Around 1549-1551, Felipillo formed a community in the Gulf of San Miguel that mixed escaped African and Indigenous slaves.",
+      "subtype": "where",
+      "key_facts": [
+        "San Miguel"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r035",
+      "language": "en",
+      "question": "What ship was Francis Drake on when he died near Panama?",
+      "type": "reader",
+      "expected_article_ids": [
+        59,
+        205
+      ],
+      "reference_answer": "Drake died of dysentery aboard the Defiance in 1596, anchored off the coast between Nombre de Dios and Portobelo.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Defiance",
+        "1596"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r036",
+      "language": "en",
+      "question": "Who governed Tierra Firme when the first Audiencia started?",
+      "type": "reader",
+      "expected_article_ids": [
+        60,
+        61,
+        62
+      ],
+      "reference_answer": "Francisco Pérez de Robles, as senior judge and President of the Audiencia, held the titles of governor and captain general of Tierra Firme.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Pérez de Robles"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r037",
+      "language": "en",
+      "question": "Who was the first president of Panama's audiencia?",
+      "type": "reader",
+      "expected_article_ids": [
+        60,
+        61,
+        62,
+        64,
+        65
+      ],
+      "reference_answer": "Francisco Pérez de Robles was the first president of Panama's Audiencia. He also acted as governor and captain-general of Tierra Firme.",
+      "subtype": "who",
+      "key_facts": [
+        "Francisco Pérez de Robles"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r038",
+      "language": "en",
+      "question": "Where was the royal seal sent when Panama lost its audiencia?",
+      "type": "reader",
+      "expected_article_ids": [
+        62
+      ],
+      "reference_answer": "The royal seal was sent south to Peru and handed to the new Audiencia of Lima.",
+      "subtype": "where",
+      "key_facts": [
+        "Peru"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r039",
+      "language": "en",
+      "question": "Who first led Panama's audiencia when it came back in 1565?",
+      "type": "reader",
+      "expected_article_ids": [
+        63
+      ],
+      "reference_answer": "Dr. Manuel Barrios de San Millán served as provisional president when the Audiencia was formally reinstalled in 1565.",
+      "subtype": "first",
+      "key_facts": [
+        "Manuel Barrios de San Millán"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r040",
+      "language": "en",
+      "question": "Who was the first president of Panama's Audiencia?",
+      "type": "reader",
+      "expected_article_ids": [
+        60,
+        61,
+        62,
+        64,
+        65
+      ],
+      "reference_answer": "Francisco Pérez de Robles first presided over the Audiencia, serving as both court president and governor of Panama.",
+      "subtype": "who",
+      "key_facts": [
+        "Francisco Pérez de Robles"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r041",
+      "language": "en",
+      "question": "How far did the first Audiencia of Panama's territory reach?",
+      "type": "reader",
+      "expected_article_ids": [
+        60,
+        61,
+        62,
+        65
+      ],
+      "reference_answer": "Its jurisdiction stretched from the Gulf of Fonseca in Nicaragua to the Strait of Magellan.",
+      "subtype": "where",
+      "key_facts": [
+        "Fonseca",
+        "Magellan"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r042",
+      "language": "en",
+      "question": "Which historian wrote about the first governments of Tierra Firme?",
+      "type": "reader",
+      "expected_article_ids": [
+        66
+      ],
+      "reference_answer": "Panamanian historian Alfredo Castillero Calvo wrote \"Los primeros gobiernos de Tierra Firme 1510-1565\" (2011).",
+      "subtype": "who",
+      "key_facts": [
+        "Alfredo Castillero Calvo",
+        "2011"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r043",
+      "language": "en",
+      "question": "What year was Nombre de Dios founded?",
+      "type": "reader",
+      "expected_article_ids": [
+        57,
+        67
+      ],
+      "reference_answer": "Nombre de Dios was founded in 1510 by Diego de Nicuesa, and was later refounded in 1519 as the Atlantic terminus.",
+      "subtype": "when",
+      "key_facts": [
+        "1510"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r044",
+      "language": "en",
+      "question": "Who decided to pull back when Drake got shot at Nombre de Dios?",
+      "type": "reader",
+      "expected_article_ids": [
+        68
+      ],
+      "reference_answer": "Drake's second-in-command, John Oxenham, chose to save his wounded captain over seizing the silver and ordered the retreat.",
+      "subtype": "who",
+      "key_facts": [
+        "John Oxenham"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r045",
+      "language": "en",
+      "question": "When was the first cimarron uprising in Panama recorded?",
+      "type": "reader",
+      "expected_article_ids": [
+        53,
+        69
+      ],
+      "reference_answer": "The first recorded Cimarron (slave) rebellion in Panama dates back to 1525.",
+      "subtype": "first",
+      "key_facts": [
+        "1525"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r046",
+      "language": "en",
+      "question": "Who ruined Drake's first try at ambushing the mule train?",
+      "type": "reader",
+      "expected_article_ids": [
+        70
+      ],
+      "reference_answer": "Robert Pike, a crewman who had secretly been drinking during the stakeout, was discovered by a Spanish traveler, and the alarm let the mule train divert its cargo away from Drake's trap.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Robert Pike"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r047",
+      "language": "en",
+      "question": "Which Spanish governor was taken prisoner when Parker raided Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        147
+      ],
+      "reference_answer": "Governor Pedro Meléndez, the garrison's commander, was captured during the fighting around the royal treasury.",
+      "subtype": "who",
+      "key_facts": [
+        "Pedro Meléndez"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r048",
+      "language": "en",
+      "question": "Where did the pirate l'Olonnais die, and who killed him?",
+      "type": "reader",
+      "expected_article_ids": [
+        148
+      ],
+      "reference_answer": "L'Olonnais was killed on the coast of Darién in eastern Panama by Kuna warriors, likely in 1668.",
+      "subtype": "where",
+      "key_facts": [
+        "Darién",
+        "Kuna"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r049",
+      "language": "en",
+      "question": "What was Henry Morgan's first big raid after becoming pirate leader?",
+      "type": "reader",
+      "expected_article_ids": [
+        149
+      ],
+      "reference_answer": "His first major operation as commander was the raid on Puerto Príncipe (modern-day Camagüey), a wealthy inland town in Cuba.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Puerto Príncipe"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r050",
+      "language": "en",
+      "question": "Which Portobelo fort did Morgan's pirates take first?",
+      "type": "reader",
+      "expected_article_ids": [
+        150
+      ],
+      "reference_answer": "Morgan's buccaneers first attacked and captured Fort San Jerónimo, which protected the town itself.",
+      "subtype": "first",
+      "key_facts": [
+        "San Jerónimo"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r051",
+      "language": "en",
+      "question": "Who stopped Mansvelt's pirates from taking Cartago in Costa Rica?",
+      "type": "reader",
+      "expected_article_ids": [
+        151
+      ],
+      "reference_answer": "Governor Juan López de la Flor organized the defense that turned back Mansvelt's force near Turrialba in 1666.",
+      "subtype": "who",
+      "key_facts": [
+        "Juan López de la Flor"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r052",
+      "language": "en",
+      "question": "Who founded the town of Portobelo and in what year?",
+      "type": "reader",
+      "expected_article_ids": [
+        205,
+        208,
+        230
+      ],
+      "reference_answer": "Francisco Valverde y Mercado formally founded San Felipe de Portobelo in 1597.",
+      "subtype": "who",
+      "key_facts": [
+        "Francisco Valverde y Mercado",
+        "1597"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r053",
+      "language": "en",
+      "question": "When was the Royal Customs House in Portobelo built?",
+      "type": "reader",
+      "expected_article_ids": [
+        206,
+        209,
+        228
+      ],
+      "reference_answer": "The Casa Real de la Aduana was built around 1630 in Renaissance style.",
+      "subtype": "when",
+      "key_facts": [
+        "1630"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r054",
+      "language": "en",
+      "question": "What year was the last Portobelo fair held?",
+      "type": "reader",
+      "expected_article_ids": [
+        207,
+        228,
+        229,
+        232
+      ],
+      "reference_answer": "The last Portobelo fair was held in 1737.",
+      "subtype": "when",
+      "key_facts": [
+        "1737"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r055",
+      "language": "en",
+      "question": "Who was Spain's first chief pilot at the Casa de Contratación?",
+      "type": "reader",
+      "expected_article_ids": [
+        208
+      ],
+      "reference_answer": "Amerigo Vespucci was the first person given charge of the Padrón Real when he was appointed piloto mayor (chief pilot) in 1508.",
+      "subtype": "first",
+      "key_facts": [
+        "Amerigo Vespucci",
+        "1508"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r056",
+      "language": "en",
+      "question": "Who found the silver mountain at Potosí?",
+      "type": "reader",
+      "expected_article_ids": [
+        209
+      ],
+      "reference_answer": "An indigenous prospector named Diego Huallpa discovered the Cerro Rico at Potosí in 1545.",
+      "subtype": "who",
+      "key_facts": [
+        "Diego Huallpa",
+        "1545"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r057",
+      "language": "en",
+      "question": "When did the British admiral Vernon capture Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        206,
+        207,
+        210,
+        228,
+        229
+      ],
+      "reference_answer": "Admiral Edward Vernon captured Portobelo on November 21, 1739, with six ships of the line.",
+      "subtype": "when",
+      "key_facts": [
+        "1739",
+        "Vernon",
+        "21"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r058",
+      "language": "en",
+      "question": "Where was Francis Drake buried after he died?",
+      "type": "reader",
+      "expected_article_ids": [
+        205,
+        227
+      ],
+      "reference_answer": "Drake died of dysentery near Portobelo in 1596. He was sealed in a lead coffin and buried at sea off the small island that still bears his name, Isla Drake.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Isla Drake"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r059",
+      "language": "en",
+      "question": "Which British admiral died of yellow fever while blockading Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        206,
+        228,
+        231
+      ],
+      "reference_answer": "Admiral Francis Hosier blockaded Portobelo in 1726 and died of yellow fever, as did most of his crew.",
+      "subtype": "who",
+      "key_facts": [
+        "Hosier",
+        "1726"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r060",
+      "language": "en",
+      "question": "Who escorted the ships of the last Portobelo fair?",
+      "type": "reader",
+      "expected_article_ids": [
+        229
+      ],
+      "reference_answer": "Blas de Lezo escorted the last successful fair in 1737, with six merchant ships and two warships.",
+      "subtype": "who",
+      "key_facts": [
+        "Blas de Lezo",
+        "1737"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r061",
+      "language": "en",
+      "question": "Who officially founded the town of Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        205,
+        208,
+        230
+      ],
+      "reference_answer": "Francisco Valverde y Mercado formally founded San Felipe de Portobelo in 1597.",
+      "subtype": "who",
+      "key_facts": [
+        "Francisco Valverde y Mercado",
+        "1597"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r063",
+      "language": "en",
+      "question": "Who defended San Lorenzo fort when Morgan attacked in 1670?",
+      "type": "reader",
+      "expected_article_ids": [
+        232,
+        234,
+        236
+      ],
+      "reference_answer": "Don Pedro de Elizalde commanded San Lorenzo, which had been reinforced to about 350 men.",
+      "subtype": "who",
+      "key_facts": [
+        "Elizalde"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r064",
+      "language": "en",
+      "question": "Who gave Henry Morgan his commission before the Panama raid?",
+      "type": "reader",
+      "expected_article_ids": [
+        233,
+        236,
+        241
+      ],
+      "reference_answer": "Sir Thomas Modyford, Governor of Jamaica, signed Morgan's commission on 1 August 1670, making him commander-in-chief of the colony's ships of war.",
+      "subtype": "who",
+      "key_facts": [
+        "Modyford"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r065",
+      "language": "en",
+      "question": "Who commanded the Spanish fort at San Lorenzo when Morgan's men attacked?",
+      "type": "reader",
+      "expected_article_ids": [
+        232,
+        234,
+        236
+      ],
+      "reference_answer": "The garrison of San Lorenzo was commanded by Don Pedro de Elizalde, a Castilian officer who died fighting at the cliff edge.",
+      "subtype": "who",
+      "key_facts": [
+        "Elizalde"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r066",
+      "language": "en",
+      "question": "What year was Henry Morgan knighted after the Panama raid?",
+      "type": "reader",
+      "expected_article_ids": [
+        235,
+        238,
+        241
+      ],
+      "reference_answer": "Morgan was knighted by Charles II in November 1674 and then returned to Jamaica as Lieutenant Governor.",
+      "subtype": "when",
+      "key_facts": [
+        "1674"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r067",
+      "language": "en",
+      "question": "Where did Morgan's fleet gather before the Panama raid?",
+      "type": "reader",
+      "expected_article_ids": [
+        233,
+        234,
+        236
+      ],
+      "reference_answer": "The fleet gathered at Île-à-Vache, a small island off the southwestern coast of Hispaniola used by buccaneers as a staging ground.",
+      "subtype": "where",
+      "key_facts": [
+        "Île-à-Vache"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r068",
+      "language": "en",
+      "question": "Which ship sailed off with Panama's treasury before Morgan got there?",
+      "type": "reader",
+      "expected_article_ids": [
+        237,
+        238,
+        239
+      ],
+      "reference_answer": "The galleon La Santísima Trinidad sailed out of the bay with much of the colonial treasury, church treasure and merchants' goods.",
+      "subtype": "what",
+      "key_facts": [
+        "Santísima Trinidad"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r069",
+      "language": "en",
+      "question": "Where was Governor Modyford locked up after Morgan's raid?",
+      "type": "reader",
+      "expected_article_ids": [
+        235,
+        238,
+        241
+      ],
+      "reference_answer": "Modyford was recalled to England and imprisoned in the Tower of London.",
+      "subtype": "where",
+      "key_facts": [
+        "Tower of London"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r070",
+      "language": "en",
+      "question": "Who negotiated the 1670 Treaty of Madrid for England?",
+      "type": "reader",
+      "expected_article_ids": [
+        233,
+        239
+      ],
+      "reference_answer": "Sir William Godolphin, England's envoy in Madrid, negotiated the 1670 Treaty of Madrid on behalf of Charles II.",
+      "subtype": "who",
+      "key_facts": [
+        "Godolphin"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r071",
+      "language": "en",
+      "question": "When did the Conde de Lemos, viceroy of Peru, die?",
+      "type": "reader",
+      "expected_article_ids": [
+        240
+      ],
+      "reference_answer": "The Conde de Lemos died in office on December 6, 1672, before the new Panama City was founded.",
+      "subtype": "when",
+      "key_facts": [
+        "1672"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r072",
+      "language": "en",
+      "question": "Who was sent to Jamaica to replace and arrest Governor Modyford?",
+      "type": "reader",
+      "expected_article_ids": [
+        241
+      ],
+      "reference_answer": "The Privy Council sent Sir Thomas Lynch, who arrived in June 1671. He arrested Modyford on August 12.",
+      "subtype": "who",
+      "key_facts": [
+        "Lynch"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r073",
+      "language": "en",
+      "question": "Who chose the new site for Panama City after Morgan burned it?",
+      "type": "reader",
+      "expected_article_ids": [
+        242,
+        244
+      ],
+      "reference_answer": "Antonio Fernández de Córdoba y Mendoza, President of the Real Audiencia and Governor of Tierra Firme, weighed the engineers' reports and settled on the Ancón Peninsula.",
+      "subtype": "who",
+      "key_facts": [
+        "Fernández de Córdoba"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r074",
+      "language": "en",
+      "question": "Where did poor and indigenous people live in the new Panama City?",
+      "type": "reader",
+      "expected_article_ids": [
+        243,
+        244
+      ],
+      "reference_answer": "They settled outside the walls in the Arrabal de Santa Ana, separated from the fortified core by the walls and the Puerta de Tierra.",
+      "subtype": "where",
+      "key_facts": [
+        "Arrabal de Santa Ana"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r075",
+      "language": "en",
+      "question": "How long did it take to build Panama's cathedral?",
+      "type": "reader",
+      "expected_article_ids": [
+        244
+      ],
+      "reference_answer": "Work began around 1688 and the cathedral was substantially finished around 1796, about 108 years later.",
+      "subtype": "how_long",
+      "key_facts": [
+        "1688",
+        "1796"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r076",
+      "language": "es",
+      "question": "¿Con quién viajó Balboa la primera vez que vio la costa panameña?",
+      "type": "reader",
+      "expected_article_ids": [
+        25,
+        26,
+        28,
+        30
+      ],
+      "reference_answer": "Balboa navegó con Rodrigo de Bastidas en 1501, en la expedición que recorrió por primera vez la costa caribeña de Panamá.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Bastidas",
+        "1501"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r078",
+      "language": "es",
+      "question": "¿Cuántos guerreros juntó el Quibían para atacar Belén?",
+      "type": "reader",
+      "expected_article_ids": [
+        26,
+        27,
+        28
+      ],
+      "reference_answer": "El Quibían reunió unos 400 guerreros y atacó Santa María de Belén en 1503.",
+      "subtype": "what",
+      "key_facts": [
+        "400"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r079",
+      "language": "es",
+      "question": "¿En qué año llegó Pedrarias Dávila a Panamá con su gran ejército?",
+      "type": "reader",
+      "expected_article_ids": [
+        28,
+        32,
+        34,
+        35,
+        39,
+        40
+      ],
+      "reference_answer": "Pedrarias Dávila llegó en 1514 con una gran expedición de entre 1.500 y 2.000 personas.",
+      "subtype": "when",
+      "key_facts": [
+        "1514"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r080",
+      "language": "es",
+      "question": "¿Dónde perdió Bastidas sus barcos en el viaje de regreso?",
+      "type": "reader",
+      "expected_article_ids": [
+        25,
+        29
+      ],
+      "reference_answer": "Bastidas perdió sus barcos por moluscos que perforan la madera frente a Jaragua, en el suroeste de La Española.",
+      "subtype": "where",
+      "key_facts": [
+        "Jaragua"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r081",
+      "language": "es",
+      "question": "¿Cuándo conoció Balboa la zona del golfo de Urabá, antes de ser polizón?",
+      "type": "reader",
+      "expected_article_ids": [
+        30,
+        32
+      ],
+      "reference_answer": "Balboa había visitado la región del golfo de Urabá en 1501, durante una expedición con Rodrigo de Bastidas.",
+      "subtype": "distractor",
+      "key_facts": [
+        "1501",
+        "Bastidas"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r083",
+      "language": "es",
+      "question": "¿Qué título le dieron a Balboa después de llegar al Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        32,
+        38,
+        39
+      ],
+      "reference_answer": "Fue nombrado Adelantado del Mar del Sur y gobernador (o capitán general) de las provincias de Panamá y Coiba.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Adelantado",
+        "Coiba"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r084",
+      "language": "es",
+      "question": "¿Qué enfermedad atacó el Darién después de llegar Pedrarias?",
+      "type": "reader",
+      "expected_article_ids": [
+        33,
+        34
+      ],
+      "reference_answer": "Hacia 1514-1515 una enfermedad llamada «modorra» dejaba a las víctimas en un letargo mortal; murieron unos 700 españoles.",
+      "subtype": "what",
+      "key_facts": [
+        "modorra"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r085",
+      "language": "es",
+      "question": "¿Cuántos españoles murieron por la enfermedad de la modorra en Darién?",
+      "type": "reader",
+      "expected_article_ids": [
+        33,
+        34
+      ],
+      "reference_answer": "La epidemia llamada modorra causó la muerte de aproximadamente 700 españoles de la expedición de Pedrarias.",
+      "subtype": "what",
+      "key_facts": [
+        "700"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r086",
+      "language": "es",
+      "question": "¿Qué obispo dejó Santa María la Antigua para irse a Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        35
+      ],
+      "reference_answer": "El obispo Vicente de Peraza abandonó la catedral de Santa María en 1524 y trasladó la sede a la ciudad de Panamá.",
+      "subtype": "who",
+      "key_facts": [
+        "Vicente de Peraza",
+        "1524"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r087",
+      "language": "es",
+      "question": "¿En qué lugar entró Balboa al agua del Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        36,
+        50
+      ],
+      "reference_answer": "Balboa llegó con sus compañeros a una bahía identificada luego como el Golfo de San Miguel, donde entró al agua y tomó posesión del mar en 1513.",
+      "subtype": "period_term",
+      "key_facts": [
+        "San Miguel",
+        "1513"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r088",
+      "language": "es",
+      "question": "¿En qué año el hijo de Comagre les habló a los españoles de otro mar?",
+      "type": "reader",
+      "expected_article_ids": [
+        37
+      ],
+      "reference_answer": "En 1512, Panquiaco, hijo del cacique Comagre, volcó la balanza del oro. Les dijo que más allá de las montañas del oeste había otro mar.",
+      "subtype": "when",
+      "key_facts": [
+        "1512",
+        "Panquiaco"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r089",
+      "language": "es",
+      "question": "¿Cuándo se ordenaron los primeros estudios para un canal por el istmo?",
+      "type": "reader",
+      "expected_article_ids": [
+        38
+      ],
+      "reference_answer": "Ya en 1534, el emperador Carlos V ordenó estudios para un posible canal a través de Panamá.",
+      "subtype": "when",
+      "key_facts": [
+        "1534"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r090",
+      "language": "es",
+      "question": "¿Dónde le cortaron la cabeza a Balboa?",
+      "type": "reader",
+      "expected_article_ids": [
+        34,
+        39,
+        50
+      ],
+      "reference_answer": "Balboa fue decapitado en Acla (en la plaza de Acla) en enero de 1519, junto con cuatro compañeros.",
+      "subtype": "where",
+      "key_facts": [
+        "Acla",
+        "1519"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r091",
+      "language": "es",
+      "question": "¿Pedrarias siguió gobernando en otro lugar después de Panamá? ¿Hasta cuándo?",
+      "type": "reader",
+      "expected_article_ids": [
+        40,
+        46
+      ],
+      "reference_answer": "Sí. Después de gobernar Panamá hasta 1526, Pedrarias gobernó Nicaragua hasta su muerte en 1531.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Nicaragua",
+        "1531"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r092",
+      "language": "es",
+      "question": "¿En qué año Panamá pasó a ser la capital de Castilla del Oro?",
+      "type": "reader",
+      "expected_article_ids": [
+        41
+      ],
+      "reference_answer": "Un decreto real de 1521 elevó Panamá de villa a ciudad. Junto con el traslado del obispado, esto la convirtió en la capital oficial de Castilla de Oro en lugar de Santa María la Antigua.",
+      "subtype": "period_term",
+      "key_facts": [
+        "1521"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r093",
+      "language": "es",
+      "question": "¿Dónde hubo una rebelión indígena en 1519 cerca de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        42
+      ],
+      "reference_answer": "Los registros españoles documentan una revuelta en 1519 en aldeas cercanas al Golfo de San Miguel, que los españoles reprimieron por la fuerza.",
+      "subtype": "where",
+      "key_facts": [
+        "San Miguel",
+        "1519"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r094",
+      "language": "es",
+      "question": "¿Cuándo reconstruyeron en piedra la catedral de Panamá Viejo?",
+      "type": "reader",
+      "expected_article_ids": [
+        43
+      ],
+      "reference_answer": "La catedral de la ciudad de Panamá fue reconstruida en piedra hacia 1626 y tenía un campanario visible desde el puerto.",
+      "subtype": "when",
+      "key_facts": [
+        "1626"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r095",
+      "language": "es",
+      "question": "¿Qué esclavo africano acompañó a Balboa cuando llegó al Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        44
+      ],
+      "reference_answer": "Ñuflo de Olano, un hombre negro esclavizado, acompañó a Vasco Núñez de Balboa en su travesía de 1513 hacia el Pacífico.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Ñuflo de Olano"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r096",
+      "language": "es",
+      "question": "¿En qué año nombraron a Pedrarias gobernador de Castilla del Oro?",
+      "type": "reader",
+      "expected_article_ids": [
+        45,
+        50
+      ],
+      "reference_answer": "Pedrarias Dávila fue nombrado gobernador de Castilla del Oro (Panamá) en 1514.",
+      "subtype": "period_term",
+      "key_facts": [
+        "1514"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r097",
+      "language": "es",
+      "question": "¿Dónde murió Pedrarias Dávila y en qué año?",
+      "type": "reader",
+      "expected_article_ids": [
+        46
+      ],
+      "reference_answer": "Pedrarias se trasladó de Panamá a León, en Nicaragua, donde permaneció hasta su muerte en 1531.",
+      "subtype": "distractor",
+      "key_facts": [
+        "León",
+        "1531"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r098",
+      "language": "es",
+      "question": "¿En qué año firmaron Pizarro, Almagro y Luque su contrato?",
+      "type": "reader",
+      "expected_article_ids": [
+        47
+      ],
+      "reference_answer": "El único documento que se conserva de su sociedad es un contrato firmado por los tres en 1526.",
+      "subtype": "when",
+      "key_facts": [
+        "1526"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r099",
+      "language": "es",
+      "question": "¿Cuándo y dónde ejecutaron a Atahualpa?",
+      "type": "reader",
+      "expected_article_ids": [
+        48
+      ],
+      "reference_answer": "Atahualpa fue bautizado y luego ejecutado con garrote en la plaza principal de Cajamarca en 1533.",
+      "subtype": "when",
+      "key_facts": [
+        "1533",
+        "Cajamarca"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r100",
+      "language": "es",
+      "question": "¿Cuántos terratenientes españoles quedaban en Natá después del éxodo a Perú?",
+      "type": "reader",
+      "expected_article_ids": [
+        49
+      ],
+      "reference_answer": "Para 1537 solo quedaban 15 terratenientes españoles en Natá, porque muchos colonos se fueron atraídos por el oro de Perú.",
+      "subtype": "what",
+      "key_facts": [
+        "15"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r101",
+      "language": "es",
+      "question": "¿En qué lugar llegó Balboa a la orilla del Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        36,
+        50
+      ],
+      "reference_answer": "Balboa llegó a la orilla en el golfo de San Miguel, donde reclamó el Mar del Sur para la Corona española.",
+      "subtype": "period_term",
+      "key_facts": [
+        "San Miguel"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r102",
+      "language": "es",
+      "question": "¿Entre cuántos encomenderos se repartieron los indígenas de Panamá hacia 1522?",
+      "type": "reader",
+      "expected_article_ids": [
+        51
+      ],
+      "reference_answer": "Entre 1519 y 1522 quedaban 8,730 indígenas encomendados, repartidos entre 102 encomenderos.",
+      "subtype": "what",
+      "key_facts": [
+        "102"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r103",
+      "language": "es",
+      "question": "¿Qué capitán español perdió contra Urracá en la cordillera en 1528?",
+      "type": "reader",
+      "expected_article_ids": [
+        52,
+        53
+      ],
+      "reference_answer": "El capitán Diego de Albitres fue rodeado y derrotado en la batalla de la Cordillera en 1528, y apenas logró escapar con vida.",
+      "subtype": "who",
+      "key_facts": [
+        "Albitres",
+        "1528"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r104",
+      "language": "es",
+      "question": "¿En qué año fue saqueada Santa María la Antigua y tragada por la selva?",
+      "type": "reader",
+      "expected_article_ids": [
+        35,
+        53
+      ],
+      "reference_answer": "En 1524 Santa María la Antigua del Darién, ya abandonada, fue saqueada por los indígenas y luego consumida por la selva.",
+      "subtype": "distractor",
+      "key_facts": [
+        "1524"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r106",
+      "language": "es",
+      "question": "¿Dónde pasaban la carga de las mulas a las canoas en el Camino de Cruces?",
+      "type": "reader",
+      "expected_article_ids": [
+        43,
+        49,
+        55,
+        56,
+        57,
+        227
+      ],
+      "reference_answer": "En Venta de Cruces, sobre el alto Chagres, la carga pasaba de las mulas a los botes. Desde allí bajaba por el río hacia el Caribe.",
+      "subtype": "where",
+      "key_facts": [
+        "Venta de Cruces",
+        "Chagres"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r107",
+      "language": "es",
+      "question": "¿Qué flota llevaba la plata del Perú por el Mar del Sur hasta Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        56,
+        209
+      ],
+      "reference_answer": "Desde el Callao, la plata viajaba al norte hacia Ciudad de Panamá en los barcos de la Armada del Mar del Sur.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Armada del Mar del Sur"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r108",
+      "language": "es",
+      "question": "¿Hasta qué año resistió el cacique Urracá a los españoles?",
+      "type": "reader",
+      "expected_article_ids": [
+        42,
+        52,
+        53,
+        57
+      ],
+      "reference_answer": "Urracá, cacique de Veragua, encabezó la resistencia contra los españoles desde la década de 1520 hasta 1531.",
+      "subtype": "when",
+      "key_facts": [
+        "Urracá",
+        "1531"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r109",
+      "language": "es",
+      "question": "¿Quién capturó al rey Bayano con un engaño?",
+      "type": "reader",
+      "expected_article_ids": [
+        58,
+        64
+      ],
+      "reference_answer": "Fue Pedro de Ursúa (o, según algunas versiones, el capitán Carreño), quien hacia 1556-1557 se acercó a Bayano con una falsa oferta de negociaciones de paz y lo capturó.",
+      "subtype": "who",
+      "key_facts": [
+        "Ursúa"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r110",
+      "language": "es",
+      "question": "¿Dónde ejecutaron al pirata inglés John Oxenham?",
+      "type": "reader",
+      "expected_article_ids": [
+        59
+      ],
+      "reference_answer": "Oxenham fue llevado a Lima y ejecutado por piratería en 1580, tras negarse a renunciar a su fe protestante.",
+      "subtype": "where",
+      "key_facts": [
+        "Lima",
+        "1580"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r111",
+      "language": "es",
+      "question": "¿Cuántos años funcionó la segunda Audiencia de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        60,
+        66
+      ],
+      "reference_answer": "La segunda Audiencia funcionó unos 153 años, desde su restablecimiento en 1565 bajo Felipe II hasta su supresión en 1718.",
+      "subtype": "how_long",
+      "key_facts": [
+        "1565",
+        "1718"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r112",
+      "language": "es",
+      "question": "¿En qué año se ordenó a Nicaragua obedecer a la audiencia de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        60,
+        61,
+        62
+      ],
+      "reference_answer": "En 1539 la Corona aclaró que Nicaragua debía obedecer a la nueva Audiencia de Panamá, en respuesta a la consulta del gobernador Rodrigo de Contreras.",
+      "subtype": "when",
+      "key_facts": [
+        "1539"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r113",
+      "language": "es",
+      "question": "¿Cuándo quedó Veragua incorporada a Tierra Firme y gracias a quién?",
+      "type": "reader",
+      "expected_article_ids": [
+        62
+      ],
+      "reference_answer": "En 1557, un acuerdo con Luis Colón, nieto de Colón, incorporó plenamente Veragua a Tierra Firme.",
+      "subtype": "period_term",
+      "key_facts": [
+        "1557",
+        "Luis Colón"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r114",
+      "language": "es",
+      "question": "¿En qué año firmó Felipe II el decreto para restablecer la audiencia de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        63
+      ],
+      "reference_answer": "Felipe II emitió la real cédula en 1563, y la Audiencia quedó reinstalada en Panamá en 1565.",
+      "subtype": "when",
+      "key_facts": [
+        "1563"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r115",
+      "language": "es",
+      "question": "¿Quién capturó al rey Bayano y en qué año?",
+      "type": "reader",
+      "expected_article_ids": [
+        64
+      ],
+      "reference_answer": "Bayano fue capturado en 1558 por una expedición militar dirigida por el capitán Pedro de Ursúa, comisionada por el virrey del Perú.",
+      "subtype": "distractor",
+      "key_facts": [
+        "Pedro de Ursúa",
+        "1558"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r117",
+      "language": "es",
+      "question": "¿Cuándo llegó a Lima el sello real de la audiencia de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        66
+      ],
+      "reference_answer": "Tras la disolución de 1543, la corona ordenó trasladar el sello a Lima, adonde llegó en 1544.",
+      "subtype": "when",
+      "key_facts": [
+        "1544"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r118",
+      "language": "es",
+      "question": "¿Dónde lo atacaron los españoles a Drake antes de su viaje a Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        67
+      ],
+      "reference_answer": "Drake sobrevivió a un ataque español en San Juan de Ulúa en 1568, lo que le dejó resentimientos personales contra España.",
+      "subtype": "distractor",
+      "key_facts": [
+        "San Juan de Ulúa",
+        "1568"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r119",
+      "language": "es",
+      "question": "¿Dónde se escondieron los hombres de Drake después del ataque?",
+      "type": "reader",
+      "expected_article_ids": [
+        68
+      ],
+      "reference_answer": "Se retiraron a las islas de manglar de Bastimentos, a pocos kilómetros de la costa, donde atendieron las heridas de Drake.",
+      "subtype": "where",
+      "key_facts": [
+        "Bastimentos"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r120",
+      "language": "es",
+      "question": "¿Qué pueblo fundaron los cimarrones al hacer la paz con España?",
+      "type": "reader",
+      "expected_article_ids": [
+        58,
+        59,
+        69
+      ],
+      "reference_answer": "Tras el acuerdo de paz de 1579, muchos cimarrones fundaron el pueblo de Santiago del Príncipe, cerca de Nombre de Dios en la costa caribeña.",
+      "subtype": "where",
+      "key_facts": [
+        "Santiago del Príncipe",
+        "1579"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r121",
+      "language": "es",
+      "question": "¿En qué año cruzó John Oxenham el istmo para atacar en el Pacífico?",
+      "type": "reader",
+      "expected_article_ids": [
+        70
+      ],
+      "reference_answer": "John Oxenham, el lugarteniente de Drake, navegó a Panamá en 1576 y cruzó el istmo para atacar barcos españoles en el Pacífico, aunque fue capturado y ejecutado.",
+      "subtype": "when",
+      "key_facts": [
+        "1576",
+        "Oxenham"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r122",
+      "language": "es",
+      "question": "¿Qué fuerte nuevo hizo España en Portobelo después del ataque de Parker?",
+      "type": "reader",
+      "expected_article_ids": [
+        147,
+        149,
+        151
+      ],
+      "reference_answer": "España construyó el fuerte de San Jerónimo para cubrir el flanco vulnerable de la ciudad que Parker había usado para entrar.",
+      "subtype": "what",
+      "key_facts": [
+        "San Jerónimo"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r123",
+      "language": "es",
+      "question": "¿Qué pueblo de Panamá quería saquear Mansvelt en 1666?",
+      "type": "reader",
+      "expected_article_ids": [
+        148
+      ],
+      "reference_answer": "La expedición de Mansvelt tenía como objetivo Natá de los Caballeros, un pueblo rico cerca de la costa pacífica de Panamá.",
+      "subtype": "where",
+      "key_facts": [
+        "Natá"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r124",
+      "language": "es",
+      "question": "¿En qué año nació Henry Morgan y de dónde era?",
+      "type": "reader",
+      "expected_article_ids": [
+        149
+      ],
+      "reference_answer": "Henry Morgan nació en Gales alrededor de 1635.",
+      "subtype": "when",
+      "key_facts": [
+        "1635",
+        "Gales"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r125",
+      "language": "es",
+      "question": "¿Dónde ancló Morgan su flota antes de atacar Portobelo por tierra?",
+      "type": "reader",
+      "expected_article_ids": [
+        150
+      ],
+      "reference_answer": "La flota ancló en Puerto de Naos (también llamado Puerto Pontín), a unas 20-25 millas al oeste de Portobelo.",
+      "subtype": "where",
+      "key_facts": [
+        "Puerto de Naos"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r126",
+      "language": "es",
+      "question": "¿Cuánto duraban las ferias de Portobelo antes de la época de los piratas?",
+      "type": "reader",
+      "expected_article_ids": [
+        151
+      ],
+      "reference_answer": "Antes de la era pirata, las ferias de Portobelo podían durar 40 días o más.",
+      "subtype": "how_long",
+      "key_facts": [
+        "40"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r127",
+      "language": "es",
+      "question": "¿Dónde y cuándo murió Francis Drake?",
+      "type": "reader",
+      "expected_article_ids": [
+        59,
+        205
+      ],
+      "reference_answer": "Drake murió de disentería el 28 de enero de 1596 a bordo de su buque insignia Defiance, anclado cerca de la bahía de Portobelo, y fue sepultado en el mar.",
+      "subtype": "distractor",
+      "key_facts": [
+        "1596",
+        "Defiance"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r128",
+      "language": "es",
+      "question": "¿Quiénes reconstruyeron los fuertes de Portobelo después del ataque de Vernon?",
+      "type": "reader",
+      "expected_article_ids": [
+        206
+      ],
+      "reference_answer": "Los ingenieros Manuel Hernández e Ignacio de Sala reconstruyeron el complejo entre 1753 y 1760.",
+      "subtype": "who",
+      "key_facts": [
+        "Manuel Hernández",
+        "Ignacio de Sala"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r129",
+      "language": "es",
+      "question": "¿Qué flota llevaba la plata de Potosí por el Mar del Sur hasta Callao?",
+      "type": "reader",
+      "expected_article_ids": [
+        207
+      ],
+      "reference_answer": "La Armada del Sur, la escuadra española del Mar del Sur, llevaba la plata desde Arica hasta Callao.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Armada del Sur",
+        "Callao"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r130",
+      "language": "es",
+      "question": "¿Cuándo murió Francis Drake y cerca de qué lugar?",
+      "type": "reader",
+      "expected_article_ids": [
+        59,
+        205,
+        227,
+        231
+      ],
+      "reference_answer": "Francis Drake murió de disentería el 28 de enero de 1596 a bordo del Defiance, anclado cerca de Portobelo, y fue sepultado en el mar.",
+      "subtype": "distractor",
+      "key_facts": [
+        "1596",
+        "28",
+        "Portobelo"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r131",
+      "language": "es",
+      "question": "¿Cuándo se creó la Armada del Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        209
+      ],
+      "reference_answer": "Felipe II estableció la Armada del Mar del Sur entre 1578 y 1581, tras los ataques de Drake en la costa del Pacífico.",
+      "subtype": "period_term",
+      "key_facts": [
+        "1578",
+        "1581"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r132",
+      "language": "es",
+      "question": "¿Quién logró capturar una flota española completa en 1628?",
+      "type": "reader",
+      "expected_article_ids": [
+        210
+      ],
+      "reference_answer": "El almirante holandés Piet Heyn capturó toda la flota de Nueva España en la bahía de Matanzas, Cuba, en 1628.",
+      "subtype": "who",
+      "key_facts": [
+        "Piet Heyn"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r133",
+      "language": "es",
+      "question": "¿Dónde fue la primera feria comercial del istmo?",
+      "type": "reader",
+      "expected_article_ids": [
+        56,
+        207,
+        227
+      ],
+      "reference_answer": "La primera feria ístmica se celebró en Nombre de Dios en 1544.",
+      "subtype": "first",
+      "key_facts": [
+        "Nombre de Dios",
+        "1544"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r134",
+      "language": "es",
+      "question": "¿Cuándo reconoció la UNESCO las tradiciones congo de Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        44,
+        228
+      ],
+      "reference_answer": "Las tradiciones congo de Portobelo fueron inscritas por la UNESCO como Patrimonio Cultural Inmaterial de la Humanidad en 2018.",
+      "subtype": "when",
+      "key_facts": [
+        "2018"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r135",
+      "language": "es",
+      "question": "¿En qué año redujo la Corona el quinto real en Potosí?",
+      "type": "reader",
+      "expected_article_ids": [
+        229
+      ],
+      "reference_answer": "La Corona cobró el quinto completo en Potosí y no lo redujo a un diezmo hasta 1736.",
+      "subtype": "when",
+      "key_facts": [
+        "1736"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r136",
+      "language": "es",
+      "question": "¿Dónde nació el ingeniero Antonelli que fortificó Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        205,
+        230
+      ],
+      "reference_answer": "Battista Antonelli nació en 1547 en Gatteo, en la Romaña, Italia.",
+      "subtype": "where",
+      "key_facts": [
+        "Gatteo",
+        "1547"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r137",
+      "language": "es",
+      "question": "¿Qué almirante inglés murió bloqueando Portobelo en 1726?",
+      "type": "reader",
+      "expected_article_ids": [
+        228,
+        231
+      ],
+      "reference_answer": "El almirante Francis Hosier, que bloqueó Portobelo en 1726, murió de fiebre, igual que miles de sus marineros.",
+      "subtype": "who",
+      "key_facts": [
+        "Hosier"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r138",
+      "language": "es",
+      "question": "¿En qué año fue la última feria de Portobelo?",
+      "type": "reader",
+      "expected_article_ids": [
+        207,
+        228,
+        229,
+        232
+      ],
+      "reference_answer": "La última feria de Portobelo se celebró en 1737.",
+      "subtype": "when",
+      "key_facts": [
+        "1737"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r139",
+      "language": "es",
+      "question": "¿Dónde juntó Morgan su flota antes de ir a Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        233,
+        234,
+        236
+      ],
+      "reference_answer": "Morgan reunió su flota en Île-à-Vache (la Isla de las Vacas), frente a la costa suroeste de La Española, a finales de 1670.",
+      "subtype": "where",
+      "key_facts": [
+        "Île-à-Vache"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r140",
+      "language": "es",
+      "question": "¿Desde qué cerro vieron los piratas de Morgan el Mar del Sur?",
+      "type": "reader",
+      "expected_article_ids": [
+        234
+      ],
+      "reference_answer": "En el noveno día de la marcha, un grupo de exploradores subió al cerro Ancón y vio el Pacífico, el Mar del Sur.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Ancon"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r141",
+      "language": "es",
+      "question": "¿Quién dirigía la caballería española en la batalla contra Morgan en 1671?",
+      "type": "reader",
+      "expected_article_ids": [
+        235
+      ],
+      "reference_answer": "La caballería española estaba al mando del capitán Francisco Haro.",
+      "subtype": "who",
+      "key_facts": [
+        "Haro"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r142",
+      "language": "es",
+      "question": "¿Quién defendía el fuerte San Lorenzo cuando lo atacó Bradley?",
+      "type": "reader",
+      "expected_article_ids": [
+        232,
+        234,
+        236
+      ],
+      "reference_answer": "El fuerte lo defendía el castellano Don Pedro de Elizalde y Ursúa, que había reforzado la guarnición hasta unos 350 hombres.",
+      "subtype": "who",
+      "key_facts": [
+        "Elizalde"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r143",
+      "language": "es",
+      "question": "¿Quién era el capitán general de Tierra Firme cuando llegó Morgan?",
+      "type": "reader",
+      "expected_article_ids": [
+        237
+      ],
+      "reference_answer": "Don Juan Pérez de Guzmán, presidente de la Audiencia de Panamá y capitán general de Tierra Firme.",
+      "subtype": "period_term",
+      "key_facts": [
+        "Pérez de Guzmán"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r144",
+      "language": "es",
+      "question": "¿En qué año nombraron caballero a Henry Morgan?",
+      "type": "reader",
+      "expected_article_ids": [
+        235,
+        238,
+        241
+      ],
+      "reference_answer": "Carlos II nombró caballero a Morgan en noviembre de 1674 y lo designó vicegobernador de Jamaica.",
+      "subtype": "distractor",
+      "key_facts": [
+        "1674"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r145",
+      "language": "es",
+      "question": "¿Qué galeón escapó con tesoros justo antes de que cayera Panamá en 1671?",
+      "type": "reader",
+      "expected_article_ids": [
+        237,
+        238,
+        239
+      ],
+      "reference_answer": "El galeón Santísima Trinidad zarpó de la bahía de Panamá con gran parte del tesoro colonial, eclesiástico y de los comerciantes antes de que cayera la ciudad.",
+      "subtype": "what",
+      "key_facts": [
+        "Santísima Trinidad"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r146",
+      "language": "es",
+      "question": "¿Quién reemplazó a Pérez de Guzmán como gobernador de Panamá después del saqueo?",
+      "type": "reader",
+      "expected_article_ids": [
+        242
+      ],
+      "reference_answer": "La Corona envió a Antonio Fernández de Córdoba y Mendoza como presidente de la Real Audiencia y gobernador y capitán general de Tierra Firme, sucesor de Pérez de Guzmán.",
+      "subtype": "who",
+      "key_facts": [
+        "Fernández de Córdoba"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r147",
+      "language": "es",
+      "question": "¿En qué año Carlos II nombró caballero a Henry Morgan?",
+      "type": "reader",
+      "expected_article_ids": [
+        235,
+        238,
+        241
+      ],
+      "reference_answer": "Carlos II nombró caballero a Henry Morgan en noviembre de 1674.",
+      "subtype": "when",
+      "key_facts": [
+        "1674"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r148",
+      "language": "es",
+      "question": "¿Cuándo tuvo por fin acueducto la ciudad de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        242,
+        244
+      ],
+      "reference_answer": "La ciudad de Panamá no tuvo acueducto hasta 1905, ya como república independiente; en la colonia nunca se construyó uno.",
+      "subtype": "when",
+      "key_facts": [
+        "1905"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r149",
+      "language": "es",
+      "question": "¿En qué año salieron las ordenanzas de Felipe II que guiaron el trazado de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        243
+      ],
+      "reference_answer": "Felipe II promulgó las ordenanzas de urbanismo en 1573, y la nueva ciudad de 1673 siguió ese modelo de cuadrícula.",
+      "subtype": "when",
+      "key_facts": [
+        "1573"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "r150",
+      "language": "es",
+      "question": "¿De dónde vino el nácar de las torres de la catedral de Panamá?",
+      "type": "reader",
+      "expected_article_ids": [
+        244
+      ],
+      "reference_answer": "El nácar que recubre las dos torres se obtuvo en el Archipiélago de las Perlas, en el golfo de Panamá.",
+      "subtype": "where",
+      "key_facts": [
+        "Archipiélago de las Perlas"
+      ],
+      "source": "opus"
+    },
+    {
+      "id": "ru001",
+      "language": "en",
+      "question": "When did Panama become independent from Spain?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Independence from Spain, 1821"
+    },
+    {
+      "id": "ru002",
+      "language": "en",
+      "question": "why did the french fail to build the panama canal",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "French canal attempt, 1880s"
+    },
+    {
+      "id": "ru003",
+      "language": "en",
+      "question": "What happened in Panama on January 9, 1964?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Martyrs' Day riots, 1964"
+    },
+    {
+      "id": "ru004",
+      "language": "en",
+      "question": "Why did the US invade Panama in 1989?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "US invasion and fall of Noriega, 1989"
+    },
+    {
+      "id": "ru005",
+      "language": "en",
+      "question": "who was omar torrijos",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Torrijos era and the Torrijos-Carter Treaties, 1968-1981"
+    },
+    {
+      "id": "ru006",
+      "language": "en",
+      "question": "What was the Watermelon War?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Watermelon Riot, 1856"
+    },
+    {
+      "id": "ru007",
+      "language": "en",
+      "question": "How did the Panama Railroad help people get to California during the gold rush?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Panama Railroad and California Gold Rush transit, 1850s"
+    },
+    {
+      "id": "ru008",
+      "language": "en",
+      "question": "When did the first humans arrive in Panama?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Earliest human settlement, Paleoindian period"
+    },
+    {
+      "id": "ru010",
+      "language": "es",
+      "question": "¿Qué fue la Revolución Dule de 1925?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Revolución Kuna/Dule, 1925"
+    },
+    {
+      "id": "ru011",
+      "language": "es",
+      "question": "¿Cuándo le entregó Estados Unidos el canal a Panamá?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Traspaso del canal, 1999"
+    },
+    {
+      "id": "ru012",
+      "language": "es",
+      "question": "quien fue arnulfo arias",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Arnulfo Arias y la política panameña del siglo XX"
+    },
+    {
+      "id": "ru013",
+      "language": "es",
+      "question": "¿Cómo afectó la Guerra de los Mil Días a Panamá?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Guerra de los Mil Días, 1899-1902"
+    },
+    {
+      "id": "ru014",
+      "language": "es",
+      "question": "¿Cuántos trabajadores murieron construyendo el canal de los gringos?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Construcción estadounidense del canal, 1904-1914"
+    },
+    {
+      "id": "ru015",
+      "language": "es",
+      "question": "¿Por qué se amplió el Canal de Panamá en 2016?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Ampliación del canal, 2007-2016"
+    },
+    {
+      "id": "ru016",
+      "language": "es",
+      "question": "¿Qué se encontró en Sitio Conte?",
+      "type": "unanswerable",
+      "expected_article_ids": [],
+      "subtype": "uncovered_period",
+      "source": "opus",
+      "notes": "Arqueología precolombina, cultura Gran Coclé"
+    }
+  ]
+}

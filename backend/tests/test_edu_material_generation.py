@@ -25,7 +25,7 @@ from app.services.edu_material_generation import (
     regenerate_slides_subset,
     validate_review_ladder,
 )
-from app.services.llm import SONNET_MODEL
+from app.services.llm import OPUS_MODEL
 
 # --- Helpers (kept inline per the brief) ---
 
@@ -282,7 +282,7 @@ class TestGenerateEduMaterials:
         # Short research → first LLM call is the outline (feature label is
         # consumed by create_message and not forwarded to the client).
         outline_kwargs = mock_client.llm_calls.call_args_list[0].kwargs
-        assert outline_kwargs["max_tokens"] == 12_000
+        assert outline_kwargs["max_tokens"] == 32_000
 
     @patch("app.services.llm.get_client")
     def test_short_research_skips_condensation(self, mock_get_client, test_db):
@@ -302,8 +302,8 @@ class TestGenerateEduMaterials:
         assert len(materials) == 1
 
     @patch("app.services.llm.get_client")
-    def test_condense_uses_sonnet_with_thinking(self, mock_get_client, test_db):
-        # #338: condensation runs on Sonnet with adaptive thinking at high effort.
+    def test_condense_uses_opus_with_thinking(self, mock_get_client, test_db):
+        # #338: condensation runs with adaptive thinking at high effort; on Opus 5.5 since 2026-10-04.
         suggestion = _create_suggestion(test_db, grade_bands=["9th-12th"])
         research = _create_research(test_db, suggestion, _long_research_content())
 
@@ -317,9 +317,14 @@ class TestGenerateEduMaterials:
         generate_edu_materials(research, suggestion, test_db)
 
         condense_kwargs = mock_client.llm_calls.call_args_list[0].kwargs
-        assert condense_kwargs["model"] == SONNET_MODEL
+        assert condense_kwargs["model"] == OPUS_MODEL
         assert condense_kwargs["thinking"] == {"type": "adaptive"}
         assert condense_kwargs["output_config"] == {"effort": "high"}
+        # Outline and content follow it onto Opus, with effort pinned (Opus 5.5
+        # would otherwise default to "medium").
+        for call in mock_client.llm_calls.call_args_list:
+            assert call.kwargs["model"] == OPUS_MODEL
+            assert call.kwargs["output_config"] == {"effort": "high"}
 
     @patch("app.services.llm.get_client")
     def test_band_focus_threaded_into_all_prompts(self, mock_get_client, test_db):
@@ -747,6 +752,37 @@ class TestGenerateEduSlides:
         assert mock_client.llm_calls.call_count == 1
 
     @patch("app.services.llm.get_client")
+    def test_deck_call_has_thinking_headroom(self, mock_get_client, test_db):
+        # A 7th-8th deck truncated in production at a 12k cap: Sonnet 5's
+        # adaptive thinking counts toward max_tokens, and a 16-22 slide JSON
+        # array is ~4-5k tokens of output on top of it. The cap must leave room
+        # for both, and stay above the streaming threshold so the call gets the
+        # 600s stream timeout instead of the 120s one.
+        suggestion = _create_suggestion(test_db, grade_bands=["7th-8th"])
+        research = _create_research(test_db, suggestion, _short_research_content())
+        guide = EduMaterial(
+            research_id=research.id,
+            material_type="guide",
+            grade_band="7th-8th",
+            title="Guide Title",
+            content="## Guide content",
+            status="APPROVED",
+        )
+        test_db.add(guide)
+        test_db.flush()
+
+        mock_client = _make_client(_mock_msg(_SLIDES_JSON))
+        mock_get_client.return_value = mock_client
+
+        generate_edu_slides(guide, test_db)
+
+        kwargs = mock_client.llm_calls.call_args.kwargs
+        assert kwargs["max_tokens"] >= 40_000
+        assert kwargs["model"] == OPUS_MODEL
+        assert mock_client.messages.stream.called
+        assert not mock_client.messages.create.called
+
+    @patch("app.services.llm.get_client")
     def test_slides_title_format(self, mock_get_client, test_db):
         suggestion = _create_suggestion(test_db, grade_bands=["3rd-6th"])
         research = _create_research(test_db, suggestion, _short_research_content())
@@ -1111,6 +1147,7 @@ class TestGenerateEduNarration:
         # The prompt carried the persisted briefing.
         prompt = mock_client.llm_calls.call_args.kwargs["messages"][0]["content"]
         assert "BRIEFING GUARDADO" in prompt
+        assert mock_client.llm_calls.call_args.kwargs["model"] == OPUS_MODEL
 
     @patch("app.services.llm.get_client")
     def test_position_mismatch_raises_and_persists_nothing(self, mock_get_client, test_db):
@@ -1453,6 +1490,26 @@ class TestLinkStripAndMedia:
             [{"type": "image", "image_query": "tower", "media_id": "42"}]
         )
         assert "media_id" not in blocks[0]
+
+    def test_photo_aspect_round_trips_on_image_and_map(self):
+        blocks = normalize_guide_blocks(
+            [
+                {"type": "image", "image_query": "tower", "aspect": "portrait"},
+                {"type": "map", "image_query": "map", "locations": ["Catedral"], "aspect": "wide"},
+            ]
+        )
+        assert blocks[0]["aspect"] == "portrait"
+        assert blocks[1]["aspect"] == "wide"
+
+    def test_photo_aspect_default_and_unknown_normalize_to_absent(self):
+        blocks = normalize_guide_blocks(
+            [
+                {"type": "image", "image_query": "a", "aspect": "landscape"},
+                {"type": "image", "image_query": "b", "aspect": "circle"},
+                {"type": "image", "image_query": "c"},
+            ]
+        )
+        assert all("aspect" not in b for b in blocks)
 
 
 class TestStrictNormalization:

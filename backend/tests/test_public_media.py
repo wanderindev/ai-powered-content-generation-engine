@@ -20,24 +20,6 @@ from app.models.media import Media
 from app.models.media_candidate import MediaCandidate
 
 
-@pytest.fixture(autouse=True)
-def _bypass_educator_gate(test_client):
-    """Bypass the educator access gate for the query-logic tests below.
-
-    These tests exercise the public-media filtering/pagination/download logic,
-    not authentication — the gate (require_educator_access) is covered
-    end-to-end in test_educators_api.py::TestPublicMediaGate. Overriding the
-    dependency here keeps these focused on the query behavior. Depends on
-    test_client so it is torn down before test_client clears overrides.
-    """
-    from app.api.dependencies import require_educator_access
-    from app.main import app
-
-    app.dependency_overrides[require_educator_access] = lambda: None
-    yield
-    app.dependency_overrides.pop(require_educator_access, None)
-
-
 def _make_media(test_db, **overrides):
     """Insert a Media row with sensible defaults.
 
@@ -173,7 +155,7 @@ class TestListPublicMedia:
         assert response.json()["total"] == 0
 
     def test_list_search_matches_search_terms(self, test_client, test_db):
-        """?search=X does ILIKE on Media.search_terms."""
+        """?search=X matches Media.search_terms (ranked full-text search, #590)."""
         m1 = _make_media(test_db, _n=1, search_terms="canal locks engineering")
         _make_candidate(test_db, m1, status="APPROVED", relevance_score=0.9)
         m2 = _make_media(test_db, _n=2, search_terms="rainforest birds")

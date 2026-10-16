@@ -1,20 +1,20 @@
 ---
 name: fix-issue
-description: Resolve one or more GitHub issues with autonomous agents — invoked as "/fix-issue <number> [<number>...] [--review|--no-review]". For each issue the skill spawns a read-only brief-writing agent that verifies the issue's claims against the actual source and drafts a tight brief, gates the returned brief, then launches a worktree-isolated implementation agent that opens a PR and reports back. Single id is reviewed by default; multiple ids run autonomously by default (override with --review / --no-review). Use when the operator says any of "fix issue N", "fix #N", "fix issues N and M", "have an agent fix N", "batch-fix these issues", "dispatch issue N to an agent", "run the autonomous fix on N", or otherwise wants filed issues resolved by unattended agents. The skill orchestrates brief-writing and dispatch (the load-bearing work); the launched agents do the verification and the code. The methodology this encodes is documented in docs/pilot/phase-1-synthesis.md and docs/pilot/phase-2-addendum.md.
+description: Resolve one or more GitHub issues with autonomous agents — invoked as "/fix-issue <number> [<number>...] [--review|--no-review]". For each issue the skill spawns a read-only brief-writing agent that verifies the issue's claims against the actual source and drafts a tight brief, gates the returned brief, then launches a worktree-isolated implementation agent that pushes a branch and reports back, then ships each ready branch with personal:ship (pre-PR QA, PR, GitHub auto-merge). Single id is reviewed by default; multiple ids run autonomously by default (override with --review / --no-review). Use when the operator says any of "fix issue N", "fix #N", "fix issues N and M", "have an agent fix N", "batch-fix these issues", "dispatch issue N to an agent", "run the autonomous fix on N", or otherwise wants filed issues resolved by unattended agents. The skill orchestrates brief-writing and dispatch (the load-bearing work); the launched agents do the verification and the code. The methodology this encodes is documented in docs/pilot/phase-1-synthesis.md and docs/pilot/phase-2-addendum.md.
 ---
 
 # fix-issue — autonomous issue resolution (one or many)
 
 ## What this skill does — and what it doesn't
 
-This skill takes one or more GitHub issue numbers and drives each to an open PR written by an autonomous agent. It encodes the audit-to-autonomy methodology from the Phase 1 synthesis and the Phase 2 addendum (`docs/pilot/phase-2-addendum.md`). The central finding that methodology produced: **the brief is the load-bearing variable for autonomous quality — not the agent, not the issue.** The skill therefore spends almost all its effort on producing and gating tight briefs, and treats the code-writing dispatch as the easy part.
+This skill takes one or more GitHub issue numbers and drives each to a shipped change written by an autonomous agent. It encodes the audit-to-autonomy methodology from the Phase 1 synthesis and the Phase 2 addendum (`docs/pilot/phase-2-addendum.md`). The central finding that methodology produced: **the brief is the load-bearing variable for autonomous quality — not the agent, not the issue.** The skill therefore spends almost all its effort on producing and gating tight briefs, and treats the code-writing dispatch as the easy part.
 
 For each issue, the pipeline is **two agents, orchestrator-coordinated**:
 
 1. **Brief-writing agent (read-only).** Reads the issue and the source, walks the verification checklist, assembles the brief from the template, and **returns it**. It writes no files and dispatches nothing. (`references/brief-agent-launch.md`.)
-2. **Implementation agent (worktree-isolated).** Receives the gated brief inlined in its prompt, makes the change, runs lint/build, opens a PR, reports back. (`references/agent-launch.md`.)
+2. **Implementation agent (worktree-isolated).** Receives the gated brief inlined in its prompt, makes the change, runs lint/build, pushes its branch, reports back. (`references/agent-launch.md`.)
 
-The **orchestrator** (the main session running this skill) sits between them: it spawns the brief-agents (in parallel for a batch), saves and **gates** each returned brief, runs the review gate when applicable, dispatches the implementation agents (in parallel), and logs outcomes. The orchestrator does NOT write the briefs itself, does NOT write code, and does NOT merge (the operator merges).
+The **orchestrator** (the main session running this skill) sits between them: it spawns the brief-agents (in parallel for a batch), saves and **gates** each returned brief, runs the review gate when applicable, dispatches the implementation agents (in parallel), and logs outcomes. The orchestrator does NOT write the briefs itself, does NOT write code, and does NOT merge directly: it ships each ready branch with the `personal:ship` skill (pre-PR QA → PR → GitHub auto-merge → the post-merge steps in CLAUDE.md `## Shipping`).
 
 A single id is just a batch of one: same pipeline, with the review gate on by default.
 
@@ -64,9 +64,9 @@ For a batch, dispatch the non-overlapping issues in parallel (single message, mu
 
 ### Step 6 — Report and instrument (on each agent's completion)
 As each implementation agent reports back:
-- Summarize its PR (number, draft-vs-ready, what shipped, any flags surfaced).
-- **The ORCHESTRATOR appends the outcomes row, not the agent.** Append one row to `docs/agent-fixes/agent-friendly-outcomes.md` (`Agent attempted: yes`, `Outcome: not-yet-attempted`; flip to `clean-merge` / `needs-revision` after the operator merges). This file is **git-untracked / local-only** (see `.gitignore`) — do NOT commit it and do NOT include it in any PR. It used to be appended by each implementation agent inside its own worktree, which made every concurrent agent PR conflict on this one file, forcing an `update-pr` + CI run per PR. Keeping it local and orchestrator-written removes that conflict class entirely (cost guardrail, 2026-05-30).
-- Remind the operator to review and merge; the `gh pr merge*` deny rule blocks the agents and the skill from merging.
+- Summarize its branch (ready-vs-blocked, what shipped, any flags surfaced).
+- **The ORCHESTRATOR appends the outcomes row, not the agent.** Append one row to `docs/agent-fixes/agent-friendly-outcomes.md` (`Agent attempted: yes`, `Outcome: not-yet-attempted`; flip to `clean-merge` / `needs-revision` once it ships). This file is **git-untracked / local-only** (see `.gitignore`) — do NOT commit it and do NOT include it in any PR. It used to be appended by each implementation agent inside its own worktree, which made every concurrent agent PR conflict on this one file, forcing an `update-pr` + CI run per PR. Keeping it local and orchestrator-written removes that conflict class entirely (cost guardrail, 2026-05-30).
+- **Ready** → run `personal:ship` on that branch, using the agent's reported PR body (summary, production-touch line, self-review checklist, test plan, `Closes #N`) as the PR body (one at a time when branches overlap; merge `origin/main` in if it fell behind). **Blocked** → don't open a PR; report the branch and the agent's blocker to the operator.
 
 ## Production-touch posture
 

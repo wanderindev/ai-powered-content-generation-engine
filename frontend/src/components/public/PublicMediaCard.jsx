@@ -11,7 +11,7 @@ export default function PublicMediaCard({ item, onClick }) {
   const handleDownload = (e) => {
     e.stopPropagation();
     if (!item.download_url) return;
-    // Gated endpoint — fetch+blob with the auth header (see publicMedia service).
+    // Cross-origin file — fetch+blob so the browser saves it (see publicMedia service).
     downloadPublicMedia(item.id, item.title);
   };
 

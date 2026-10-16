@@ -239,8 +239,8 @@ class TestExcursionCoverage:
 
         assert resp.status_code == 200
         items = resp.json()
-        # The owed list is the canonical 15 combos regardless of what's seeded.
-        assert len(items) == 15
+        # The owed list is the canonical 24 combos regardless of what's seeded.
+        assert len(items) == 24
 
         by = {(i["excursion_key"], i["grade_band"]): i for i in items}
 
@@ -752,6 +752,43 @@ class TestEduMaterialDetail:
         assert body["has_spanish"] is True
         assert "English body" in body["content_html"]
         assert "español" in body["content_es_html"]
+
+    def test_guide_detail_lists_both_language_pdfs(self, test_client, test_db):
+        """file_url only remembers the last render; the detail probes the other
+        language's deterministic key so the drawer can link EN and ES."""
+        from unittest.mock import MagicMock, patch
+
+        s = _create_suggestion(test_db)
+        r = _create_research(test_db, s)
+        m = _create_material(test_db, r, material_type="guide", status="APPROVED")
+        m.grade_band = "3rd-6th"
+        m.file_url = f"https://cdn.example/materials/guide/{r.id}/3rd_6th_es.pdf"
+        test_db.commit()
+
+        storage = MagicMock()
+        storage.__enter__.return_value = storage
+        storage.object_exists.side_effect = lambda key: key.endswith("_es.pdf")
+        storage.public_url.side_effect = lambda key: f"https://cdn.example/{key}"
+        with patch("app.services.image_storage.ImageStorageService", return_value=storage):
+            body = test_client.get(self.URL.format(id=m.id), params={"token": "any"}).json()
+
+        assert body["pdf_urls"] == {
+            "en": None,
+            "es": f"https://cdn.example/materials/guide/{r.id}/3rd_6th_es.pdf",
+        }
+
+    def test_guide_detail_without_pdf_does_not_probe_storage(self, test_client, test_db):
+        from unittest.mock import patch
+
+        s = _create_suggestion(test_db)
+        r = _create_research(test_db, s)
+        m = _create_material(test_db, r, material_type="guide", status="APPROVED")
+        test_db.commit()
+
+        with patch("app.services.image_storage.ImageStorageService") as storage_cls:
+            body = test_client.get(self.URL.format(id=m.id), params={"token": "any"}).json()
+        storage_cls.assert_not_called()
+        assert body["pdf_urls"] is None
 
     def test_untranslated_has_no_spanish(self, test_client, test_db):
         s = _create_suggestion(test_db)
@@ -1330,3 +1367,68 @@ class TestEduMaterialDetailSlides:
         assert body["video_material_id"] is None
         assert body["video_url"] is None
         assert body["video_duration_ms"] is None
+
+
+# --- GET /research/available-for-materials ---
+
+
+class TestResearchAvailableForMaterials:
+    URL = "/api/v1/admin/dashboard/edu/research/available-for-materials"
+
+    def _row(self, test_client, research_id):
+        data = test_client.get(self.URL).json()
+        return next((x for x in data if x["id"] == research_id), None)
+
+    def test_untouched_research_lists_every_band(self, test_client, test_db):
+        s = _create_suggestion(test_db, grade_bands=["3rd-6th", "7th-8th", "9th-12th"])
+        r = _create_research(test_db, s, status="APPROVED")
+
+        row = self._row(test_client, r.id)
+        assert row["bands_to_generate"] == ["3rd-6th", "7th-8th", "9th-12th"]
+
+    def test_partially_generated_research_stays_listed_with_missing_band(
+        self, test_client, test_db
+    ):
+        # The Panama History Museum case: 9th-12th failed, the other two guides
+        # were approved, and a slide deck exists — the research must stay
+        # offered so the missing band can be generated.
+        s = _create_suggestion(test_db, grade_bands=["3rd-6th", "7th-8th", "9th-12th"])
+        r = _create_research(test_db, s, status="APPROVED")
+        _create_material(test_db, r, grade_band="3rd-6th", status="APPROVED")
+        _create_material(test_db, r, grade_band="7th-8th", status="APPROVED")
+        _create_material(test_db, r, material_type="slides", grade_band="3rd-6th")
+
+        row = self._row(test_client, r.id)
+        assert row is not None
+        assert row["grade_bands"] == ["3rd-6th", "7th-8th", "9th-12th"]
+        assert row["bands_to_generate"] == ["9th-12th"]
+
+    def test_pending_guide_counts_as_to_generate(self, test_client, test_db):
+        s = _create_suggestion(test_db, grade_bands=["3rd-6th", "7th-8th"])
+        r = _create_research(test_db, s, status="APPROVED")
+        _create_material(test_db, r, grade_band="3rd-6th", status="APPROVED")
+        _create_material(test_db, r, grade_band="7th-8th", status="PENDING")
+
+        assert self._row(test_client, r.id)["bands_to_generate"] == ["7th-8th"]
+
+    def test_all_bands_approved_is_not_listed(self, test_client, test_db):
+        s = _create_suggestion(test_db, grade_bands=["3rd-6th", "7th-8th"])
+        r = _create_research(test_db, s, status="APPROVED")
+        _create_material(test_db, r, grade_band="3rd-6th", status="APPROVED")
+        _create_material(test_db, r, grade_band="7th-8th", status="APPROVED")
+
+        assert self._row(test_client, r.id) is None
+
+    def test_unapproved_research_is_not_listed(self, test_client, test_db):
+        s = _create_suggestion(test_db, grade_bands=["3rd-6th"])
+        r = _create_research(test_db, s, status="PENDING")
+
+        assert self._row(test_client, r.id) is None
+
+    def test_bandless_research_listed_only_until_it_has_materials(self, test_client, test_db):
+        s = _create_suggestion(test_db, grade_bands=[])
+        r = _create_research(test_db, s, status="APPROVED")
+        assert self._row(test_client, r.id)["bands_to_generate"] == []
+
+        _create_material(test_db, r, grade_band=None)
+        assert self._row(test_client, r.id) is None

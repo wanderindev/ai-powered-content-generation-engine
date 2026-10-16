@@ -8,8 +8,11 @@ import { BooleanCell } from '../../components/admin/SharedCellRenderers';
 import ActionsCellRenderer from '../../components/admin/ActionsCellRenderer';
 import InlineStatusCell from '../../components/admin/InlineStatusCell';
 import EditDrawer from '../../components/admin/EditDrawer';
+import FactCheckStatusCell from '../../components/admin/FactCheckStatusCell';
+import FactCheckModal from '../../components/admin/FactCheckModal';
 import { ToastContainer } from '../../components/admin/Toast';
 import { useToast } from '../../hooks/useToast';
+import { useFactCheck } from '../../hooks/useFactCheck';
 
 const modules = [AllCommunityModule];
 
@@ -254,6 +257,17 @@ export default function AdminEduResearch() {
   const [promptModalOpen, setPromptModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { toasts, show: showToast, dismiss: dismissToast } = useToast();
+  // Edu research runs the same external tier as blog research (#460). The
+  // entityType is the edu router's path segment, so runFactCheck POSTs to
+  // /admin/dashboard/edu/research/{id}/fact-check.
+  const factCheck = useFactCheck({
+    token,
+    subjectType: 'EDU_RESEARCH',
+    entityType: 'edu/research',
+    showToast,
+    dismissToast,
+    titleOf: (r) => r.suggestion_title,
+  });
 
   const refreshGrid = useCallback(() => {
     adminService.getEduResearch(token)
@@ -310,8 +324,19 @@ export default function AdminEduResearch() {
     },
     { field: 'has_content', headerName: 'Has Content', width: 130, cellRenderer: BooleanCell },
     {
+      headerName: 'Fact Check',
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: FactCheckStatusCell,
+      cellRendererParams: {
+        getCounts: factCheck.getCounts,
+        onOpen: factCheck.setModalRecord,
+      },
+    },
+    {
       headerName: 'Actions',
-      width: 130,
+      width: 160,
       sortable: false,
       filter: false,
       cellRenderer: ActionsCellRenderer,
@@ -319,9 +344,13 @@ export default function AdminEduResearch() {
         onEdit: handleEdit,
         onDownload: handleDownload,
         isDownloadDisabled: (d) => !d.has_content,
+        showFactCheck: (d) => d.has_content,
+        onFactCheck: factCheck.run,
+        isFactChecking: factCheck.isRunning,
+        factCheckTitle: 'Fact-check: extract claims & queue deep research',
       },
     },
-  ], [handleEdit, handleStatusChange, handleDownload]);
+  ], [handleEdit, handleStatusChange, handleDownload, factCheck]);
 
   useEffect(() => {
     adminService.getEduResearch(token)
@@ -397,6 +426,16 @@ export default function AdminEduResearch() {
         onClose={() => setUploadModalOpen(false)}
         token={token}
         onSuccess={refreshGrid}
+      />
+
+      <FactCheckModal
+        open={!!factCheck.modalRecord}
+        onClose={() => factCheck.setModalRecord(null)}
+        token={token}
+        subjectType="EDU_RESEARCH"
+        subjectId={factCheck.modalRecord?.id}
+        title={factCheck.modalRecord?.suggestion_title}
+        onCountsChange={factCheck.updateCounts}
       />
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

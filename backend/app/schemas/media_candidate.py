@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class MediaCandidateItem(BaseModel):
@@ -109,12 +109,90 @@ class ReviewRequest(BaseModel):
     notes: str | None = None
 
 
+def _strip_or_none(value):
+    """Strip strings; a blank string becomes ``None``."""
+    if isinstance(value, str):
+        value = value.strip()
+        return value or None
+    return value
+
+
+def _check_http_url(value: str | None) -> str | None:
+    if value is not None and not value.lower().startswith(("http://", "https://")):
+        raise ValueError("must be an http(s) URL")
+    return value
+
+
 class MediaImportRequest(BaseModel):
     """Import an external image URL into the media library (picker's
-    escape hatch when the crawled catalog has no good photo)."""
+    escape hatch when the crawled catalog has no good photo), with the
+    editor's metadata (#589). Plain text throughout — never rendered as HTML."""
 
     url: str
-    title: str | None = None
+    title: str | None = Field(None, max_length=255)
+    caption: str | None = Field(None, max_length=2000)
+    attribution: str | None = Field(None, max_length=1000)
+    # The page the image came from; stored as ``Media.source_url``.
+    source_page_url: str | None = Field(None, max_length=512)
+    license: str | None = Field(None, max_length=100)
+    license_url: str | None = Field(None, max_length=512)
+    # Comma-separated; merged into ``Media.search_terms`` (never ``Tag`` rows).
+    keywords: str | None = Field(None, max_length=1000)
+    alt_text: str | None = Field(None, max_length=255)
+
+    @field_validator(
+        "title",
+        "caption",
+        "attribution",
+        "source_page_url",
+        "license",
+        "license_url",
+        "keywords",
+        "alt_text",
+        mode="before",
+    )
+    @classmethod
+    def _strip(cls, value):
+        return _strip_or_none(value)
+
+    @field_validator("source_page_url", "license_url")
+    @classmethod
+    def _http_url(cls, value):
+        return _check_http_url(value)
+
+
+class MediaUpdateRequest(BaseModel):
+    """Partial update of a media row's metadata (#589). Only the keys sent are
+    applied; an explicit ``null`` clears a field (except ``title``)."""
+
+    title: str | None = Field(None, max_length=255)
+    caption: str | None = Field(None, max_length=2000)
+    attribution: str | None = Field(None, max_length=1000)
+    source_url: str | None = Field(None, max_length=512)
+    license: str | None = Field(None, max_length=100)
+    license_url: str | None = Field(None, max_length=512)
+    alt_text: str | None = Field(None, max_length=255)
+    search_terms: str | None = Field(None, max_length=4000)
+
+    @field_validator(
+        "title",
+        "caption",
+        "attribution",
+        "source_url",
+        "license",
+        "license_url",
+        "alt_text",
+        "search_terms",
+        mode="before",
+    )
+    @classmethod
+    def _strip(cls, value):
+        return _strip_or_none(value)
+
+    @field_validator("source_url", "license_url")
+    @classmethod
+    def _http_url(cls, value):
+        return _check_http_url(value)
 
 
 class LOCCrawlRequest(BaseModel):

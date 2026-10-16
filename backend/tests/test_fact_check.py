@@ -1,5 +1,6 @@
 """Tests for the fact-check pipeline foundation + article grounding (#374/#375)."""
 
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -19,14 +20,15 @@ from app.services.fact_check import (
     build_suggestion_text,
     extract_claims,
     extract_for_deep_research,
-    fact_check_subject,
     ground_article,
+    ground_subject,
+    grounding_verdict,
     match_claims_against_kb,
     parse_claim_lines,
     run_fact_check_job,
     upsert_verified_claims,
-    verify_claims_via_search,
 )
+from app.services.llm import HAIKU_MODEL
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
@@ -62,12 +64,20 @@ def _msg(text: str):
 @pytest.fixture(autouse=True)
 def _bypass_admin_auth():
     """Bypass admin token validation via dependency override (#54)."""
-    from app.api.dependencies import validate_admin_token
+    from app.api.dependencies import (
+        validate_admin_or_allowlisted_driver_token,
+        validate_admin_token,
+    )
     from app.main import app
 
+    # dependency_overrides keys on the exact callable a router declares: the
+    # dashboard/instagram/admin routers now declare the allowlisted-driver
+    # variant (#444), other admin routers still the plain one. Override both.
     app.dependency_overrides[validate_admin_token] = lambda: _FAKE_ADMIN
+    app.dependency_overrides[validate_admin_or_allowlisted_driver_token] = lambda: _FAKE_ADMIN
     yield
     app.dependency_overrides.pop(validate_admin_token, None)
+    app.dependency_overrides.pop(validate_admin_or_allowlisted_driver_token, None)
 
 
 EXTRACTION_RESPONSE = """\
@@ -180,7 +190,10 @@ class TestGroundArticle:
         assert summary["total_claims"] == 3
         assert summary["verified"] == 1
         assert summary["inaccurate"] == 1
-        assert summary["unverifiable"] == 1
+        # #555: an article claim its research does not cover is queued for
+        # deep research, not parked as UNVERIFIABLE.
+        assert summary["unverifiable"] == 0
+        assert summary["needs_deep_research"] == 1
 
         rows = (
             test_db.query(FactCheckClaim)
@@ -194,7 +207,7 @@ class TestGroundArticle:
         assert [r.verdict for r in rows] == [
             FactCheckVerdict.VERIFIED.value,
             FactCheckVerdict.INACCURATE.value,
-            FactCheckVerdict.UNVERIFIABLE.value,
+            FactCheckVerdict.NEEDS_DEEP_RESEARCH.value,
         ]
         # CONTRADICTED note lands in correction; "-" notes are dropped.
         assert rows[0].correction is None
@@ -203,10 +216,12 @@ class TestGroundArticle:
         assert all(r.checked_at is not None for r in rows)
 
     @patch("app.services.llm.get_client")
-    def test_missing_verdict_degrades_to_unverifiable(
+    def test_missing_verdict_degrades_to_deep_research(
         self, mock_get_client, test_db, category_factory
     ):
-        # Judge answers only claim 1 — the other two must NOT default to verified.
+        # Judge answers only claim 1 — the other two must NOT default to
+        # verified. A missing line is ABSENT, which for an article (#555)
+        # queues the claim for deep research.
         mock_get_client.return_value = _make_client(
             _msg(EXTRACTION_RESPONSE), _msg("VERDICT: 1 | SUPPORTED | -")
         )
@@ -215,7 +230,49 @@ class TestGroundArticle:
         summary = ground_article(article, research, test_db)
 
         assert summary["verified"] == 1
-        assert summary["unverifiable"] == 2
+        assert summary["needs_deep_research"] == 2
+        assert summary["unverifiable"] == 0
+
+    @patch("app.services.llm.get_client")
+    def test_edu_material_absent_stays_unverifiable(
+        self, mock_get_client, test_db, category_factory
+    ):
+        """EDU_MATERIAL shares ground_subject but keeps ABSENT -> UNVERIFIABLE."""
+        mock_get_client.return_value = _make_client(
+            _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE)
+        )
+
+        summary = ground_subject(
+            FactCheckSubject.EDU_MATERIAL.value,
+            987,
+            "Guide text about Panama Viejo.",
+            "Research content about Panama Viejo.",
+            test_db,
+            feature="test",
+        )
+
+        assert [r.verdict for r in summary["claims"]] == [
+            FactCheckVerdict.VERIFIED.value,
+            FactCheckVerdict.INACCURATE.value,
+            FactCheckVerdict.UNVERIFIABLE.value,
+        ]
+        assert summary["needs_deep_research"] == 0
+
+    @pytest.mark.parametrize(
+        ("subject", "label", "expected"),
+        [
+            ("ARTICLE", "SUPPORTED", "VERIFIED"),
+            ("ARTICLE", "CONTRADICTED", "INACCURATE"),
+            ("ARTICLE", "ABSENT", "NEEDS_DEEP_RESEARCH"),
+            ("ARTICLE", "BANANA", "UNVERIFIABLE"),
+            ("EDU_MATERIAL", "SUPPORTED", "VERIFIED"),
+            ("EDU_MATERIAL", "CONTRADICTED", "INACCURATE"),
+            ("EDU_MATERIAL", "ABSENT", "UNVERIFIABLE"),
+            ("EDU_MATERIAL", "BANANA", "UNVERIFIABLE"),
+        ],
+    )
+    def test_grounding_verdict_mapping(self, subject, label, expected):
+        assert grounding_verdict(subject, label) == expected
 
     @patch("app.services.llm.get_client")
     def test_rerun_replaces_previous_rows(self, mock_get_client, test_db, category_factory):
@@ -235,6 +292,328 @@ class TestGroundArticle:
             test_db.query(FactCheckClaim).filter(FactCheckClaim.subject_id == article.id).count()
         )
         assert count == 1
+
+    # --- #575: a re-ground reuses deep-research verdicts and the KB -----------
+
+    @staticmethod
+    def _seed_article_claim(test_db, article_id, text, verdict, checked_via, **extra):
+        row = FactCheckClaim(
+            subject_type=FactCheckSubject.ARTICLE.value,
+            subject_id=article_id,
+            claim_text=text,
+            claim_type="EVENT",
+            verdict=verdict,
+            checked_via=checked_via,
+            **extra,
+        )
+        test_db.add(row)
+        test_db.flush()
+        return row
+
+    @staticmethod
+    def _article_rows(test_db, article_id):
+        return (
+            test_db.query(FactCheckClaim)
+            .filter(
+                FactCheckClaim.subject_type == FactCheckSubject.ARTICLE.value,
+                FactCheckClaim.subject_id == article_id,
+            )
+            .order_by(FactCheckClaim.id)
+            .all()
+        )
+
+    @patch("app.services.llm.get_client")
+    def test_reground_keeps_deep_research_verdict(self, mock_get_client, test_db, category_factory):
+        # Empty KB and an exact claim_key hit: no LLM call beyond extract+judge.
+        mock_get_client.return_value = _make_client(
+            _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE)
+        )
+        article, research = _create_article_chain(test_db, category_factory)
+        resolved_at = datetime(2026, 9, 1, tzinfo=UTC)
+        # Different case/punctuation, same normalised claim_key as claim 3.
+        self._seed_article_claim(
+            test_db,
+            article.id,
+            "Henry Morgan attacked Panama Viejo in 1671.",
+            "DISPUTED",
+            "DEEP_RESEARCH",
+            correction="Sources disagree on the month",
+            citation="https://example.org/morgan",
+            checked_at=resolved_at,
+        )
+        # A stale grounding row is still replaced, not kept.
+        self._seed_article_claim(test_db, article.id, "Some old claim", "VERIFIED", "GROUNDING")
+
+        summary = ground_article(article, research, test_db)
+
+        assert summary["total_claims"] == 3
+        assert summary["needs_deep_research"] == 0
+        rows = self._article_rows(test_db, article.id)
+        assert len(rows) == 3
+        kept = rows[2]
+        assert kept.claim_text == "Henry Morgan attacked Panama Viejo in 1671"
+        assert kept.verdict == FactCheckVerdict.DISPUTED.value
+        assert kept.checked_via == "DEEP_RESEARCH"
+        assert kept.checked_at == resolved_at
+        assert kept.citation == "https://example.org/morgan"
+        assert kept.correction == "Sources disagree on the month"
+        # The judged claims keep their grounding verdicts.
+        assert [r.checked_via for r in rows[:2]] == ["GROUNDING", "GROUNDING"]
+
+    @patch("app.services.llm.get_client")
+    def test_reground_does_not_keep_corrected_or_unresolved_rows(
+        self, mock_get_client, test_db, category_factory
+    ):
+        mock_get_client.return_value = _make_client(
+            _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE)
+        )
+        article, research = _create_article_chain(test_db, category_factory)
+        # CORRECTED describes the edited content; re-asserted text is re-queued.
+        self._seed_article_claim(
+            test_db,
+            article.id,
+            "Henry Morgan attacked Panama Viejo in 1671",
+            "CORRECTED",
+            "DEEP_RESEARCH",
+        )
+
+        summary = ground_article(article, research, test_db)
+
+        assert summary["needs_deep_research"] == 1
+        row = self._article_rows(test_db, article.id)[2]
+        assert row.verdict == FactCheckVerdict.NEEDS_DEEP_RESEARCH.value
+        assert row.checked_via == "GROUNDING"
+
+    @patch("app.services.llm.get_client")
+    def test_absent_claim_inherits_kb_verdict(self, mock_get_client, test_db, category_factory):
+        client = _make_client(_msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE))
+        mock_get_client.return_value = client
+        article, research = _create_article_chain(test_db, category_factory)
+        _seed_kb(
+            test_db,
+            "Henry Morgan attacked Panama Viejo in 1671",
+            verdict="INACCURATE",
+            correction="It was 1671 but the city was Panama, not Panama Viejo by name",
+            citation="https://kb.org/morgan",
+        )
+        # A SUPPORTED claim with a KB entry keeps its grounding verdict.
+        _seed_kb(test_db, "Panama Viejo was founded in 1519", verdict="DISPUTED")
+
+        summary = ground_article(article, research, test_db)
+
+        assert summary["needs_deep_research"] == 0
+        rows = self._article_rows(test_db, article.id)
+        assert rows[0].verdict == FactCheckVerdict.VERIFIED.value
+        assert rows[0].checked_via == "GROUNDING"
+        assert rows[2].verdict == FactCheckVerdict.INACCURATE.value
+        assert rows[2].checked_via == "KB_MATCH"
+        assert rows[2].citation == "https://kb.org/morgan"
+        assert "Panama Viejo by name" in rows[2].correction
+        # Exact claim_key hit: only extract + judge reached the model.
+        assert client.messages.create.call_count + client.messages.stream.call_count == 2
+
+    # --- #586: the KB's Haiku pass inside grounding -----------------------------
+
+    _FUZZY_MORGAN = "The pirate Henry Morgan attacked Panama Viejo in the year 1671"
+
+    @patch("app.services.llm.get_client")
+    def test_absent_claim_fuzzy_kb_match(self, mock_get_client, test_db, category_factory):
+        article, research = _create_article_chain(test_db, category_factory)
+        kb = _seed_kb(
+            test_db,
+            self._FUZZY_MORGAN,
+            verdict="INACCURATE",
+            correction="Morgan sacked the city in 1671",
+            citation="https://kb.org/morgan-fuzzy",
+        )
+        client = _make_client(
+            _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE), _msg(f"MATCH: 1 | {kb.id}")
+        )
+        mock_get_client.return_value = client
+
+        summary = ground_article(article, research, test_db)
+
+        assert summary["needs_deep_research"] == 0
+        row = self._article_rows(test_db, article.id)[2]
+        assert row.checked_via == "KB_MATCH"
+        assert row.verdict == FactCheckVerdict.INACCURATE.value
+        assert row.correction == "Morgan sacked the city in 1671"
+        assert row.citation == "https://kb.org/morgan-fuzzy"
+        # extract + judge + one Haiku KB confirmation.
+        assert client.messages.create.call_count + client.messages.stream.call_count == 3
+
+    @patch("app.services.llm.get_client")
+    def test_kb_failure_degrades_to_queued(self, mock_get_client, test_db, category_factory):
+        from app.services.llm import BudgetExceededError
+
+        article, research = _create_article_chain(test_db, category_factory)
+        _seed_kb(test_db, self._FUZZY_MORGAN, verdict="INACCURATE")
+        # Extract and the judge stream (pop the queue in order); only the KB
+        # match is a non-streamed create.
+        client = _make_client(_msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE))
+        client.messages.create.side_effect = [BudgetExceededError("budget")]
+        mock_get_client.return_value = client
+
+        with patch("app.services.fact_check.sentry_sdk.capture_exception") as capture:
+            summary = ground_article(article, research, test_db)
+
+        capture.assert_called_once()
+        assert summary["needs_deep_research"] == 1
+        row = self._article_rows(test_db, article.id)[2]
+        assert row.verdict == FactCheckVerdict.NEEDS_DEEP_RESEARCH.value
+        assert row.checked_via == "GROUNDING"
+
+    @patch("app.services.llm.get_client")
+    def test_reground_newest_prior_row_wins(self, mock_get_client, test_db, category_factory):
+        mock_get_client.return_value = _make_client(
+            _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE)
+        )
+        article, research = _create_article_chain(test_db, category_factory)
+        # Two deep-research rows sharing claim 3's claim_key: the newer wins.
+        self._seed_article_claim(
+            test_db,
+            article.id,
+            "Henry Morgan attacked Panama Viejo in 1671",
+            "VERIFIED",
+            "DEEP_RESEARCH",
+            citation="https://example.org/older",
+        )
+        self._seed_article_claim(
+            test_db,
+            article.id,
+            "Henry Morgan attacked Panama Viejo, in 1671!",
+            "DISPUTED",
+            "DEEP_RESEARCH",
+            citation="https://example.org/newer",
+        )
+
+        ground_article(article, research, test_db)
+
+        row = self._article_rows(test_db, article.id)[2]
+        assert row.verdict == FactCheckVerdict.DISPUTED.value
+        assert row.citation == "https://example.org/newer"
+        assert row.checked_via == "DEEP_RESEARCH"
+
+    @staticmethod
+    def _recording_client(events, *messages):
+        """_make_client that also records each non-streamed create call."""
+        client = _make_client(*messages)
+        inner = client.messages.create.side_effect
+
+        def _create(**kwargs):
+            events.append(("create", kwargs["max_tokens"]))
+            return inner(**kwargs)
+
+        client.messages.create.side_effect = _create
+        return client
+
+    @patch("app.services.llm.get_client")
+    def test_progress_runs_before_kb_haiku_call(self, mock_get_client, test_db, category_factory):
+        """The caller's progress seam (which commits in the job runner) fires
+        before the KB Haiku call, so the pool slot is free for it (#586)."""
+        article, research = _create_article_chain(test_db, category_factory)
+        kb = _seed_kb(test_db, self._FUZZY_MORGAN, verdict="INACCURATE")
+        events: list = []
+        mock_get_client.return_value = self._recording_client(
+            events,
+            _msg(EXTRACTION_RESPONSE),
+            _msg(GROUNDING_RESPONSE),
+            _msg(f"MATCH: 1 | {kb.id}"),
+        )
+
+        ground_article(
+            article,
+            research,
+            test_db,
+            progress_callback=lambda done, total, current: events.append(("progress", current)),
+        )
+
+        kb_progress = [
+            i for i, e in enumerate(events) if e[0] == "progress" and "verified-claims KB" in e[1]
+        ]
+        kb_create = [i for i, e in enumerate(events) if e == ("create", 4000)]
+        assert len(kb_progress) == 1
+        assert len(kb_create) == 1
+        assert kb_progress[0] < kb_create[0]
+
+    @patch("app.services.llm.get_client")
+    def test_exact_kb_match_reports_no_kb_progress(
+        self, mock_get_client, test_db, category_factory
+    ):
+        article, research = _create_article_chain(test_db, category_factory)
+        _seed_kb(test_db, "Henry Morgan attacked Panama Viejo in 1671", verdict="INACCURATE")
+        events: list = []
+        mock_get_client.return_value = self._recording_client(
+            events, _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE)
+        )
+
+        ground_article(
+            article,
+            research,
+            test_db,
+            progress_callback=lambda done, total, current: events.append(("progress", current)),
+        )
+
+        assert not any(e[0] == "progress" and "verified-claims KB" in e[1] for e in events)
+        assert ("create", 1500) not in events
+        assert self._article_rows(test_db, article.id)[2].checked_via == "KB_MATCH"
+
+    @patch("app.services.llm.get_client")
+    def test_edu_material_absent_ignores_kb(self, mock_get_client, test_db):
+        """EDU_MATERIAL never queues deep research, so it never consults the KB."""
+        mock_get_client.return_value = _make_client(
+            _msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE)
+        )
+        _seed_kb(test_db, "Henry Morgan attacked Panama Viejo in 1671")
+
+        summary = ground_subject(
+            FactCheckSubject.EDU_MATERIAL.value,
+            988,
+            "Guide text about Panama Viejo.",
+            "Research content about Panama Viejo.",
+            test_db,
+            feature="test",
+        )
+
+        row = summary["claims"][2]
+        assert row.verdict == FactCheckVerdict.UNVERIFIABLE.value
+        assert row.checked_via == "GROUNDING"
+
+    @patch("app.services.llm.get_client")
+    def test_grounding_caches_research_prefix(self, mock_get_client, test_db, category_factory):
+        # 26 claims > GROUNDING_BATCH_SIZE (25) -> two grounding batches.
+        extraction_response = "\n".join(f"CLAIM: OTHER | Claim number {i}" for i in range(26))
+        mock_get_client.return_value = _make_client(
+            _msg(extraction_response),
+            _msg("VERDICT: 1 | SUPPORTED | -"),
+            _msg("VERDICT: 1 | SUPPORTED | -"),
+        )
+        article, research = _create_article_chain(test_db, category_factory)
+
+        ground_article(article, research, test_db)
+
+        client = mock_get_client.return_value
+        # One streamed Haiku extraction, then the two streamed judge batches.
+        assert client.messages.stream.call_count == 3
+        judge_calls = [
+            c for c in client.messages.stream.call_args_list if c.kwargs["model"] != HAIKU_MODEL
+        ]
+        assert len(judge_calls) == 2
+
+        block0_texts = []
+        for call in judge_calls:
+            content = call.kwargs["messages"][0]["content"]
+            assert len(content) == 2
+            assert content[0]["type"] == "text"
+            assert content[0]["cache_control"] == {"type": "ephemeral"}
+            assert "cache_control" not in content[1]
+            assert research.content in content[0]["text"]
+            assert research.content not in content[1]["text"]
+            assert "CLAIMS:" in content[1]["text"]
+            block0_texts.append(content[0]["text"])
+
+        # Stable prefix -> byte-identical across both batches.
+        assert block0_texts[0] == block0_texts[1]
 
 
 # --- POST /articles/{id}/fact-check ------------------------------------------
@@ -259,22 +638,28 @@ class TestFactCheckEndpoint:
         assert job.params == {"subject_type": "ARTICLE", "subject_id": article.id}
 
     @patch("app.api.dashboard.run_fact_check_job")
-    def test_duplicate_run_rejected(self, mock_run, test_client, test_db, category_factory):
+    def test_duplicate_run_joins_the_inflight_job(
+        self, mock_run, test_client, test_db, category_factory
+    ):
+        """A kickoff while a run is in flight returns the running job (202)
+        instead of 409ing — no second job, no second background task. The agent
+        driver races the write endpoint's auto-kicked check and must be able to
+        poll the existing run to completion."""
         article, _ = _create_article_chain(test_db, category_factory)
-        test_db.add(
-            CrawlJob(
-                job_type=CrawlJobType.FACT_CHECK.value,
-                status=CrawlJobStatus.RUNNING.value,
-                params={"subject_type": "ARTICLE", "subject_id": article.id},
-            )
+        inflight = CrawlJob(
+            job_type=CrawlJobType.FACT_CHECK.value,
+            status=CrawlJobStatus.RUNNING.value,
+            params={"subject_type": "ARTICLE", "subject_id": article.id},
         )
+        test_db.add(inflight)
         test_db.commit()
 
         response = test_client.post(
             f"/api/v1/admin/dashboard/articles/{article.id}/fact-check",
             params={"token": "any"},
         )
-        assert response.status_code == 409
+        assert response.status_code == 202
+        assert response.json()["id"] == inflight.id
         mock_run.assert_not_called()
 
     @patch("app.api.dashboard.run_fact_check_job")
@@ -348,6 +733,30 @@ class TestWriteArticleFactCheckTrigger:
         assert job.params == {"subject_type": "ARTICLE", "subject_id": article.id}
         mock_run.assert_called_once_with(job.id)
 
+    @patch("app.services.knowledge.indexer.index_article")
+    @patch("app.api.dashboard.run_fact_check_job")
+    @patch("app.services.llm.get_client")
+    def test_write_kicks_off_fact_check_before_reindex(
+        self, mock_get_client, mock_run, mock_index, test_client, test_db, category_factory
+    ):
+        # BackgroundTasks run in order, so grounding must not queue behind the
+        # embedding reindex (#649).
+        order: list[str] = []
+        mock_run.side_effect = lambda *a, **k: order.append("fact_check")
+        mock_index.side_effect = lambda *a, **k: order.append("reindex")
+        mock_get_client.return_value = _make_client(
+            _msg(ARTICLE_CONTENT), _msg(EXCERPT_TEXT), _msg(SUMMARY_TEXT)
+        )
+        article = self._create_writable_article(test_db, category_factory)
+
+        response = test_client.post(
+            f"/api/v1/admin/dashboard/articles/{article.id}/write",
+            params={"token": "any"},
+        )
+
+        assert response.status_code == 200
+        assert order == ["fact_check", "reindex"]
+
     @patch("app.api.dashboard._kickoff_fact_check", side_effect=RuntimeError("boom"))
     @patch("app.services.llm.get_client")
     def test_enqueue_failure_is_non_fatal(
@@ -404,113 +813,6 @@ class TestFactCheckConstraints:
         test_db.flush()  # must not raise
 
 
-# --- Web-search verification tier (#376) ---------------------------------------
-
-
-SEARCH_RESPONSE = """\
-VERDICT: 1 | VERIFIED | - | https://en.wikipedia.org/wiki/Panama_Viejo
-VERDICT: 2 | INACCURATE | The city was founded by a royal expedition led by Pedrarias | https://example.org/history
-VERDICT: 3 | DISPUTED | Sources disagree on the exact date of the attack | https://a.org, https://b.org"""
-
-
-def _three_claims():
-    return [
-        ExtractedClaim("Panama Viejo was founded in 1519", "DATE"),
-        ExtractedClaim("Pedrarias Davila founded Panama Viejo", "PERSON"),
-        ExtractedClaim("Henry Morgan attacked Panama Viejo in 1671", "EVENT"),
-    ]
-
-
-class TestVerifyClaimsViaSearch:
-    @patch("app.services.llm.get_client")
-    def test_maps_verdicts_and_citations(self, mock_get_client):
-        mock_get_client.return_value = _make_client(_msg(SEARCH_RESPONSE))
-
-        results = verify_claims_via_search(_three_claims())
-
-        assert [r[0] for r in results] == ["VERIFIED", "INACCURATE", "DISPUTED"]
-        assert results[0][2] == "https://en.wikipedia.org/wiki/Panama_Viejo"
-        assert "royal expedition" in results[1][1]
-
-    @patch("app.services.llm.get_client")
-    def test_missing_verdict_punts_to_deep_research(self, mock_get_client):
-        # Only claim 1 answered — the rest must punt, never default to verified.
-        mock_get_client.return_value = _make_client(
-            _msg("VERDICT: 1 | VERIFIED | - | https://x.org")
-        )
-
-        results = verify_claims_via_search(_three_claims())
-
-        assert results[0][0] == "VERIFIED"
-        assert results[1][0] == "NEEDS_DEEP_RESEARCH"
-        assert results[2][0] == "NEEDS_DEEP_RESEARCH"
-
-    @patch("app.services.llm.get_client")
-    def test_uncited_definitive_verdict_downgraded(self, mock_get_client):
-        # VERIFIED/INACCURATE without a source URL must not survive.
-        mock_get_client.return_value = _make_client(
-            _msg(
-                "VERDICT: 1 | VERIFIED | - | -\n"
-                "VERDICT: 2 | INACCURATE | wrong founder | -\n"
-                "VERDICT: 3 | DISPUTED | positions differ | -"
-            )
-        )
-
-        results = verify_claims_via_search(_three_claims())
-
-        assert results[0][0] == "NEEDS_DEEP_RESEARCH"
-        assert results[1][0] == "NEEDS_DEEP_RESEARCH"
-        # DISPUTED does not require a citation to survive.
-        assert results[2][0] == "DISPUTED"
-
-    @patch("app.services.llm.get_client")
-    def test_batches_claims(self, mock_get_client):
-        # 10 claims > SEARCH_BATCH_SIZE (8) -> two search calls.
-        client = _make_client(
-            _msg("VERDICT: 1 | VERIFIED | - | https://x.org"),
-            _msg("VERDICT: 1 | VERIFIED | - | https://y.org"),
-        )
-        mock_get_client.return_value = client
-
-        claims = [ExtractedClaim(f"Claim number {i}", "OTHER") for i in range(10)]
-        results = verify_claims_via_search(claims)
-
-        calls = client.messages.create.call_count + client.messages.stream.call_count
-        assert calls == 2
-        # First claim of each batch verified; everything else punts.
-        assert results[0][0] == "VERIFIED"
-        assert results[8][0] == "VERIFIED"
-        assert results[1][0] == "NEEDS_DEEP_RESEARCH"
-
-    @patch("app.services.llm.get_client")
-    def test_search_call_cost_controls(self, mock_get_client):
-        # Cost trims (post-#384): low effort, 8 searches/call, grouping prompt.
-        client = _make_client(_msg(SEARCH_RESPONSE))
-        mock_get_client.return_value = client
-
-        verify_claims_via_search(_three_claims())
-
-        kwargs = client.messages.stream.call_args.kwargs
-        assert kwargs["output_config"] == {"effort": "low"}
-        assert kwargs["tools"][0]["max_uses"] == 8
-        assert "single broader query" in kwargs["messages"][0]["content"]
-
-    @patch("app.services.llm.get_client")
-    def test_pause_turn_is_resumed(self, mock_get_client):
-        paused = _msg("searching...")
-        paused.stop_reason = "pause_turn"
-        final = _msg("VERDICT: 1 | VERIFIED | - | https://x.org")
-        final.stop_reason = "end_turn"
-        client = _make_client(paused, final)
-        mock_get_client.return_value = client
-
-        results = verify_claims_via_search([_three_claims()[0]])
-
-        calls = client.messages.create.call_count + client.messages.stream.call_count
-        assert calls == 2
-        assert results[0][0] == "VERIFIED"
-
-
 class TestBuildSuggestionText:
     def test_includes_all_factual_fields(self):
         suggestion = SimpleNamespace(
@@ -523,74 +825,6 @@ class TestBuildSuggestionText:
         assert "Panama Viejo" in text
         assert "Founding: 1519" in text
         assert "narrative" in text
-
-
-class TestFactCheckSubject:
-    @patch("app.services.llm.get_client")
-    def test_persists_web_search_rows(self, mock_get_client, test_db):
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE), _msg(SEARCH_RESPONSE)
-        )
-
-        summary = fact_check_subject(
-            FactCheckSubject.SUGGESTION.value, 42, "Some suggestion text", test_db
-        )
-
-        assert summary["total_claims"] == 3
-        assert summary["counts"] == {"VERIFIED": 1, "INACCURATE": 1, "DISPUTED": 1}
-        rows = (
-            test_db.query(FactCheckClaim)
-            .filter(
-                FactCheckClaim.subject_type == FactCheckSubject.SUGGESTION.value,
-                FactCheckClaim.subject_id == 42,
-            )
-            .order_by(FactCheckClaim.id)
-            .all()
-        )
-        assert [r.verdict for r in rows] == ["VERIFIED", "INACCURATE", "DISPUTED"]
-        assert all(r.checked_via == "WEB_SEARCH" for r in rows)
-        assert rows[0].citation == "https://en.wikipedia.org/wiki/Panama_Viejo"
-        assert rows[0].correction is None  # "-" notes are dropped
-
-    @patch("app.services.fact_check.MAX_SEARCH_CLAIMS_PER_RUN", 2)
-    @patch("app.services.llm.get_client")
-    def test_overflow_claims_persist_as_pending(self, mock_get_client, test_db):
-        # 3 extracted claims, cap of 2 -> third row stays PENDING, unchecked.
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE),
-            _msg(
-                "VERDICT: 1 | VERIFIED | - | https://x.org\n"
-                "VERDICT: 2 | VERIFIED | - | https://y.org"
-            ),
-        )
-
-        summary = fact_check_subject(
-            FactCheckSubject.RESEARCH.value, 7, "Some research text", test_db
-        )
-
-        assert summary["total_claims"] == 3
-        assert summary["counts"] == {"VERIFIED": 2, "PENDING": 1}
-        pending = [c for c in summary["claims"] if c.verdict == "PENDING"]
-        assert len(pending) == 1
-        assert pending[0].checked_via is None
-
-    @patch("app.services.llm.get_client")
-    def test_rerun_replaces_previous_rows(self, mock_get_client, test_db):
-        one_claim = "CLAIM: DATE | Panama Viejo was founded in 1519"
-        one_verdict = "VERDICT: 1 | VERIFIED | - | https://x.org"
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE),
-            _msg(SEARCH_RESPONSE),
-            _msg(one_claim),
-            _msg(one_verdict),
-        )
-
-        fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-        summary = fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-
-        assert summary["total_claims"] == 1
-        count = test_db.query(FactCheckClaim).filter(FactCheckClaim.subject_id == 42).count()
-        assert count == 1
 
 
 def _seed_subject_rows(test_db, subject_id, *rows):
@@ -612,107 +846,6 @@ def _seed_subject_rows(test_db, subject_id, *rows):
     return persisted
 
 
-class TestResumePendingFactCheck:
-    @patch("app.services.llm.get_client")
-    def test_resume_verifies_only_pending_rows_in_place(self, mock_get_client, test_db):
-        resolved, pending_a, pending_b = _seed_subject_rows(
-            test_db,
-            42,
-            ("Already verified claim", "VERIFIED", "WEB_SEARCH"),
-            ("Pending claim about the canal", "PENDING", None),
-            ("Pending claim about the railroad", "PENDING", None),
-        )
-        # ONE search call, NO extraction call — resume skips it entirely.
-        client = _make_client(
-            _msg(
-                "VERDICT: 1 | VERIFIED | - | https://new.org\n"
-                "VERDICT: 2 | INACCURATE | actually 1855 | https://rr.org"
-            )
-        )
-        mock_get_client.return_value = client
-
-        summary = fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-
-        calls = client.messages.create.call_count + client.messages.stream.call_count
-        assert calls == 1
-        # Rows updated in place — same ids, no delete/re-insert.
-        assert pending_a.verdict == "VERIFIED"
-        assert pending_a.citation == "https://new.org"
-        assert pending_a.checked_via == "WEB_SEARCH"
-        assert pending_b.verdict == "INACCURATE"
-        assert pending_b.correction == "actually 1855"
-        # The already-resolved row is untouched.
-        assert resolved.citation == "https://old.org"
-        # Summary reflects the WHOLE subject, not just the resumed rows.
-        assert summary["total_claims"] == 3
-        assert summary["counts"] == {"VERIFIED": 2, "INACCURATE": 1}
-        assert test_db.query(FactCheckClaim).filter(FactCheckClaim.subject_id == 42).count() == 3
-
-    def test_resume_inherits_from_kb_without_search(self, test_db):
-        # Exact-key KB hit resolves the only PENDING row — zero LLM calls
-        # (no client patched at all; any call would raise).
-        kb = _seed_kb(test_db, "Panama Viejo was founded in 1519", citation="https://kb.org/pv")
-        (pending,) = _seed_subject_rows(
-            test_db, 42, ("Panama Viejo was founded in 1519", "PENDING", None)
-        )
-
-        summary = fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-
-        assert pending.verdict == "VERIFIED"
-        assert pending.checked_via == "KB_MATCH"
-        assert pending.citation == kb.citation
-        assert summary["counts"] == {"VERIFIED": 1}
-
-    @patch("app.services.fact_check.MAX_SEARCH_CLAIMS_PER_RUN", 1)
-    @patch("app.services.llm.get_client")
-    def test_resume_respects_per_run_cap(self, mock_get_client, test_db):
-        pending_a, pending_b = _seed_subject_rows(
-            test_db,
-            42,
-            ("First pending claim", "PENDING", None),
-            ("Second pending claim", "PENDING", None),
-        )
-        mock_get_client.return_value = _make_client(
-            _msg("VERDICT: 1 | VERIFIED | - | https://x.org")
-        )
-
-        summary = fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-
-        assert pending_a.verdict == "VERIFIED"
-        assert pending_b.verdict == "PENDING"  # overflow survives for the next resume
-        assert summary["counts"] == {"VERIFIED": 1, "PENDING": 1}
-
-    @patch("app.services.llm.get_client")
-    def test_resume_feeds_search_verdicts_to_kb(self, mock_get_client, test_db):
-        _seed_subject_rows(test_db, 42, ("A pending claim", "PENDING", None))
-        mock_get_client.return_value = _make_client(
-            _msg("VERDICT: 1 | VERIFIED | - | https://x.org")
-        )
-
-        fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-
-        assert test_db.query(VerifiedClaim).count() == 1
-
-    @patch("app.services.llm.get_client")
-    def test_needs_deep_research_rows_do_not_trigger_resume(self, mock_get_client, test_db):
-        # Only PENDING resumes — NEEDS_DEEP_RESEARCH belongs to the manual
-        # tier, so a re-run with none pending re-extracts wholesale.
-        _seed_subject_rows(
-            test_db, 42, ("Old deep-research claim", "NEEDS_DEEP_RESEARCH", "WEB_SEARCH")
-        )
-        mock_get_client.return_value = _make_client(
-            _msg("CLAIM: DATE | Panama Viejo was founded in 1519"),
-            _msg("VERDICT: 1 | VERIFIED | - | https://x.org"),
-        )
-
-        summary = fact_check_subject(FactCheckSubject.SUGGESTION.value, 42, "text", test_db)
-
-        # Wholesale replacement: the old row is gone, one fresh row remains.
-        assert summary["total_claims"] == 1
-        assert summary["counts"] == {"VERIFIED": 1}
-        assert test_db.query(FactCheckClaim).filter(FactCheckClaim.subject_id == 42).count() == 1
-
-
 class TestSubjectFactCheckEndpoints:
     @patch("app.api.dashboard.run_fact_check_job")
     def test_suggestion_kickoff_returns_202(self, mock_run, test_client, test_db, category_factory):
@@ -729,12 +862,8 @@ class TestSubjectFactCheckEndpoints:
         assert data["job_type"] == "FACT_CHECK"
         mock_run.assert_called_once_with(data["id"])
         job = test_db.get(CrawlJob, data["id"])
-        # deep_research (extract-only) is the default mode (#389).
-        assert job.params == {
-            "subject_type": "SUGGESTION",
-            "subject_id": suggestion_id,
-            "mode": "deep_research",
-        }
+        # Extract-only is the only external tier (#389); no mode is stored (#751).
+        assert job.params == {"subject_type": "SUGGESTION", "subject_id": suggestion_id}
 
     def test_suggestion_not_found(self, test_client):
         response = test_client.post(
@@ -755,11 +884,7 @@ class TestSubjectFactCheckEndpoints:
         assert response.status_code == 202
         data = response.json()
         job = test_db.get(CrawlJob, data["id"])
-        assert job.params == {
-            "subject_type": "RESEARCH",
-            "subject_id": research.id,
-            "mode": "deep_research",
-        }
+        assert job.params == {"subject_type": "RESEARCH", "subject_id": research.id}
 
     def test_research_not_found(self, test_client):
         response = test_client.post(
@@ -780,35 +905,38 @@ class TestSubjectFactCheckEndpoints:
         assert response.status_code == 400
 
     @patch("app.api.dashboard.run_fact_check_job")
-    def test_web_search_mode_stored_in_params(
-        self, mock_run, test_client, test_db, category_factory
+    @pytest.mark.parametrize("mode", ["web_search", "deep_research", "bogus"])
+    def test_stray_mode_param_is_ignored(
+        self, mock_run, mode, test_client, test_db, category_factory
     ):
-        # The API-only escape hatch (#389): mode=web_search rides in job params.
+        # #751 removed the mode query param; FastAPI ignores unknown params, so
+        # an old client sending ?mode=... still gets the extract-only tier.
         article, research = _create_article_chain(test_db, category_factory)
 
         response = test_client.post(
             f"/api/v1/admin/dashboard/research/{research.id}/fact-check",
-            params={"token": "any", "mode": "web_search"},
+            params={"token": "any", "mode": mode},
         )
 
         assert response.status_code == 202
         job = test_db.get(CrawlJob, response.json()["id"])
-        assert job.params["mode"] == "web_search"
-
-    def test_invalid_mode_rejected(self, test_client, test_db, category_factory):
-        article, research = _create_article_chain(test_db, category_factory)
-
-        response = test_client.post(
-            f"/api/v1/admin/dashboard/research/{research.id}/fact-check",
-            params={"token": "any", "mode": "bogus"},
-        )
-        assert response.status_code == 422
+        assert "mode" not in job.params
 
 
 # --- Verified-claims knowledge base (#378) ---------------------------------------
 
 
+def _three_claims():
+    return [
+        ExtractedClaim("Panama Viejo was founded in 1519", "DATE"),
+        ExtractedClaim("Pedrarias Davila founded Panama Viejo", "PERSON"),
+        ExtractedClaim("Henry Morgan attacked Panama Viejo in 1671", "EVENT"),
+    ]
+
+
 def _seed_kb(test_db, text, *, verdict="VERIFIED", correction=None, citation="https://kb.org"):
+    # source_method WEB_SEARCH on purpose: prod's historical WEB_SEARCH KB rows
+    # (the tier was removed in #751) must keep loading and matching via KB_MATCH.
     row = VerifiedClaim(
         claim_key=_normalize(text),
         claim_text=text,
@@ -909,48 +1037,6 @@ class TestUpsertVerifiedClaims:
         rows = test_db.query(VerifiedClaim).all()
         assert len(rows) == 1
         assert rows[0].verdict == "DISPUTED"
-
-
-class TestFactCheckSubjectWithKb:
-    @patch("app.services.llm.get_client")
-    def test_kb_matches_inherit_verdict_and_skip_search(self, mock_get_client, test_db):
-        kb = _seed_kb(
-            test_db,
-            "Panama Viejo was founded in 1519",
-            verdict="VERIFIED",
-            citation="https://kb.org/pv",
-        )
-        # Calls: extraction, KB fuzzy confirm (claims 2+3 share words with the
-        # KB row), then ONE search batch covering only the two unmatched claims.
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE),
-            _msg("MATCH: 1 | NONE\nMATCH: 2 | NONE"),
-            _msg(
-                "VERDICT: 1 | VERIFIED | - | https://a.org\n"
-                "VERDICT: 2 | VERIFIED | - | https://b.org"
-            ),
-        )
-
-        summary = fact_check_subject("SUGGESTION", 42, "text", test_db)
-
-        assert summary["total_claims"] == 3
-        assert summary["counts"] == {"VERIFIED": 3}
-        kb_rows = [c for c in summary["claims"] if c.checked_via == "KB_MATCH"]
-        assert len(kb_rows) == 1
-        assert kb_rows[0].citation == kb.citation
-        searched = [c for c in summary["claims"] if c.checked_via == "WEB_SEARCH"]
-        assert len(searched) == 2
-
-    @patch("app.services.llm.get_client")
-    def test_search_verdicts_feed_the_kb(self, mock_get_client, test_db):
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE), _msg(SEARCH_RESPONSE)
-        )
-
-        fact_check_subject("SUGGESTION", 42, "text", test_db)
-
-        # VERIFIED + INACCURATE + DISPUTED all land in the KB.
-        assert test_db.query(VerifiedClaim).count() == 3
 
 
 class TestFactCheckReadEndpoints:
@@ -1083,8 +1169,8 @@ class TestRunFactCheckJob:
     def test_suggestion_job_success(
         self, mock_get_client, test_db, category_factory, patched_session
     ):
-        # No mode in params (also the pre-#389 job shape) → deep_research
-        # default: extraction only, every claim queued for deep research.
+        # Extract-only external tier: extraction only, every claim queued for
+        # deep research.
         mock_get_client.return_value = _make_client(_msg(EXTRACTION_RESPONSE))
         article, research = _create_article_chain(test_db, category_factory)
         suggestion_id = research.suggestion_id
@@ -1110,27 +1196,6 @@ class TestRunFactCheckJob:
         )
         assert len(rows) == 3
 
-    @patch("app.services.fact_check.MAX_SEARCH_CLAIMS_PER_RUN", 1)
-    @patch("app.services.llm.get_client")
-    def test_job_runs_uncapped(self, mock_get_client, test_db, category_factory, patched_session):
-        # The sync-era per-run cap must not apply to jobs: all 3 claims are
-        # searched (in one batch) and nothing is left PENDING.
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE), _msg(SEARCH_RESPONSE)
-        )
-        article, research = _create_article_chain(test_db, category_factory)
-        suggestion_id = research.suggestion_id
-        test_db.commit()
-        job_id = self._job(test_db, "SUGGESTION", suggestion_id, mode="web_search")
-
-        run_fact_check_job(job_id)
-
-        test_db.expire_all()
-        job = test_db.get(CrawlJob, job_id)
-        assert job.status == CrawlJobStatus.SUCCEEDED.value
-        assert "PENDING" not in job.stats["counts"]
-        assert job.stats["total_claims"] == 3
-
     @patch("app.services.llm.get_client")
     def test_article_grounding_job_success(
         self, mock_get_client, test_db, category_factory, patched_session
@@ -1148,7 +1213,7 @@ class TestRunFactCheckJob:
         test_db.expire_all()
         job = test_db.get(CrawlJob, job_id)
         assert job.status == CrawlJobStatus.SUCCEEDED.value
-        assert job.stats["counts"] == {"VERIFIED": 1, "INACCURATE": 1, "UNVERIFIABLE": 1}
+        assert job.stats["counts"] == {"VERIFIED": 1, "INACCURATE": 1, "NEEDS_DEEP_RESEARCH": 1}
         rows = (
             test_db.query(FactCheckClaim)
             .filter(
@@ -1158,6 +1223,46 @@ class TestRunFactCheckJob:
             .all()
         )
         assert all(r.checked_via == "GROUNDING" for r in rows)
+
+    @patch("app.services.llm.get_client")
+    def test_article_grounding_kb_failure_still_succeeds(
+        self, mock_get_client, test_db, category_factory, patched_session
+    ):
+        """#586: a failed KB Haiku call leaves the claim queued; the job
+        does not fail after extract + judge were paid for."""
+        article, _ = _create_article_chain(test_db, category_factory)
+        article_id = article.id
+        _seed_kb(
+            test_db,
+            "The pirate Henry Morgan attacked Panama Viejo in the year 1671",
+            verdict="INACCURATE",
+        )
+        test_db.commit()
+        # Extract and the judge stream (pop the queue in order); only the KB
+        # match is a non-streamed create.
+        client = _make_client(_msg(EXTRACTION_RESPONSE), _msg(GROUNDING_RESPONSE))
+        client.messages.create.side_effect = [RuntimeError("haiku down")]
+        mock_get_client.return_value = client
+        job_id = self._job(test_db, "ARTICLE", article_id)
+
+        with patch("app.services.fact_check.sentry_sdk.capture_exception") as capture:
+            run_fact_check_job(job_id)
+
+        capture.assert_called_once()
+        test_db.expire_all()
+        job = test_db.get(CrawlJob, job_id)
+        assert job.status == CrawlJobStatus.SUCCEEDED.value
+        assert job.stats["counts"] == {"VERIFIED": 1, "INACCURATE": 1, "NEEDS_DEEP_RESEARCH": 1}
+        queued = (
+            test_db.query(FactCheckClaim)
+            .filter(
+                FactCheckClaim.subject_type == "ARTICLE",
+                FactCheckClaim.subject_id == article_id,
+                FactCheckClaim.verdict == "NEEDS_DEEP_RESEARCH",
+            )
+            .one()
+        )
+        assert queued.checked_via == "GROUNDING"
 
     def test_missing_subject_records_failure(self, test_db, patched_session):
         job_id = self._job(test_db, "SUGGESTION", 999999)
@@ -1221,7 +1326,8 @@ class TestExtractForDeepResearch:
         assert "Old resolved claim" not in texts
 
     def test_pending_flip_in_place_preserves_resolved(self, test_db):
-        # Half-checked subject (a capped earlier web-search run). No client
+        # Half-checked subject (PENDING rows left by the removed web-search
+        # tier, #751). No client
         # patched at all — no re-extraction, and the empty KB costs no LLM call.
         resolved, pending_a, pending_b = _seed_subject_rows(
             test_db,
@@ -1260,54 +1366,24 @@ class TestExtractForDeepResearch:
         assert pending_other.verdict == "NEEDS_DEEP_RESEARCH"
 
 
-class TestFactCheckModeDispatch:
-    def _job(self, subject_id, mode=None):
-        params = {"subject_type": "SUGGESTION", "subject_id": subject_id}
-        if mode is not None:
-            params["mode"] = mode
-        return SimpleNamespace(params=params)
+class TestLegacyModeParam:
+    """Job rows created before #751 may carry ``mode`` in params; it is ignored."""
 
+    @pytest.mark.parametrize("mode", [None, "deep_research", "web_search"])
     @patch("app.services.llm.get_client")
-    def test_default_mode_is_deep_research(self, mock_get_client, test_db, category_factory):
-        # No mode in params (pre-#389 jobs included) → extract-only, no search.
+    def test_external_subject_always_runs_extract_only(
+        self, mock_get_client, mode, test_db, category_factory
+    ):
         client = _make_client(_msg(EXTRACTION_RESPONSE))
         mock_get_client.return_value = client
         article, research = _create_article_chain(test_db, category_factory)
+        params = {"subject_type": "SUGGESTION", "subject_id": research.suggestion_id}
+        if mode is not None:
+            params["mode"] = mode
 
-        stats = _run_fact_check_for_subject(test_db, self._job(research.suggestion_id), None)
+        stats = _run_fact_check_for_subject(test_db, SimpleNamespace(params=params), None)
 
+        # Extraction is the only LLM call; nothing is web-searched.
         calls = client.messages.create.call_count + client.messages.stream.call_count
         assert calls == 1
         assert stats["counts"] == {"NEEDS_DEEP_RESEARCH": 3}
-
-    @patch("app.services.llm.get_client")
-    def test_web_search_mode_still_runs_search_tier(
-        self, mock_get_client, test_db, category_factory
-    ):
-        mock_get_client.return_value = _make_client(
-            _msg(EXTRACTION_RESPONSE), _msg(SEARCH_RESPONSE)
-        )
-        article, research = _create_article_chain(test_db, category_factory)
-
-        stats = _run_fact_check_for_subject(
-            test_db, self._job(research.suggestion_id, mode="web_search"), None
-        )
-
-        assert stats["counts"] == {"VERIFIED": 1, "INACCURATE": 1, "DISPUTED": 1}
-        rows = (
-            test_db.query(FactCheckClaim)
-            .filter(
-                FactCheckClaim.subject_type == "SUGGESTION",
-                FactCheckClaim.subject_id == research.suggestion_id,
-            )
-            .all()
-        )
-        assert all(r.checked_via == "WEB_SEARCH" for r in rows)
-
-    def test_unknown_mode_raises(self, test_db, category_factory):
-        article, research = _create_article_chain(test_db, category_factory)
-
-        with pytest.raises(ValueError, match="Unknown fact-check mode"):
-            _run_fact_check_for_subject(
-                test_db, self._job(research.suggestion_id, mode="bogus"), None
-            )

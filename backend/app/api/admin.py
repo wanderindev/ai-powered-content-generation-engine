@@ -1,13 +1,19 @@
 """Admin API endpoints for translation and content management."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import validate_admin_token
+from app.api.dependencies import validate_admin_or_allowlisted_driver_token
 from app.core.database import get_db
 from app.models.article import Article
 from app.models.category import Category, Taxonomy
+from app.models.enums import Language
+from app.schemas.grammar_check import (
+    EsAccuracyCheckResponse,
+    GrammarCheckResponse,
+    GrammarFixItem,
+)
 from app.schemas.series import (
     SeriesSectionResult,
     SeriesSectionStatus,
@@ -19,13 +25,17 @@ from app.schemas.translation import (
     TaxonomyTranslationResponse,
     TranslationResponse,
 )
+from app.services.article_slugs import SlugCollisionError, sync_article_slugs
+from app.services.es_accuracy import run_es_accuracy_check
+from app.services.grammar_check import run_grammar_check
+from app.services.knowledge.indexer import schedule_reindex, schedule_series_reindex
 from app.services.series_sections import SeriesSectionGenerator
 from app.services.translation import get_translation_service
 
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
-    dependencies=[Depends(validate_admin_token)],
+    dependencies=[Depends(validate_admin_or_allowlisted_driver_token)],
 )
 
 
@@ -51,6 +61,7 @@ def _ensure_translation_service():
 @router.post("/translate/article/{article_id}/title", response_model=TranslationResponse)
 async def translate_article_title(
     article_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> TranslationResponse:
     """
@@ -68,7 +79,12 @@ async def translate_article_title(
 
     # Save to database
     article.title_es = translated
+    try:
+        sync_article_slugs(db, article)
+    except SlugCollisionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     db.commit()
+    schedule_reindex(background_tasks, article_id)
 
     return TranslationResponse(
         success=True,
@@ -113,6 +129,7 @@ async def translate_article_excerpt(
 @router.post("/translate/article/{article_id}/content", response_model=TranslationResponse)
 async def translate_article_content(
     article_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> TranslationResponse:
     """
@@ -137,6 +154,7 @@ async def translate_article_content(
     # Save to database
     article.content_es = translated
     db.commit()
+    schedule_reindex(background_tasks, article_id)
 
     return TranslationResponse(
         success=True,
@@ -374,6 +392,7 @@ async def get_series_section_status(
 )
 async def generate_series_sections(
     series_parent_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> SeriesSectionResult:
     """
@@ -392,9 +411,107 @@ async def generate_series_sections(
 
     if not success:
         raise HTTPException(status_code=400, detail=message)
+    schedule_series_reindex(db, background_tasks, series_parent_id)
 
     return SeriesSectionResult(
         success=success,
         articles_updated=articles_updated,
         message=message,
+    )
+
+
+@router.post("/articles/{article_id}/grammar-check", response_model=GrammarCheckResponse)
+def grammar_check_article(
+    article_id: int,
+    background_tasks: BackgroundTasks,
+    language: Language = Query(..., description="Which language of the article to proofread"),
+    db: Session = Depends(get_db),
+) -> GrammarCheckResponse:
+    """
+    Run the strict corrections-only proofread over one language of an article.
+
+    Synchronous by design — a single LLM call of a few seconds, so no background
+    job. Applies every fix whose FIND snippet occurs exactly once across the
+    language's title/excerpt/content, audits both applied and skipped fixes in
+    ``grammar_check_fixes``, and stamps ``grammar_checked_<lang>_at``.
+
+    Re-running is allowed and re-stamps; audit rows accumulate.
+    """
+    article = _get_article_or_404(article_id, db)
+
+    if language is Language.EN:
+        if not (article.content or "").strip():
+            raise HTTPException(status_code=400, detail="Article has no English content to check")
+    elif not (article.content_es or "").strip():
+        raise HTTPException(status_code=400, detail="Article has no Spanish translation to check")
+
+    fixes = run_grammar_check(article, language, db)
+    checked_at = (
+        article.grammar_checked_en_at if language is Language.EN else article.grammar_checked_es_at
+    )
+    db.commit()
+    schedule_reindex(background_tasks, article_id)
+
+    applied_count = sum(1 for fix in fixes if fix.applied)
+    return GrammarCheckResponse(
+        article_id=article_id,
+        language=language.value,
+        fixes=[
+            GrammarFixItem(
+                find=fix.find,
+                replace=fix.replace,
+                applied=fix.applied,
+                skipped_reason=fix.skipped_reason,
+            )
+            for fix in fixes
+        ],
+        applied_count=applied_count,
+        skipped_count=len(fixes) - applied_count,
+        checked_at=checked_at,
+    )
+
+
+@router.post("/articles/{article_id}/es-accuracy-check", response_model=EsAccuracyCheckResponse)
+def es_accuracy_check_article(
+    article_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> EsAccuracyCheckResponse:
+    """
+    Check that the Spanish says what the (fact-checked) English says (#557).
+
+    Runs after translation: one Sonnet comparison of the Spanish title, excerpt
+    and body against the English, returning FIND/REPLACE fixes for the Spanish
+    only — meaning differences (numbers, dates, names, negations, omitted or
+    added claims), never style. Applies every fix whose FIND occurs exactly
+    once and audits applied and skipped fixes in ``grammar_check_fixes``
+    (``source=ES_ACCURACY``).
+
+    Synchronous, like the grammar check. Replays converge (#495): nothing is
+    stamped, a re-run is always allowed, and zero fixes is a 200.
+    """
+    article = _get_article_or_404(article_id, db)
+    if not (article.content or "").strip():
+        raise HTTPException(status_code=400, detail="Article has no English content to compare")
+    if not (article.content_es or "").strip():
+        raise HTTPException(status_code=400, detail="Article has no Spanish translation to check")
+
+    fixes = run_es_accuracy_check(article, db)
+    db.commit()
+    schedule_reindex(background_tasks, article_id)
+
+    applied_count = sum(1 for fix in fixes if fix.applied)
+    return EsAccuracyCheckResponse(
+        article_id=article_id,
+        fixes=[
+            GrammarFixItem(
+                find=fix.find,
+                replace=fix.replace,
+                applied=fix.applied,
+                skipped_reason=fix.skipped_reason,
+            )
+            for fix in fixes
+        ],
+        applied_count=applied_count,
+        skipped_count=len(fixes) - applied_count,
     )

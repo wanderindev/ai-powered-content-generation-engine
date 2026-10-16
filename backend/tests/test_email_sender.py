@@ -51,8 +51,8 @@ class TestSendEmailHappyPath:
     def test_send_email_uses_configured_host_port_timeout(self, smtp_mock):
         ctor, _ = smtp_mock
         send_email("r@example.com", "S", "B")
-        # Default settings: smtp-relay.gmail.com:587, timeout=10
-        ctor.assert_called_once_with("smtp-relay.gmail.com", 587, timeout=10)
+        # conftest points the host at smtp.invalid (#563); port/timeout are defaults.
+        ctor.assert_called_once_with("smtp.invalid", 587, timeout=10)
 
     def test_send_email_constructs_html_message_with_headers(self, smtp_mock):
         _, instance = smtp_mock

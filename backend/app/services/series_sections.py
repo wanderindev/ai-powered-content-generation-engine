@@ -5,6 +5,7 @@ Generates "About this Article" and "Continue Reading" sections for articles
 that are part of a series, with proper bilingual support and links.
 """
 
+import re
 from dataclasses import dataclass
 
 from fastapi import HTTPException
@@ -14,7 +15,6 @@ from sqlalchemy.orm import Session
 from app.models.article import Article
 from app.models.article_suggestion import ArticleSuggestion
 from app.models.research import Research
-from app.utils.slug import generate_slug
 
 # Marker strings used by the about-this-article header. These are the
 # deterministic signal that an article has already been processed by
@@ -22,6 +22,50 @@ from app.utils.slug import generate_slug
 # refusal below and by scripts/one_off/cleanup_articles_39_40.py.
 ABOUT_MARKER_EN = "**About this Article**"
 ABOUT_MARKER_ES = "**Acerca de este artículo**"
+
+# --- Splitting stored content back into (about, body, continue) -------------
+# The About block is prepended and ends at the first horizontal rule; the
+# Continue Reading block is appended and starts at its bold header, optionally
+# preceded by a rule (36 older series members carry the CTA with no rule, and
+# the markdownify round trip has historically emitted ``* * *`` and ``***``
+# variants), so both patterns are deliberately tolerant. Everything between is
+# the article body. Both languages' markers are matched regardless of which
+# column is being split, so a mis-tagged row cannot leak a section into the body.
+_SECTION_RULE = r"(?:-{3,}|\* \* \*)"
+_ABOUT_SECTION_RE = re.compile(
+    r"\A(\*{2,3}\s*(?:About this Article|Acerca de este artículo)\s*\*{2,3}"
+    r".*?\n" + _SECTION_RULE + r"[ \t]*\n\n?)",
+    re.DOTALL,
+)
+_CONTINUE_SECTION_RE = re.compile(
+    r"(\n+(?:" + _SECTION_RULE + r"[ \t]*\n+)?"
+    r"\*{2,3}\s*(?:Continue Reading|Continuar leyendo)\s*\*{2,3}.*)\Z",
+    re.DOTALL,
+)
+
+
+def split_series_sections(content: str | None) -> tuple[str, str, str]:
+    """Split stored article markdown into ``(about, body, continue_reading)``.
+
+    Each part keeps its own surrounding whitespace so that
+    ``about + body + continue_reading == content`` holds exactly; a consumer
+    that rewrites only the body (the Grammarly apply endpoint) re-attaches the
+    sections byte-for-byte. Absent sections come back as ``""``.
+    """
+    if not content:
+        return "", "", ""
+    about = ""
+    rest = content
+    match = _ABOUT_SECTION_RE.match(rest)
+    if match:
+        about = match.group(1)
+        rest = rest[match.end() :]
+    continue_reading = ""
+    match = _CONTINUE_SECTION_RE.search(rest)
+    if match:
+        continue_reading = match.group(1)
+        rest = rest[: match.start()]
+    return about, rest, continue_reading
 
 
 @dataclass
@@ -101,8 +145,10 @@ class SeriesSectionGenerator:
                 id=row.id,
                 title=row.title,
                 title_es=row.title_es,
-                slug=generate_slug(row.title),
-                slug_es=generate_slug(row.title_es) if row.title_es else generate_slug(row.title),
+                slug=row.slug,
+                # SeriesArticleInfo.slug_es is non-optional for the link writer;
+                # fall back to the English slug the way the old property did.
+                slug_es=row.slug_es or row.slug,
                 series_order=row.series_order if row.series_order else 1,
                 has_content_es=row.content_es is not None,
             )
@@ -262,13 +308,28 @@ class SeriesSectionGenerator:
             .all()
         }
 
+        # Idempotent replay: the weekly planner schedules a series-sections
+        # task per member, and each one regenerates the WHOLE series — once
+        # the first succeeds, its siblings must converge as a no-op success,
+        # not park FAILED on the refuse-on-rerun 400 below.
+        with_marker = [
+            info.id
+            for info in articles
+            if (row := article_rows.get(info.id)) is not None
+            and row.content
+            and ABOUT_MARKER_EN in row.content
+        ]
+        if len(with_marker) == len(articles) and articles:
+            return True, "Series sections already generated", 0
+
         # Refuse-on-rerun policy for #99. Check ALL articles before mutating
         # any. The continue-marker is not checked: it is conditionally
         # absent for the last article in the series and would produce false
         # positives. The about-marker is the deterministic signal.
         # HTTPException(400) matches the surface of the other
         # regeneration-guarded flows in this pipeline (write_article,
-        # translate_article, generate-outlines).
+        # translate_article, generate-outlines). Reached only for a PARTIALLY
+        # marked series — an inconsistent state a human has to untangle.
         for info in articles:
             row = article_rows.get(info.id)
             if row is None:

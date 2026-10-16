@@ -17,6 +17,7 @@ Dockerfiles); a missing browser surfaces as a clear runtime error.
 """
 
 import logging
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import UTC, datetime
 
@@ -28,6 +29,8 @@ from app.services.image_storage import ImageStorageService
 from app.services.slide_html import autofit_script, build_slide_html, heroicons_script
 
 logger = logging.getLogger(__name__)
+
+ProgressCallback = Callable[[int, int, str], None]
 
 # Fixed 16:9 frame at device-scale 1 → the screenshot is exactly 1280x720 px.
 VIEWPORT = {"width": 1280, "height": 720}
@@ -97,7 +100,10 @@ def render_to_png(html: str) -> bytes:
 
 
 def render_material_slides(
-    material: EduMaterial, db: Session, positions: set[int] | None = None
+    material: EduMaterial,
+    db: Session,
+    positions: set[int] | None = None,
+    progress: ProgressCallback | None = None,
 ) -> dict:
     """Render a slides-material's slides to branded PNG frames.
 
@@ -116,6 +122,9 @@ def render_material_slides(
     resolved/missing now mean picked/unpicked (over the rendered subset), so the
     admin can spot slides still waiting on a photo before assembling the video.
     Raises ``ValueError`` if the material has no slides (or the subset is empty).
+
+    ``progress(done, total, current)`` is called after each frame is uploaded —
+    the background-job runner (#346) commits there, so frames persist per slide.
     """
     slides = material.slides  # relationship is ordered by EduSlide.position
     if not slides:
@@ -123,6 +132,7 @@ def render_material_slides(
     if positions is not None and not any(s.position in positions for s in slides):
         raise ValueError("None of the requested positions match this deck's slides")
 
+    targeted = sum(1 for s in slides if positions is None or s.position in positions)
     rendered = 0
     images_resolved = 0
     # The kit's kicker line, shared by every slide of the deck (and the
@@ -160,6 +170,8 @@ def render_material_slides(
                 key = f"materials/slides/frames/{material.id}/{slide.position:02d}.png"
                 slide.image_url = storage.upload_image(png, key, "image/png")
                 rendered += 1
+                if progress is not None:
+                    progress(rendered, targeted, f"slide {slide.position}")
     finally:
         storage.close()
 

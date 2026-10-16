@@ -21,6 +21,7 @@ from app.prompts.edu_material_generation import (
     build_edu_narration_prompt,
     build_edu_slides_prompt,
 )
+from app.prompts.article_generation import build_article_prompt
 from app.prompts.image_generation import build_image_prompt
 from app.prompts.suggestion_generation import build_historical_suggestion_prompt
 
@@ -459,7 +460,7 @@ class TestBuildEduNarrationPrompt:
 class TestReviewLadderForBand:
     def test_known_bands(self):
         assert _review_ladder_for_band("3rd-6th") == (4, 2, 1)
-        assert _review_ladder_for_band("4th-6th") == (4, 2, 1)
+        assert _review_ladder_for_band("4th-8th") == (4, 2, 1)
         assert _review_ladder_for_band("7th-8th") == (6, 3, 2)
         assert _review_ladder_for_band("9th-12th") == (8, 4, 3)
 
@@ -557,3 +558,18 @@ class TestBlocksPromptRedesign:
         prompt = _blocks_prompt(title="Fixed Name")
         assert "must be EXACTLY the TITLE" in prompt
         assert "TITLE: Fixed Name" in prompt
+
+
+class TestBuildArticlePrompt:
+    def test_forbids_bold_and_italics(self):
+        """#540: emphasis runs are what Grammarly suggestions trip over."""
+        prompt = build_article_prompt(
+            research_content="r",
+            outline="## O",
+            title="T",
+            suggestion_point_of_view="pov",
+            category_name="c",
+            taxonomy_name="t",
+        )
+        assert "Do NOT use bold or italic markdown" in prompt
+        assert "titles of works" in prompt

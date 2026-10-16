@@ -2,7 +2,6 @@ import ExcursionsHero from '../components/sections/academic/ExcursionsHero.jsx'
 import ValueProp from '../components/sections/academic/ValueProp.jsx'
 import Methodology from '../components/sections/academic/Methodology.jsx'
 import ExperienceShowcase from '../components/sections/academic/ExperienceShowcase.jsx'
-import ResourcesSection from '../components/sections/academic/ResourcesSection.jsx'
 import ExcursionsCTA from '../components/sections/academic/ExcursionsCTA.jsx'
 
 export default function AcademicExcursions() {
@@ -12,7 +11,6 @@ export default function AcademicExcursions() {
             <ValueProp />
             <Methodology />
             <ExperienceShowcase />
-            <ResourcesSection />
             <ExcursionsCTA />
         </>
     )

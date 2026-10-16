@@ -1,0 +1,234 @@
+name: Deploy
+
+# Builds the two prod images and pushes them to the DO container registry.
+# Watchtower on the droplet polls `latest` every 300s and restarts the
+# containers, so this workflow never touches the server.
+#
+# Triggered via `workflow_run` rather than `on: push` because the issue
+# requires gating on green CI, and a plain push trigger cannot wait for
+# another workflow. `workflow_run` fires on failed CI runs too, so every job
+# carries an explicit `conclusion == 'success'` guard — that guard is what
+# enforces "never deploy a red main".
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Queue deploys instead of cancelling them: a cancelled run could leave
+# `latest` updated for one image and stale for the other.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+env:
+  REGISTRY: registry.digitalocean.com/wanderindev
+  # Tag and check out the exact commit CI validated (falls back to the
+  # dispatch ref's SHA for manual runs).
+  IMAGE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  # The BuildKit image every build job boots (#647/#677).
+  BUILDKIT_IMAGE: public.ecr.aws/vend/moby/buildkit:buildx-stable-1
+
+jobs:
+  changes:
+    name: Changes
+    # `paths:` filters are unavailable on workflow_run, so path filtering is
+    # done here from the commit diff.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.IMAGE_SHA }}
+          fetch-depth: 2
+
+      # Known limitation: a multi-commit *direct* push to main diffs only the
+      # tip commit. main is PR-merge driven under branch protection, so the
+      # merge/squash commit diffs the whole PR against the previous main tip;
+      # workflow_dispatch (which forces both builds) covers the rare miss.
+      - name: Detect changed services
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual dispatch: building everything"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            echo "no parent commit: building everything"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only HEAD^ HEAD)
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^(backend/|docker/backend/)'; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$CHANGED" | grep -qE '^(frontend/|docker/frontend/)'; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-backend:
+    name: Build & push backend
+    needs: changes
+    if: |
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+      && needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.IMAGE_SHA }}
+
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to the DO registry
+        run: doctl registry login --expiry-seconds 1200
+
+      # BuildKit comes from the ECR mirror (#647), whose anonymous limit is per
+      # second per IP, so two deploys starting together can get
+      # "toomanyrequests: Rate exceeded" while the builder boots (#677). buildx
+      # contacts the registry on every bootstrap even when the image is cached,
+      # so a pre-pull does not help: retry creating the builder instead.
+      # (Replaces docker/setup-buildx-action, which has no retry; buildx is
+      # preinstalled on ubuntu-latest, and build-push-action still wires the
+      # gha cache.)
+      - name: Set up Buildx (retry on ECR rate limit)
+        run: |
+          for i in 1 2 3 4 5; do
+            docker buildx create --name pic --driver docker-container \
+              --driver-opt "image=$BUILDKIT_IMAGE" --use --bootstrap && exit 0
+            docker buildx rm pic >/dev/null 2>&1 || true
+            [ "$i" -lt 5 ] || break
+            echo "buildx bootstrap failed (attempt $i), retrying in $((i * 10))s"
+            sleep $((i * 10))
+          done
+          echo "buildx bootstrap failed 5 times" >&2
+          exit 1
+
+      # GHA layer cache is best-effort — the backend image is large enough that
+      # entries may be evicted, which costs build time but never correctness.
+      - name: Build and push pic-backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          builder: pic
+          file: docker/backend/Dockerfile.prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/pic-backend:latest
+            ${{ env.REGISTRY }}/pic-backend:${{ env.IMAGE_SHA }}
+          cache-from: type=gha,scope=pic-backend
+          cache-to: type=gha,mode=max,scope=pic-backend
+
+  build-frontend:
+    name: Build & push frontend
+    needs: changes
+    if: |
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+      && needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.IMAGE_SHA }}
+
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to the DO registry
+        run: doctl registry login --expiry-seconds 1200
+
+      # BuildKit comes from the ECR mirror (#647), whose anonymous limit is per
+      # second per IP, so two deploys starting together can get
+      # "toomanyrequests: Rate exceeded" while the builder boots (#677). buildx
+      # contacts the registry on every bootstrap even when the image is cached,
+      # so a pre-pull does not help: retry creating the builder instead.
+      # (Replaces docker/setup-buildx-action, which has no retry; buildx is
+      # preinstalled on ubuntu-latest, and build-push-action still wires the
+      # gha cache.)
+      - name: Set up Buildx (retry on ECR rate limit)
+        run: |
+          for i in 1 2 3 4 5; do
+            docker buildx create --name pic --driver docker-container \
+              --driver-opt "image=$BUILDKIT_IMAGE" --use --bootstrap && exit 0
+            docker buildx rm pic >/dev/null 2>&1 || true
+            [ "$i" -lt 5 ] || break
+            echo "buildx bootstrap failed (attempt $i), retrying in $((i * 10))s"
+            sleep $((i * 10))
+          done
+          echo "buildx bootstrap failed 5 times" >&2
+          exit 1
+
+      # No build-args: every VITE_* arg defaults to its prod value inside
+      # docker/frontend/Dockerfile.prod, matching the /deploy skill.
+      - name: Build and push pic-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          builder: pic
+          file: docker/frontend/Dockerfile.prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/pic-frontend:latest
+            ${{ env.REGISTRY }}/pic-frontend:${{ env.IMAGE_SHA }}
+          cache-from: type=gha,scope=pic-frontend
+          cache-to: type=gha,mode=max,scope=pic-frontend
+
+  prune-tags:
+    name: Prune SHA tags
+    needs: [build-backend, build-frontend]
+    # `!cancelled()` is required so this still runs when one of the two builds
+    # was skipped by the path filter (a skipped `needs` otherwise skips this job).
+    if: ${{ !cancelled() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      # Keeps the newest 2 commit-SHA tags per PIC repo (one rollback target
+      # beyond the tag just pushed) and deletes older ones. KEEP=10 filled the
+      # 5 GB Basic plan to 222% by 2026-08 — backend images are ~1 GB each.
+      # `latest` is never touched, and neither is any other repository in
+      # the registry — `wanderindev` is shared with other projects
+      # (feliu-backend, feliu-frontend, pic-cert-watcher).
+      #
+      # The untagged manifests left behind are reclaimed by the registry's
+      # automated garbage collection (enabled account-wide since 2026-08;
+      # manual `doctl registry garbage-collection start` now returns 412 and
+      # is no longer needed).
+      - name: Prune old SHA tags
+        env:
+          KEEP: 2
+        run: |
+          set -euo pipefail
+          for repo in pic-backend pic-frontend; do
+            echo "== $repo =="
+            tags=$(doctl registry repository list-tags "$repo" --output json \
+              | jq -r 'sort_by(.updated_at) | reverse | .[].tag' \
+              | grep -E '^[0-9a-f]{40}$' || true)
+            i=0
+            for tag in $tags; do
+              i=$((i + 1))
+              if [ "$i" -le "$KEEP" ]; then
+                echo "keep   $tag"
+              else
+                echo "delete $tag"
+                doctl registry repository delete-tag "$repo" "$tag" --force
+              fi
+            done
+          done

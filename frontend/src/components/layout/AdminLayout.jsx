@@ -10,15 +10,19 @@ import {
   ShoppingCartIcon,
   CalendarIcon,
   CalendarDaysIcon,
+  QueueListIcon,
   Cog6ToothIcon,
   XMarkIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronRightIcon,
+  ExclamationTriangleIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { Bars3Icon } from '@heroicons/react/20/solid';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { AdminAuthProvider } from '../../contexts/AdminAuthProvider';
 import { useBeforeUnload } from '../../hooks/useBeforeUnload';
+import { useNewDeployAvailable } from '../../hooks/useNewDeployAvailable';
 
 const navigation = [
   { name: 'Home', href: '/admin/dashboard', icon: HomeIcon },
@@ -43,6 +47,8 @@ const navigation = [
   },
   { name: 'Instagram', href: '/admin/instagram', icon: CameraIcon },
   { name: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: CalendarIcon },
+  { name: 'Agent Tasks', href: '/admin/agent-tasks', icon: QueueListIcon },
+  { name: 'Approvals', href: '/admin/approvals', icon: ShieldCheckIcon },
   { name: 'Media Library', href: '/admin/media-library', icon: PhotoIcon },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCartIcon },
   { name: 'Bookings', href: '/admin/calendar', icon: CalendarDaysIcon },
@@ -225,6 +231,12 @@ function AdminLayoutInner() {
   // and #120 for the per-editor dirty tracking that becomes the source of truth).
   useBeforeUnload(false);
 
+  // #595: a tab opened before a deploy keeps running the old bundle against
+  // the new backend (article 246 was re-narrated in full that way, #594).
+  // The banner sits at z-[60], above the z-50 drawers, so it stays visible
+  // while a drawer is open (headless UI makes it inert until the drawer closes).
+  const newDeployAvailable = useNewDeployAvailable();
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -287,6 +299,26 @@ function AdminLayoutInner() {
           <div className="flex-1" />
           <span className="text-sm text-gray-500">{adminEmail}</span>
         </div>
+
+        {newDeployAvailable && (
+          <div
+            role="alert"
+            className="sticky top-16 z-[60] flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:px-6 lg:px-8"
+          >
+            <ExclamationTriangleIcon aria-hidden="true" className="size-5 shrink-0 text-amber-600" />
+            <p className="flex-1 font-medium">
+              A new version of the admin was deployed — reload before running any generation.
+              Unsaved edits in an open drawer will be lost, so save them first.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-md bg-amber-600 px-3 py-1.5 font-semibold text-white shadow-xs hover:bg-amber-500"
+            >
+              Reload now
+            </button>
+          </div>
+        )}
 
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8">

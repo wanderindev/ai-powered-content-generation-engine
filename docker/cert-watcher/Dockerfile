@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM public.ecr.aws/docker/library/python:3.12-slim
 
 RUN pip install --no-cache-dir 'sentry-sdk>=2.0.0' 'cryptography>=42.0.0'
 

@@ -12,8 +12,9 @@ server-side session token bound to a 7-day window:
   If the mailing-list box is ticked, the double-opt-in subscription is delegated
   to ``services.mailing_list`` (unchanged), which sends the confirmation email;
   gate access is granted regardless of that confirmation.
-* ``validate_token(token)`` — resolve a Bearer token to an Educator for the
-  ``require_educator_access`` dependency. Used to gate every public-media route.
+* ``validate_token(token)`` — resolve a Bearer token to an Educator. (It used
+  to back the ``require_educator_access`` gate on ``/public-media``; that gate
+  was removed and the media library is now open to everyone.)
 * ``session(token)`` — refresh check for the frontend on mount.
 * ``unsubscribe(token)`` — token-authenticated; revokes the caller's own access
   and opts them out (#51 — no more unauthenticated email-only revocation).

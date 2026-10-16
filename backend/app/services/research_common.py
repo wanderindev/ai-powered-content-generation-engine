@@ -5,7 +5,7 @@ import re
 
 from fastapi import HTTPException, UploadFile
 
-from app.services.llm import HAIKU_MODEL, create_message
+from app.services.llm import HAIKU_MODEL, create_message, first_text
 
 # Upload size caps (#89). Research documents are markdown text targeting
 # 5000-8000 words (< ~1 MB); 5 MB is a generous ceiling. Material uploads are
@@ -99,7 +99,8 @@ def validate_research_document(
         message = create_message(
             feature="research_validate_subtopics",
             model=HAIKU_MODEL,
-            max_tokens=256,
+            max_tokens=2000,  # was 256 before thinking (#610)
+            output_config={"effort": "medium"},
             messages=[
                 {
                     "role": "user",
@@ -117,7 +118,7 @@ def validate_research_document(
             ],
         )
 
-        raw_response = message.content[0].text.strip()
+        raw_response = first_text(message).strip()
         # Strip markdown code fences if present
         if raw_response.startswith("```"):
             raw_response = re.sub(r"^```\w*\n?", "", raw_response)
@@ -163,7 +164,9 @@ def _generate_references_section(content: str) -> str | None:
     message = create_message(
         feature="research_references",
         model=HAIKU_MODEL,
-        max_tokens=4000,
+        # Thinking headroom at medium effort (#610); 8000 also streams.
+        max_tokens=8000,
+        output_config={"effort": "medium"},
         messages=[
             {
                 "role": "user",
@@ -184,7 +187,7 @@ def _generate_references_section(content: str) -> str | None:
         ],
     )
 
-    refs_text = message.content[0].text.strip()
+    refs_text = first_text(message).strip()
     if refs_text.startswith("## References") or refs_text.startswith("## Sources"):
         return content.rstrip() + "\n\n---\n\n" + refs_text
     return None

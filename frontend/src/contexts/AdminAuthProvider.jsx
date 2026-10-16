@@ -17,7 +17,7 @@ export function AdminAuthProvider({ children }) {
   const [loading, setLoading] = useState(() => !import.meta.env.DEV);
 
   async function logout() {
-    // Best-effort server-side revocation so the 24h token can't be replayed
+    // Best-effort server-side revocation so the 7-day token can't be replayed
     // from history/logs after logout (#57). Clear local state regardless.
     const current = sessionStorage.getItem('adminToken');
     if (current && current !== 'dev-token') {
@@ -50,7 +50,7 @@ export function AdminAuthProvider({ children }) {
       // *fragment* (#token=...), which browsers never send to the server (no
       // access-log / Referer leak); we stash it in sessionStorage and strip it
       // from the URL. Query (?token=) is read only as a fallback so magic links
-      // already in flight before this change keep working for their 24h window.
+      // already in flight before this change keep working for their 7-day window.
       const hashMatch = window.location.hash.match(/(?:^#|&)token=([^&]+)/);
       const queryToken = new URLSearchParams(window.location.search).get('token');
       const landingToken = hashMatch ? decodeURIComponent(hashMatch[1]) : queryToken;

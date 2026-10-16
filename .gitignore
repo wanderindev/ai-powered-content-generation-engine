@@ -70,3 +70,6 @@ docs/wander-in-dev
 # agents report). Untracked so concurrent agent PRs don't all conflict on
 # it, which was forcing an update-pr + CI run per PR (cost guardrail 2026-05-30).
 docs/agent-fixes/agent-friendly-outcomes.md
+
+# RAG eval working drafts (#627): curated into golden.json
+backend/eval/rag/drafts/

@@ -176,9 +176,7 @@ class TestScheduling:
         assert resp.json()["scheduled_at"] is None
 
     def test_publish_now_503_when_unconfigured(self, test_db, test_client, admin_token):
-        post = _seed_post(
-            test_db, status="APPROVED", image_url="https://cdn.example.com/i.jpg"
-        )
+        post = _seed_post(test_db, status="APPROVED", image_url="https://cdn.example.com/i.jpg")
         resp = test_client.post(f"{BASE}/posts/{post.id}/publish-now")
         assert resp.status_code == 503
 
@@ -194,6 +192,74 @@ class TestScheduling:
             json={"scheduled_at": "2027-01-01T12:00:00Z"},
         )
         assert resp.status_code == 400
+
+
+class TestPromoScheduleFollowsPublishDate:
+    """#576: an article promo's time is derived from the article's published_at."""
+
+    def _promo(self, test_db, article_id):
+        return _seed_post(
+            test_db,
+            post_type="ARTICLE_PROMO",
+            template_variant=None,
+            fact=None,
+            status="APPROVED",
+            article_id=article_id,
+            image_url="https://cdn.example.com/p.jpg",
+        )
+
+    def test_no_body_derives_day_after_publish_at_17_utc(
+        self, test_db, test_client, admin_token, article_factory
+    ):
+        article = article_factory(published_at=datetime(2027, 3, 10, 12, 0, tzinfo=UTC))
+        post = self._promo(test_db, article.id)
+
+        resp = test_client.patch(f"{BASE}/posts/{post.id}/schedule")
+        assert resp.status_code == 200
+        assert resp.json()["scheduled_at"].startswith("2027-03-11T17:00:00")
+        assert resp.json()["derived_state"] == "SCHEDULED"
+
+        # A driver replay converges on the same time (200, not 400).
+        replay = test_client.patch(f"{BASE}/posts/{post.id}/schedule", json={})
+        assert replay.status_code == 200
+        assert replay.json()["scheduled_at"] == resp.json()["scheduled_at"]
+
+    def test_null_scheduled_at_also_derives(
+        self, test_db, test_client, admin_token, article_factory
+    ):
+        article = article_factory(published_at=datetime(2027, 3, 10, 23, 30, tzinfo=UTC))
+        post = self._promo(test_db, article.id)
+        resp = test_client.patch(f"{BASE}/posts/{post.id}/schedule", json={"scheduled_at": None})
+        assert resp.status_code == 200
+        assert resp.json()["scheduled_at"].startswith("2027-03-11T17:00:00")
+
+    def test_refused_while_article_has_no_publish_date(
+        self, test_db, test_client, admin_token, article_factory
+    ):
+        article = article_factory(published_at=None)
+        post = self._promo(test_db, article.id)
+        resp = test_client.patch(f"{BASE}/posts/{post.id}/schedule")
+        assert resp.status_code == 409
+        assert "publish date" in resp.json()["detail"]
+        test_db.refresh(post)
+        assert post.scheduled_at is None
+
+    def test_explicit_time_still_wins_for_manual_scheduling(
+        self, test_db, test_client, admin_token, article_factory
+    ):
+        article = article_factory(published_at=datetime(2027, 3, 10, 12, 0, tzinfo=UTC))
+        post = self._promo(test_db, article.id)
+        resp = test_client.patch(
+            f"{BASE}/posts/{post.id}/schedule", json={"scheduled_at": "2027-04-01T15:00:00Z"}
+        )
+        assert resp.status_code == 200
+        assert resp.json()["scheduled_at"].startswith("2027-04-01T15:00:00")
+
+    def test_sabias_que_requires_a_time(self, test_db, test_client, admin_token):
+        post = _seed_post(test_db, status="APPROVED", image_url="https://cdn.example.com/i.jpg")
+        resp = test_client.patch(f"{BASE}/posts/{post.id}/schedule")
+        assert resp.status_code == 400
+        assert "scheduled_at is required" in resp.json()["detail"]
 
 
 class TestRenderEndpoint:

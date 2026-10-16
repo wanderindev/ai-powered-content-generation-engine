@@ -30,3 +30,43 @@ export const StatusCell = ({ value }) => {
     </span>
   );
 };
+
+// "Possible duplicate" pill for the suggestions grid (#630). Advisory only: the
+// backend flags a suggestion whose topic is close to an existing article or
+// suggestion. An article match calls onOpenArticle(id) and a suggestion match
+// onOpenSuggestion(id), so the page opens that record's admin drawer. (Never a
+// public link: the match is computed with internal visibility, so it can be a
+// scheduled or unpublished article, #659.) No handler -> a plain pill.
+export const DuplicateCell = ({ data, onOpenSuggestion, onOpenArticle }) => {
+  if (!data) return null;
+  const { duplicate_article_id: articleId, duplicate_suggestion_id: suggestionId } = data;
+  if (!articleId && !suggestionId) return null;
+  const score = data.duplicate_similarity != null ? `${Math.round(data.duplicate_similarity * 100)}%` : '';
+  const title = articleId
+    ? data.duplicate_article_title || `Article #${articleId}`
+    : data.duplicate_suggestion_title || `Suggestion #${suggestionId}`;
+  const kind = articleId ? 'article' : 'suggestion';
+  const label = `Possible duplicate ${score}`.trim();
+  const tooltip = `Possible duplicate of ${kind}: ${title}${score ? ` (similarity ${score})` : ''}`;
+  const className =
+    'inline-flex max-w-full items-center truncate rounded px-1.5 py-0.5 text-xs font-medium text-amber-800 bg-amber-50 ring-1 ring-inset ring-amber-600/20 hover:bg-amber-100';
+  if (articleId && onOpenArticle) {
+    return (
+      <button type="button" title={tooltip} className={className} onClick={() => onOpenArticle(articleId)}>
+        {label}: {title}
+      </button>
+    );
+  }
+  if (suggestionId && onOpenSuggestion) {
+    return (
+      <button type="button" title={tooltip} className={className} onClick={() => onOpenSuggestion(suggestionId)}>
+        {label}: {title}
+      </button>
+    );
+  }
+  return (
+    <span title={tooltip} className={className}>
+      {label}: {title}
+    </span>
+  );
+};

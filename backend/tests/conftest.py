@@ -13,22 +13,129 @@ import os
 # unconditionally (not setdefault) so a stray ENVIRONMENT=dev/production in the
 # shell can't defeat the gate; ENVIRONMENT is only ever read by that gate.
 os.environ["ENVIRONMENT"] = "test"
+# Point the SMTP relay at an unresolvable host (RFC 2606 reserves .invalid) so
+# a send that somehow gets past the ``smtp_outbox`` guard below fails DNS
+# instead of reaching the IP-allowlisted Workspace relay, which would deliver
+# it as @panamaincontext.com (#563). Unconditional, like ENVIRONMENT.
+os.environ["SMTP_RELAY_HOST"] = "smtp.invalid"
+# No test may call Voyage for real (#624): the indexer runs as a background task
+# behind every article write, so a key in the shell would embed test fixtures.
+# Tests that exercise the seam set a fake key with monkeypatch.
+os.environ["VOYAGE_API_KEY"] = ""
 
+import smtplib  # noqa: E402
+import warnings  # noqa: E402
+
+import docker.errors  # noqa: E402
 import pytest  # noqa: E402
+import requests  # noqa: E402
 from app.core.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.models.search_sql import SEARCH_PREREQUISITES_SQL  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from testcontainers.postgres import PostgresContainer  # noqa: E402
 
 
+class _RecordingSMTP:
+    """Stand-in for ``smtplib.SMTP``: records each message, never opens a socket."""
+
+    def __init__(self, outbox, host="", port=0, timeout=None, **kwargs):
+        self._outbox = outbox
+        self.host, self.port = host, port
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def ehlo(self, *args, **kwargs):
+        return (250, b"ok")
+
+    def starttls(self, *args, **kwargs):
+        return (220, b"ok")
+
+    def send_message(self, msg, *args, **kwargs):
+        self._outbox.append(msg)
+        return {}
+
+    def quit(self):
+        return (221, b"bye")
+
+
+@pytest.fixture(autouse=True)
+def smtp_outbox(monkeypatch):
+    """Global SMTP guard (#563): no test can send real email.
+
+    The backend's only transport is ``email_sender.send_email`` over
+    ``smtplib.SMTP`` to an IP-allowlisted relay that needs no credentials, so
+    an unguarded test delivered real mail from any allowlisted machine (a
+    managed-agents sandbox did on 2026-10-05). Replacing ``smtplib.SMTP`` on
+    the module covers every caller. Request this fixture by name to assert on
+    what was sent: it is the list of ``email.message.Message`` objects. A test
+    that patches ``smtplib.SMTP`` or ``send_email`` itself (test_email_sender,
+    test_notifications_dispatch) still wins, since its patch is applied later.
+    ``send_email`` additionally refuses outright if it ever sees the real class
+    under ENVIRONMENT=test (see ``RealSendBlockedError``).
+    """
+    outbox: list = []
+    monkeypatch.setattr(
+        smtplib, "SMTP", lambda *args, **kwargs: _RecordingSMTP(outbox, *args, **kwargs)
+    )
+    return outbox
+
+
 # PostgreSQL container for testing
 @pytest.fixture(scope="session")
 def postgres_container():
-    """Start a PostgreSQL container for the test session."""
-    with PostgresContainer("postgres:17-alpine") as postgres:
+    """Start a PostgreSQL container for the test session.
+
+    ``PIC_TEST_PG_IMAGE`` overrides the image. CI sets it to ``pic-test-pg:17``,
+    built from ``docker/test-db/Dockerfile`` (the ECR mirror of the official
+    image plus pgvector), because runners hit Docker Hub's pull rate limit on
+    ``pgvector/pgvector``.
+    """
+    image = os.environ.get("PIC_TEST_PG_IMAGE") or "pgvector/pgvector:pg17"
+    postgres = PostgresContainer(image)
+    # Explicit start/stop instead of ``with`` (#735): ``__exit__`` lets a
+    # Docker timeout on the force-remove fail an all-green session. A start
+    # failure still raises (it happens before the ``try``); only the stop is
+    # made non-fatal.
+    postgres.start()
+    try:
         yield postgres
+    finally:
+        _stop_test_container(postgres)
+
+
+# Docker errors a teardown may swallow: the API read timing out (60 s default)
+# or the daemon refusing/failing the remove. Anything else still raises.
+_TEARDOWN_DOCKER_ERRORS = (
+    requests.exceptions.Timeout,
+    requests.exceptions.ConnectionError,
+    docker.errors.APIError,
+)
+
+
+def _stop_test_container(container):
+    """Stop and remove a test container; a Docker failure warns, never raises.
+
+    The test Postgres is disposable: on CI the runner is thrown away with it
+    (Ryuk is disabled there), and locally Ryuk reaps an orphan when the session
+    ends. So a slow ``remove(force=True)`` after ~2,900 passing tests must not
+    turn the run red (#735) — it surfaces in the pytest warnings summary.
+    """
+    try:
+        container.stop()
+    except _TEARDOWN_DOCKER_ERRORS as exc:
+        warnings.warn(
+            f"Ignoring a Docker error while removing the test Postgres container "
+            f"(it is disposable): {type(exc).__name__}: {exc}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
 
 @pytest.fixture(scope="session")
@@ -38,6 +145,14 @@ def test_engine(postgres_container):
         postgres_container.get_connection_url(),
         pool_pre_ping=True,
     )
+    # DB objects the models depend on but create_all cannot make: the
+    # extensions and IMMUTABLE wrappers behind the media search_vector
+    # generated columns (#590). Same SQL as migration 0041. Plus pgvector
+    # (#621, migration 0043) — why the container is the pgvector image.
+    with engine.begin() as conn:
+        for stmt in SEARCH_PREREQUISITES_SQL:
+            conn.execute(text(stmt))
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public"))
     # Create all tables
     Base.metadata.create_all(bind=engine)
     yield engine
@@ -108,6 +223,39 @@ def test_client(test_db):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def edu_job_session(test_engine):
+    """Point the edu job runner's own session factory at the test database.
+
+    The long edu endpoints return 202 and run ``run_edu_job`` as a background
+    task (#346), which ``TestClient`` executes after the response; the runner
+    opens ``SessionLocal()`` itself rather than using the request's session.
+    """
+    from unittest.mock import patch
+
+    from app.services import edu_jobs
+
+    factory = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    with patch.object(edu_jobs, "SessionLocal", factory):
+        yield
+
+
+@pytest.fixture
+def narration_job_session(test_engine):
+    """Point the article narration job runner's session factory at the test DB.
+
+    ``generate-audio`` returns 202 and runs ``run_article_narration_job`` as a
+    background task (#547) — same reason as ``edu_job_session``.
+    """
+    from unittest.mock import patch
+
+    from app.services import article_narration_job
+
+    factory = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    with patch.object(article_narration_job, "SessionLocal", factory):
+        yield
 
 
 @pytest.fixture
@@ -249,6 +397,7 @@ def article_factory(test_db, category_factory, suggestion_factory, research_fact
 
     def create(
         title="Test Article",
+        title_es=None,
         content="Test content",
         excerpt="Test excerpt",
         status="APPROVED",
@@ -275,6 +424,7 @@ def article_factory(test_db, category_factory, suggestion_factory, research_fact
             published_at = datetime.now(UTC) - timedelta(seconds=1)
         article = Article(
             title=title,
+            title_es=title_es,
             content=content,
             excerpt=excerpt,
             status=status,

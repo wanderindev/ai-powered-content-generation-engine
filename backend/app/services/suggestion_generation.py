@@ -4,9 +4,11 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.models.article_suggestion import ArticleSuggestion
 from app.models.category import Category, Taxonomy
 from app.prompts.suggestion_generation import build_historical_suggestion_prompt
+from app.services import suggestion_dedup
 from app.services.llm import SONNET_MODEL, create_message, parse_llm_json
 
 # Thinking counts *toward* max_tokens, so the real output budget is
@@ -42,14 +44,41 @@ def generate_historical_suggestions(
         .all()
     ]
 
-    prompt = build_historical_suggestion_prompt(
-        taxonomy_name=taxonomy.name,
-        taxonomy_description=taxonomy.description,
-        category_name=category.name,
-        category_description=category.description,
-        num_suggestions=num_suggestions,
-        existing_titles=existing_titles,
-    )
+    # Semantic dedup (#630) runs only when the flag is on; off, this function
+    # issues exactly the pre-#630 prompt, calls and rows.
+    dedup_enabled = get_settings().suggestion_dedup_enabled
+    if dedup_enabled:
+        # Read everything the prompt needs before the steer step commits (a
+        # commit expires the ORM objects, and reloading them would pin a pooled
+        # connection through the LLM call).
+        prompt_fields = {
+            "taxonomy_name": taxonomy.name,
+            "taxonomy_description": taxonomy.description,
+            "category_name": category.name,
+            "category_description": category.description,
+        }
+        covered_titles = suggestion_dedup.covered_article_titles(
+            db,
+            category_name=prompt_fields["category_name"],
+            category_description=prompt_fields["category_description"],
+            limit=get_settings().suggestion_dedup_steer_titles,
+        )
+        prompt = build_historical_suggestion_prompt(
+            **prompt_fields,
+            num_suggestions=num_suggestions,
+            existing_titles=existing_titles,
+            covered_article_titles=covered_titles,
+        )
+        db.commit()  # no connection held through the LLM call
+    else:
+        prompt = build_historical_suggestion_prompt(
+            taxonomy_name=taxonomy.name,
+            taxonomy_description=taxonomy.description,
+            category_name=category.name,
+            category_description=category.description,
+            num_suggestions=num_suggestions,
+            existing_titles=existing_titles,
+        )
 
     message = create_message(
         feature="suggestion_generation",
@@ -85,5 +114,9 @@ def generate_historical_suggestions(
     db.commit()
     for s in suggestions:
         db.refresh(s)
+
+    if dedup_enabled:
+        # Advisory only: never raises, never blocks or deletes a suggestion.
+        suggestion_dedup.flag_duplicates(db, suggestions)
 
     return suggestions

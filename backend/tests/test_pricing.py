@@ -12,7 +12,7 @@ from app.models import (
     ZoneTransportRate,
 )
 from app.schemas.booking import ParticipantBreakdown, ParticipantCategory, TransportRequest
-from app.services.pricing import PricingEngine
+from app.services.pricing import PricingEngine, calculate_fixed_price
 
 
 @pytest.fixture
@@ -411,3 +411,180 @@ class TestTransportCost:
         # 30 * (3 + 1) = 120
         assert cost == Decimal("120.00")
         assert quote_required is False
+
+# The exact fixed_price_config stored in production for the siete-iglesias tour,
+# which already took real bookings under the original two-key format.
+LEGACY_CONFIG = {
+    "adult": 20.00,
+    "child_5_10": 12.50,
+    "child_under_5": 0,
+    "senior_discount_pct": 20,
+}
+
+# The same price grid written with the explicit keys: 20% off $20 is a flat $16,
+# and 10-17-year-olds paid the adult price. Pricing a booking either way must
+# come out to the same cent.
+EXPLICIT_EQUIVALENT_CONFIG = {
+    "adult": 20.00,
+    "senior": 16.00,
+    "child_10_17": 20.00,
+    "child_5_10": 12.50,
+    "child_under_5": 0,
+}
+
+# Panama Viejo 507th anniversary: a grid the legacy format cannot express,
+# because 10-17-year-olds pay the child rate rather than the adult rate.
+PANAMA_VIEJO_507_CONFIG = {
+    "adult": 15.00,
+    "senior": 10.00,
+    "child_10_17": 5.00,
+    "child_5_10": 5.00,
+    "child_under_5": 0,
+}
+
+# Mixes covering every age category alone and in combination.
+PARTICIPANT_MIXES = [
+    {"adult": 1},
+    {"adult": 2, "child_5_10": 1},
+    {"senior_female": 1},
+    {"senior_male": 2},
+    {"senior_female": 1, "senior_male": 1, "adult": 2},
+    {"child_10_17": 3},
+    {"child_under_5": 2, "adult": 1},
+    {"child_under_5": 1},
+    {
+        "senior_female": 2,
+        "senior_male": 1,
+        "adult": 3,
+        "child_10_17": 2,
+        "child_5_10": 2,
+        "child_under_5": 1,
+    },
+]
+
+
+def _pax(**counts):
+    """Build a ParticipantBreakdown from plain counts, e.g. _pax(adult=2)."""
+    return ParticipantBreakdown(
+        **{key: ParticipantCategory(resident=0, tourist=n) for key, n in counts.items()}
+    )
+
+
+class TestFixedPrice:
+    """Tests for calculate_fixed_price (open-group tours)."""
+
+    @pytest.mark.parametrize("mix", PARTICIPANT_MIXES)
+    def test_legacy_and_explicit_configs_agree(self, mix):
+        """
+        The two config formats are two spellings of one price grid.
+
+        This is the guard against the newer `senior` / `child_10_17` keys quietly
+        repricing a tour that was configured before they existed: every field of
+        the breakdown must match, not just the grand total.
+        """
+        participants = _pax(**mix)
+
+        legacy = calculate_fixed_price(LEGACY_CONFIG, participants)
+        explicit = calculate_fixed_price(EXPLICIT_EQUIVALENT_CONFIG, participants)
+
+        assert legacy.grand_total == explicit.grand_total
+        assert legacy.service_total == explicit.service_total
+        assert legacy.service_per_pax == explicit.service_per_pax
+        assert legacy.senior_discount == explicit.senior_discount
+        assert legacy.tickets_total == explicit.tickets_total
+        assert legacy.transport_total == explicit.transport_total
+
+    def test_legacy_config_totals_unchanged(self):
+        """
+        Golden totals for the production siete-iglesias config.
+
+        Hand-computed against the original implementation, so a future edit that
+        changes what that tour charges has to fail here first.
+        """
+        participants = _pax(
+            senior_female=2,
+            senior_male=1,
+            adult=3,
+            child_10_17=2,
+            child_5_10=2,
+            child_under_5=1,
+        )
+
+        price = calculate_fixed_price(LEGACY_CONFIG, participants)
+
+        # 3 seniors + 3 adults + 2 teens at $20 = $160, 2 children at $12.50 = $25,
+        # 1 infant free. Pre-discount $185, less 20% on the 3 seniors ($12).
+        assert price.service_total == Decimal("185.00")
+        assert price.senior_discount == Decimal("12.00")
+        assert price.grand_total == Decimal("173.00")
+        assert price.service_per_pax == Decimal("20.00")
+
+    def test_panama_viejo_507_totals(self):
+        """Golden totals for the anniversary grid: $15 / $10 / $5 / free."""
+        participants = _pax(adult=2, senior_female=1, child_10_17=1, child_5_10=1, child_under_5=1)
+
+        price = calculate_fixed_price(PANAMA_VIEJO_507_CONFIG, participants)
+
+        # 2 adults $30 + 1 jubilado $10 + 2 menores $10 + 1 infant free = $50.
+        assert price.grand_total == Decimal("50.00")
+        # The $5 the senior rate saved is reported, not folded silently into the total.
+        assert price.senior_discount == Decimal("5.00")
+        assert price.service_total == Decimal("55.00")
+
+    def test_teens_pay_the_child_rate_only_when_configured(self):
+        """`child_10_17` is opt-in: without it teens keep paying the adult price."""
+        participants = _pax(child_10_17=2)
+
+        assert calculate_fixed_price(PANAMA_VIEJO_507_CONFIG, participants).grand_total == Decimal(
+            "10.00"
+        )
+        assert calculate_fixed_price(LEGACY_CONFIG, participants).grand_total == Decimal("40.00")
+
+    def test_flat_senior_price_wins_over_percentage(self):
+        """When a config carries both, the flat `senior` price is authoritative."""
+        both = {**LEGACY_CONFIG, "senior": 5.00}
+
+        price = calculate_fixed_price(both, _pax(senior_female=1))
+
+        assert price.grand_total == Decimal("5.00")
+        assert price.senior_discount == Decimal("15.00")
+
+    def test_infants_only_is_free(self):
+        """
+        A party of only under-5s costs nothing and reports no per-pax rate.
+
+        (A wholly empty breakdown cannot reach pricing — ParticipantBreakdown
+        rejects it — so this is the real zero-payer case.)
+        """
+        price = calculate_fixed_price(PANAMA_VIEJO_507_CONFIG, _pax(child_under_5=2))
+
+        assert price.grand_total == Decimal("0")
+        assert price.service_per_pax == Decimal("0")
+
+
+class TestRegularTourPricingUnaffected:
+    """
+    Regular (non-fixed-price) tours must be untouched by the fixed-price changes.
+
+    Regular tours price age through attraction *tickets* and a per-position guide
+    ladder, and never reach calculate_fixed_price at all — this pins that with a
+    group spanning every age category.
+    """
+
+    def test_mixed_age_group_full_price(self, test_db, pricing_config, tour):
+        engine = PricingEngine(test_db)
+        participants = _pax(
+            senior_female=1, adult=1, child_10_17=1, child_5_10=1, child_under_5=1
+        )
+
+        price = engine.calculate_full_price(tour, participants)
+
+        # 4 billable (the under-5 is not charged and takes no ladder position):
+        # base $10 + 3h * ($10 + $6 + $6 + $5) = $91, per-pax $22.75.
+        assert price.service_total == Decimal("91.00")
+        assert price.service_per_pax == Decimal("22.75")
+        # Senior discount is a percentage of the per-pax rate, not a flat price.
+        assert price.senior_discount == Decimal("4.55")
+        # Tickets: adult $20 + senior $18 + teen $10 + child $10 + infant free.
+        assert price.tickets_total == Decimal("58.00")
+        assert price.grand_total == Decimal("144.45")

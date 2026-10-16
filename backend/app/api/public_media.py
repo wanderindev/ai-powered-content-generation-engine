@@ -9,7 +9,6 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, literal_column, select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import require_educator_access
 from app.core.database import get_db
 from app.models.article import Article
 from app.models.media import Media
@@ -21,15 +20,17 @@ from app.schemas.public_media import (
     PublicMediaStats,
     PublicMediaTags,
 )
-
-# Every route requires a valid educator session token (#50). Applied at the
-# router level so new routes are gated by default rather than by remembering to
-# add the dependency per-endpoint.
-router = APIRouter(
-    prefix="/public-media",
-    tags=["public-media"],
-    dependencies=[Depends(require_educator_access)],
+from app.services.media_search import (
+    apply_ranked_search,
+    media_search_vector,
+    media_trigram_text,
 )
+
+# Open to everyone, no login. The educator email gate (#50) that used to sit on
+# this router was removed so the teacher-facing materials are self-serve, like
+# /public-edu. The public filter in _base_query is the only thing deciding what
+# is exposed.
+router = APIRouter(prefix="/public-media", tags=["public-media"])
 
 # Subquery: article feature image IDs to exclude
 _feature_image_ids = select(Article.feature_image_id).where(Article.feature_image_id.is_not(None))
@@ -72,7 +73,13 @@ def _to_item(media: Media, candidate: MediaCandidate) -> PublicMediaItem:
 @router.get("", response_model=PublicMediaListResponse)
 def list_public_media(
     db: Session = Depends(get_db),
-    search: str | None = Query(None, description="Search in Media.search_terms"),
+    search: str | None = Query(
+        None,
+        description=(
+            "Ranked search over title, alt text, caption, search terms, credit "
+            "and the candidate's description/tags"
+        ),
+    ),
     tag: str | None = Query(None, description="Filter by tag"),
     page: int = Query(1, ge=1),
     page_size: int = Query(30, ge=1, le=60),
@@ -80,17 +87,25 @@ def list_public_media(
     """List approved, high-relevance media with optional search and tag filters."""
     query = _base_query()
 
-    if search:
-        query = query.where(Media.search_terms.ilike(f"%{search}%"))
     if tag:
         query = query.where(MediaCandidate.tags.any(tag))
 
-    # Count total
-    count_query = select(func.count()).select_from(query.subquery())
-    total = db.execute(count_query).scalar() or 0
+    if search:
+        # Ranked search (#590) — the same helper as the admin picker.
+        query, total = apply_ranked_search(
+            db,
+            query,
+            search,
+            vector=media_search_vector(),
+            trigram_text=media_trigram_text(),
+        )
+        query = query.order_by(MediaCandidate.relevance_score.desc(), Media.id.desc())
+    else:
+        count_query = select(func.count()).select_from(query.subquery())
+        total = db.execute(count_query).scalar() or 0
+        query = query.order_by(MediaCandidate.relevance_score.desc())
 
-    # Order and paginate
-    query = query.order_by(MediaCandidate.relevance_score.desc())
+    # Paginate
     offset = (page - 1) * page_size
     query = query.offset(offset).limit(page_size)
 

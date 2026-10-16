@@ -1,6 +1,6 @@
 # AI-Powered Content Generation Engine
 
-> **📌 This is a snapshot, as of July 17, 2026, of an active private project.**
+> **📌 This is a snapshot, as of October 16, 2026, of an active private project.**
 > The live repository stays private for security reasons; this snapshot exists
 > so the architecture and code can be discussed openly. It is not developed
 > here and accepts no pull requests.
@@ -11,17 +11,20 @@ The production codebase behind [Panama In Context](https://panamaincontext.com) 
 a bilingual (Spanish/English) platform for a Panama-based educational-tourism
 business: academic field trips for schools, private guided tours, and a
 long-form history blog. Underneath the marketing site sits an **AI-powered
-content engine**: deep-research → long-form article generation → three-tier
-fact-checking with claim-level verdicts → educational study guides, narrated
-slide-deck videos, and Instagram publishing — with a human approving every
-step through a custom admin CMS.
+content engine**: deep research → long-form article series → claim-level
+fact-checking → educational study guides, narrated slide-deck videos and
+Instagram cards. A knowledge layer (pgvector + Voyage) indexes everything the
+engine has written and verified; a deterministic task graph lets an external
+agent drive the article pipeline over a narrowly scoped token; and an MCP
+server gives other agents scoped, audited access, with anything that would
+publish routed to an approvals queue a person confirms.
 
 **📖 Read the full project overview at
 [feliu.dev/projects/panama-in-context](https://feliu.dev/projects/panama-in-context)** —
-or browse the same 10-part system write-up right here in [`docs/`](docs/README.md),
+or browse the same 14-part system write-up right here in [`docs/`](docs/README.md),
 with architecture diagrams and screenshots.
 
-The fact-checking and research loops are driven end-to-end by a companion
+The research, fact-checking and Grammarly proofreading loops are driven by a companion
 Chrome extension with its own public snapshot:
 [**research-companion-extension**](https://github.com/wanderindev/research-companion-extension)
 — it wraps an API around Claude's deep-research mode by treating the browser
@@ -29,8 +32,8 @@ as the runtime.
 
 Also of note: [`.claude/`](.claude/) contains the real agentic-development
 configuration used to build this project — permission fences (deny rules for
-prod DB access, force-pushes, migrations), format/quality hooks, and 19
-project-specific skills for everything from deploys to research-prompt
+force-pushes, history rewrites and destructive deletes), format/quality hooks,
+and 20 project-specific skills for everything from deploys to research-prompt
 generation. [`CLAUDE.md`](CLAUDE.md) is the project constitution those agents
 operate under.
 
@@ -38,8 +41,9 @@ operate under.
 
 - **Frontend**: React 19, Vite, Tailwind CSS 4, i18next, React Router
 - **Backend**: FastAPI, SQLAlchemy 2.0 (sync), Pydantic 2, Alembic
-- **Database**: PostgreSQL 17
-- **AI**: Anthropic + OpenAI SDKs, DeepL translation, ElevenLabs narration
+- **Database**: PostgreSQL 17 + pgvector
+- **AI**: Anthropic (Opus, Sonnet, Haiku), Voyage embeddings + rerank, Gemini feature images, DeepL translation, ElevenLabs narration
+- **Agents**: an MCP server (official Python SDK) mounted inside the FastAPI app
 - **Infrastructure**: Docker Compose, DigitalOcean (Droplet + Managed Postgres + Spaces), Sentry
 
 ## How the Project Is Organized
@@ -54,11 +58,13 @@ backend/             FastAPI API server
   app/models/        SQLAlchemy models (+ enums.py as the status vocabulary)
   app/schemas/       Pydantic request/response models
   app/services/      Business logic: LLM orchestration, media crawler, email, PayPal
+  app/services/knowledge/  Knowledge layer: chunking, embeddings, hybrid retrieval
+  app/mcp/           MCP server: scoped tools, audit, approval requests
   tests/             pytest suite (runs against a throwaway Postgres container)
   alembic/           Database migrations
 docker/              Production Dockerfiles (backend, frontend, cert-watcher)
 scripts/             Operational scripts (incl. scripts/run-tests.sh)
-docs/                The 10-part system write-up with diagrams and screenshots
+docs/                The 14-part system write-up, plus docs/claude/ (agent reference docs)
 .claude/             Agentic development config: skills, hooks, permission fence
 CLAUDE.md            Project constitution for AI-assisted development
 ```
@@ -84,7 +90,9 @@ want to exercise:
 
 | Variable | Enables |
 |----------|---------|
-| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | Article generation, fact-checking, media scoring |
+| `ANTHROPIC_API_KEY` | Article generation, fact-checking, media scoring, Ask PIC |
+| `VOYAGE_API_KEY` | Knowledge layer: embeddings, rerank, related articles |
+| `GEMINI_API_KEY` | Feature-image generation |
 | `DEEPL_API` | Spanish ↔ English translation |
 | `ELEVENLABS_API_KEY` | Narrated slide-deck videos |
 | `PAYPAL_CLIENT_ID` / `SECRET` | Checkout + webhook verification (sandbox by default) |
@@ -138,7 +146,7 @@ pip install pre-commit && pre-commit install
 ## Deploying to DigitalOcean
 
 The production setup this codebase runs on (see the
-[architecture & operations write-up](docs/10-architecture-data-and-operations.md)
+[architecture & operations write-up](docs/14-architecture-data-and-operations.md)
 for the full picture):
 
 1. **Managed PostgreSQL** — a DO Managed Database cluster (`sslmode=require`);

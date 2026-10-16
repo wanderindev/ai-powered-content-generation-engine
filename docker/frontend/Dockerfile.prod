@@ -2,7 +2,7 @@
 # Multi-stage build for optimal image size
 
 # Stage 1: Build the React application
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -37,11 +37,17 @@ ENV VITE_GA_ID=$VITE_GA_ID
 ARG VITE_META_PIXEL_ID=1062950551173065
 ENV VITE_META_PIXEL_ID=$VITE_META_PIXEL_ID
 
-# Build the application (VITE_BUILD_HASH busts browser cache for translation files)
-RUN VITE_BUILD_HASH=$(date +%s) npm run build
+# Build the application. VITE_BUILD_HASH busts the browser cache for translation
+# files, and the SAME value is published as /version.json so a long-lived admin
+# tab can tell it is running a stale bundle and prompt a reload (#595,
+# hooks/useNewDeployAvailable.js). One shell, one value — never compute it twice.
+RUN VITE_BUILD_HASH=$(date +%s) \
+    && export VITE_BUILD_HASH \
+    && npm run build \
+    && printf '{"buildHash":"%s"}\n' "$VITE_BUILD_HASH" > dist/version.json
 
 # Stage 2: Serve with nginx
-FROM nginx:alpine
+FROM public.ecr.aws/docker/library/nginx:alpine
 
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf

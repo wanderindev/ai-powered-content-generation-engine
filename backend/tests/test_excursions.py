@@ -10,15 +10,15 @@ from app.core.excursions import (
 )
 
 
-def test_seven_excursions_with_unique_keys():
+def test_excursions_have_unique_keys():
     keys = [e.key for e in EXCURSIONS]
-    assert len(keys) == 7
+    assert len(keys) == 10
     assert len(keys) == len(set(keys))
 
 
-def test_owed_combos_total_is_15():
+def test_owed_combos_total_is_24():
     combos = owed_combos()
-    assert len(combos) == 15
+    assert len(combos) == 24
     assert len(combos) == len(set(combos))  # no duplicate (excursion, band) pairs
 
 
@@ -46,7 +46,7 @@ def test_religious_is_two_excursions_under_one_public_page():
 def test_grade_band_ids_use_canonical_format_not_frontend_labels():
     bands = {b for e in EXCURSIONS for b in e.grade_bands}
     assert "3rd-6th" in bands
-    assert "4th-6th" in bands
+    assert "4th-8th" in bands
     # frontend display label ("3rd - 6th Grade") must NOT leak into canonical ids
     assert all(" Grade" not in b for b in bands)
 
@@ -92,3 +92,27 @@ def test_religious_display_names_are_disambiguated():
     oriental = get_excursion("inter-religiosa-oriental")
     assert abrahamic.display_name != oriental.display_name
     assert abrahamic.display_name_es != oriental.display_name_es
+
+
+def test_canal_museum_shares_the_circuit_public_page():
+    # Per-museum deliverables (#523): the canal museum is its own excursion
+    # owing its own materials, delivered on the circuit's public page.
+    assert public_key_for("museo-del-canal") == "casco_museums"
+    assert edu_keys_for_public("casco_museums") == [
+        "casco-antiguo-museos",
+        "museo-del-canal",
+        "museo-de-historia",
+        "museo-de-la-mola",
+    ]
+    assert get_excursion("museo-del-canal").grade_bands == ("3rd-6th", "7th-8th", "9th-12th")
+
+
+def test_history_and_mola_museums_are_per_museum_excursions():
+    # Same per-museum pattern as the canal (#523): three bands each, on the
+    # circuit's public page, with a focus written for every band.
+    for key in ("museo-de-historia", "museo-de-la-mola"):
+        excursion = get_excursion(key)
+        assert excursion.public_key == "casco_museums"
+        assert excursion.grade_bands == ("3rd-6th", "7th-8th", "9th-12th")
+        assert set(excursion.band_focus) == set(excursion.grade_bands)
+        assert excursion.display_name and excursion.display_name_es

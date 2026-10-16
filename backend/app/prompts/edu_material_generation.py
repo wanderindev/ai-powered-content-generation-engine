@@ -12,10 +12,13 @@ GRADE_BAND_VOICE = {
         "picture or experience. Define any vocabulary word inline the first time "
         "it appears. Keep paragraphs to 3-4 sentences."
     ),
-    "4th-6th": (
-        "Write at a 4th-5th grade reading level. Use short, clear sentences and "
-        "a storytelling approach. Relate historical events to things students can "
-        "picture or experience. Define any vocabulary word inline the first time "
+    # Miraflores spans upper elementary through middle school: readable by a
+    # 4th grader, with enough cause-and-effect to hold an 8th grader.
+    "4th-8th": (
+        "Write at a 5th-6th grade reading level. Use clear sentences and a "
+        "storytelling approach, and relate events to things students can picture "
+        "or experience. Invite cause-and-effect thinking without assuming "
+        "background knowledge. Define any vocabulary word inline the first time "
         "it appears. Keep paragraphs to 3-4 sentences."
     ),
     "7th-8th": (
@@ -34,7 +37,7 @@ GRADE_BAND_VOICE = {
 
 GRADE_BAND_WORD_TARGET = {
     "3rd-6th": "1,200-1,800",
-    "4th-6th": "1,200-1,800",
+    "4th-8th": "1,200-1,800",
     "7th-8th": "1,500-2,500",
     "9th-12th": "2,000-3,000",
 }
@@ -47,7 +50,7 @@ GRADE_BAND_WORD_TARGET = {
 # to shrink toward (#338). Invariant guarded by test_condensed_targets_are_supersets.
 GRADE_BAND_CONDENSED_TARGET = {
     "3rd-6th": 2500,
-    "4th-6th": 2500,
+    "4th-8th": 2500,
     "7th-8th": 3500,
     "9th-12th": 4500,
 }
@@ -58,7 +61,7 @@ GRADE_BAND_CONDENSED_TARGET = {
 # failure mode: 6,000+-word inputs make the model ignore shape constraints).
 SLIDES_CONDENSED_TARGET = {
     "3rd-6th": 3000,
-    "4th-6th": 3000,
+    "4th-8th": 3000,
     "7th-8th": 3500,
     "9th-12th": 4000,
 }
@@ -70,7 +73,7 @@ SLIDES_CONDENSED_TARGET = {
 # multi-minute generation run; the admin edit UI is the correction path.
 GRADE_BAND_REVIEW_LADDER = {
     "3rd-6th": (4, 2, 1),
-    "4th-6th": (4, 2, 1),
+    "4th-8th": (4, 2, 1),
     "7th-8th": (6, 3, 2),
     "9th-12th": (8, 4, 3),
 }

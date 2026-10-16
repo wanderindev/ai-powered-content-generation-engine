@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import ArticleContent from '../components/sections/blog/ArticleContent.jsx'
+import RelatedArticles from '../components/sections/blog/RelatedArticles.jsx'
+import AskPicCallout from '../components/sections/blog/AskPicCallout.jsx'
 import { getArticleBySlug } from '../services/articles'
 
 export default function Article() {
@@ -123,5 +125,15 @@ export default function Article() {
         )
     }
 
-    return <ArticleContent article={article} />
+    return (
+        <>
+            <ArticleContent article={article} />
+            <AskPicCallout className="bg-white px-6 pt-16 lg:px-8" />
+            <RelatedArticles
+                key={`${article.id}-${i18n.language}`}
+                articleId={article.id}
+                language={i18n.language}
+            />
+        </>
+    )
 }

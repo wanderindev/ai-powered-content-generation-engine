@@ -458,6 +458,55 @@ class TestSlotConcurrency:
         assert test_client.post("/api/v1/orders", json=payload).status_code == 200
         assert test_client.post("/api/v1/orders", json=payload).status_code == 200
 
+    def test_anniversary_grid_prices_the_page_payload(
+        self, test_db, test_client, pricing_config, zone
+    ):
+        """
+        End-to-end price for the exact payload the Panamá Viejo 507 page posts.
+
+        The page sells three bands (adulto / jubilado / menor) and collapses them
+        onto the API's finer age categories, so this pins the server-side total
+        for that mapping rather than only the pure pricing function.
+        """
+        test_db.add(
+            Tour(
+                slug="panama-viejo-507",
+                name="Panama Viejo 507",
+                name_es="Panamá Viejo 507",
+                duration_hours=Decimal("2.0"),
+                max_group_size=15,
+                zone_id=zone.id,
+                is_active=True,
+                fixed_price_config={
+                    "adult": 15.00,
+                    "senior": 10.00,
+                    "child_10_17": 5.00,
+                    "child_5_10": 5.00,
+                    "child_under_5": 0,
+                },
+            )
+        )
+        test_db.commit()
+
+        response = test_client.post(
+            "/api/v1/orders",
+            json=_order_payload(
+                "panama-viejo-507",
+                (date.today() + timedelta(days=7)).isoformat(),
+                time_slot="PM",
+                participants={
+                    "adult": {"resident": 0, "tourist": 2},
+                    "senior_female": {"resident": 0, "tourist": 1},
+                    "child_10_17": {"resident": 0, "tourist": 2},
+                    "child_under_5": {"resident": 0, "tourist": 1},
+                },
+            ),
+        )
+
+        assert response.status_code == 200
+        # 2 adultos $30 + 1 jubilado $10 + 2 menores $10 + 1 under-5 free = $50.
+        assert Decimal(response.json()["grand_total"]) == Decimal("50.00")
+
     def test_db_unique_index_rejects_duplicate_active_slot(self, test_db, tour):
         """Direct DB proof: a second active private-tour booking on a slot is rejected."""
         common = dict(

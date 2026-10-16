@@ -7,9 +7,14 @@ on:
     branches: [main]
 
 # Cancel in-progress runs when a new commit lands on the same branch/PR.
+# Cancel superseded runs on PR branches only. On main every push is a merge
+# that Deploy path-filters from its own HEAD^..HEAD diff, so cancelling a
+# main run drops that merge's deploy entirely: three PRs merged within 30 s
+# on 2026-09-05 left only the last (script-only) merge with a green CI, and
+# the backend + frontend changes in the two cancelled ones never built.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   secrets-scan:
@@ -57,8 +62,16 @@ jobs:
       - name: Ruff format
         run: ruff format --check app
 
-      # Tests use testcontainers, which spawns a sibling postgres:17-alpine
-      # container via the runner's docker socket (ubuntu-latest has Docker).
+      # Docker Hub rate-limits unauthenticated pulls of non-official images on
+      # runners (pgvector/pgvector, testcontainers/ryuk). So CI builds the
+      # pgvector test image from the AWS ECR mirror of the official postgres
+      # image, and turns off Ryuk, which is safe on an ephemeral runner.
+      - name: Build test Postgres image (pgvector, no Docker Hub)
+        working-directory: .
+        run: docker build -t pic-test-pg:17 docker/test-db
+
+      # Tests use testcontainers, which spawns a sibling container from that
+      # image via the runner's docker socket (ubuntu-latest has Docker).
       # DATABASE_URL is deliberately bogus so anything that bypasses the
       # FastAPI `get_db` override fails loudly instead of hitting prod.
       # Coverage is reported (--cov-report=term prints the per-file table
@@ -70,6 +83,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:1/none
           ENVIRONMENT: test
+          PIC_TEST_PG_IMAGE: pic-test-pg:17
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
         run: pytest --cov=app --cov-report=term -q
 
   frontend:

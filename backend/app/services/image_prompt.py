@@ -9,7 +9,7 @@ def generate_image_prompt(article: Article) -> str:
     """Generate a watercolor image prompt for the given article."""
     system_prompt = build_image_prompt(article.title, article.content)
 
-    # The prompt itself is short, but Sonnet 5's default adaptive thinking
+    # The prompt itself is short, but Sonnet 5.5's always-on adaptive thinking
     # counts toward max_tokens — 1024 total would truncate almost every call.
     message = create_message(
         feature="image_prompt",

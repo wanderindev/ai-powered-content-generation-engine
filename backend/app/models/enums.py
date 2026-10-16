@@ -92,6 +92,16 @@ class CrawlJobType(StrEnum):
     # Fact-check runs (#384): research-sized runs exceed the proxy timeout, so
     # they execute off the request path via the same background-job table.
     FACT_CHECK = "FACT_CHECK"
+    # Long edu pipeline steps (#346): a full deck's video assembly runs ~15-20
+    # min and guide generation several minutes, past the api. vhost's 300s
+    # proxy ceiling, so they run here too instead of as blocking requests.
+    EDU_GENERATE_GUIDES = "EDU_GENERATE_GUIDES"
+    EDU_RENDER_SLIDES = "EDU_RENDER_SLIDES"
+    EDU_GENERATE_AUDIO = "EDU_GENERATE_AUDIO"
+    EDU_ASSEMBLE_VIDEO = "EDU_ASSEMBLE_VIDEO"
+    # Spanish article narration (#547): a large article's per-segment TTS plus
+    # post-processing runs well past the 300s proxy ceiling.
+    ARTICLE_NARRATION = "ARTICLE_NARRATION"
 
 
 # --- Bookings / orders (String + CHECK) -------------------------------------
@@ -198,11 +208,24 @@ class GuideBlockType(StrEnum):
 
 # --- Fact-check pipeline (String + CHECK; epic #373) ------------------------
 class FactCheckSubject(StrEnum):
-    """Which content-pipeline stage a checked claim was extracted from."""
+    """Which content-pipeline stage a checked claim was extracted from.
+
+    The blog pipeline owns the first three; ``EDU_RESEARCH`` (#460) and
+    ``EDU_MATERIAL`` (#461) extend the same machinery to the
+    educational-materials pipeline. Adding a value here needs a matching
+    drop-and-recreate of ``ck_fact_check_claims_subject_type`` in a migration —
+    the column is ``String`` + named CHECK, not a PG enum.
+
+    ``EDU_MATERIAL`` is one value for every ``material_type``: the subject is
+    the ``EduMaterial`` row, and the text checked depends on its type (guides
+    read ``content_blocks``; the deck reads its ``edu_slides`` rows, #464).
+    """
 
     SUGGESTION = "SUGGESTION"
     RESEARCH = "RESEARCH"
     ARTICLE = "ARTICLE"
+    EDU_RESEARCH = "EDU_RESEARCH"
+    EDU_MATERIAL = "EDU_MATERIAL"
 
 
 class FactClaimType(StrEnum):
@@ -235,7 +258,10 @@ class FactCheckMethod(StrEnum):
     """How a verdict was reached (``checked_via``)."""
 
     GROUNDING = "GROUNDING"  # judged against the approved research doc (#375)
-    WEB_SEARCH = "WEB_SEARCH"  # Sonnet + web-search tool (#376)
+    # Historical: the Sonnet + web-search tier (#376) was removed in #751 after
+    # one run. Its ~193 claim rows and ~192 KB rows stay valid (CHECK + KB_MATCH),
+    # so the value stays; nothing writes it any more.
+    WEB_SEARCH = "WEB_SEARCH"
     DEEP_RESEARCH = "DEEP_RESEARCH"  # manual claude.ai deep-research loop (#377)
     KB_MATCH = "KB_MATCH"  # matched an already-verified claim (#378)
 
@@ -267,6 +293,218 @@ class Language(StrEnum):
     ES = "es"
 
 
+# --- RAG knowledge layer (String + CHECK; knowledge_chunks.source_type) ------
+class KnowledgeSourceType(StrEnum):
+    """What a ``knowledge_chunks`` row was cut from (#623, epic #617).
+
+    ``ARTICLE`` rows are sections of an article body (``source_id`` = the
+    article id); ``ARTICLE_CLAIM`` rows are single fact-check claims of an
+    article (``source_id`` = the ``fact_check_claims`` id); ``VERIFIED_CLAIM``
+    rows are verified-claims KB entries (``source_id`` = the
+    ``verified_claims`` id, no ``article_id``).
+    """
+
+    ARTICLE = "ARTICLE"
+    ARTICLE_CLAIM = "ARTICLE_CLAIM"
+    VERIFIED_CLAIM = "VERIFIED_CLAIM"
+
+
+# --- Ask Panama in Context (String + CHECK; ask_pic_queries.status) ---------
+class AskPicQueryStatus(StrEnum):
+    """Outcome of one public Ask PIC request (#634, epic #619).
+
+    ``NULL`` in the column means the query was admitted and is still in flight
+    (its ``cost_usd`` then holds the worst-case reservation of its LLM call).
+    ``RATE_LIMITED`` / ``BUDGET_EXCEEDED`` rows are refusals by the controls
+    themselves and never count toward the per-IP / global limits.
+    """
+
+    ANSWERED = "ANSWERED"
+    NOT_COVERED = "NOT_COVERED"
+    REFUSED = "REFUSED"
+    RATE_LIMITED = "RATE_LIMITED"
+    BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
+    INVALID = "INVALID"
+    ERROR = "ERROR"
+
+
+# --- Cross-article consistency (String + CHECK; consistency_findings) -------
+class ConsistencyVerdict(StrEnum):
+    """The judge's label for one (claim, other-article fact) pair (#631).
+
+    Only ``CONTRADICTS`` is stored today (shadow mode); the per-label counts
+    are logged per article for #632. The column CHECK allows all three so
+    recording ``CONSISTENT`` later is not a migration.
+    """
+
+    CONSISTENT = "CONSISTENT"
+    CONTRADICTS = "CONTRADICTS"
+    UNRELATED = "UNRELATED"
+
+
+class ConsistencySource(StrEnum):
+    """Where the other side of a consistency pair came from (#631).
+
+    ``ARTICLE_CLAIM`` = another article's fact-check claim (``other_source_id``
+    is its ``fact_check_claims`` id at check time); ``VERIFIED_CLAIM`` = a
+    verified-claims KB row (``other_source_id`` = its ``verified_claims`` id).
+    """
+
+    ARTICLE_CLAIM = "ARTICLE_CLAIM"
+    VERIFIED_CLAIM = "VERIFIED_CLAIM"
+
+
+class ConsistencyResolution(StrEnum):
+    """How an editor closed a consistency finding (#631)."""
+
+    DISMISSED = "DISMISSED"
+    RESOLVED = "RESOLVED"
+
+
+# --- Grammar-check provenance (String + CHECK; grammar_check_fixes.source) ---
+class GrammarFixSource(StrEnum):
+    """Which proofreader produced a ``grammar_check_fixes`` row.
+
+    ``LLM`` is the Sonnet corrections pass (#409); ``GRAMMARLY`` is the
+    operator-driven Grammarly web-editor pass applied through
+    ``POST /admin/dashboard/articles/{id}/grammar-apply`` by the PIC Companion
+    extension. ``ES_ACCURACY`` is the Spanish-vs-English meaning check run after
+    translation (#557, ``POST /admin/articles/{id}/es-accuracy-check``); its rows
+    are always ``language = 'es'``.
+    """
+
+    LLM = "LLM"
+    GRAMMARLY = "GRAMMARLY"
+    ES_ACCURACY = "ES_ACCURACY"
+
+
+# --- Weekly-series agent tasks (String + CHECK; epic #422) -------------------
+class AgentTaskKind(StrEnum):
+    """Which pipeline step a task row represents (the #417 weekly graph)."""
+
+    RESEARCH_FACT_CHECK = "RESEARCH_FACT_CHECK"
+    APPLY_RESEARCH_CORRECTIONS = "APPLY_RESEARCH_CORRECTIONS"
+    GENERATE_OUTLINE = "GENERATE_OUTLINE"
+    # Fan-out: article rows don't exist until the outline runs; #417 may emit
+    # this task to expand the per-article graph after GENERATE_OUTLINE.
+    PLAN_ARTICLES = "PLAN_ARTICLES"
+    WRITE_ARTICLE = "WRITE_ARTICLE"
+    ARTICLE_FACT_CHECK = "ARTICLE_FACT_CHECK"
+    APPLY_ARTICLE_CORRECTIONS = "APPLY_ARTICLE_CORRECTIONS"
+    GRAMMAR_CHECK_EN = "GRAMMAR_CHECK_EN"
+    GENERATE_TAGS = "GENERATE_TAGS"
+    TRANSLATE = "TRANSLATE"
+    GRAMMAR_CHECK_ES = "GRAMMAR_CHECK_ES"
+    GENERATE_FEATURE_IMAGE = "GENERATE_FEATURE_IMAGE"
+    GENERATE_SERIES_SECTIONS = "GENERATE_SERIES_SECTIONS"
+    APPROVE_ARTICLE = "APPROVE_ARTICLE"
+    SET_PUBLISH_DATE = "SET_PUBLISH_DATE"
+    GENERATE_SABIAS_QUE = "GENERATE_SABIAS_QUE"
+    GENERATE_ARTICLE_PROMO = "GENERATE_ARTICLE_PROMO"
+    APPROVE_IG_POST = "APPROVE_IG_POST"
+    RENDER_IG_POST = "RENDER_IG_POST"
+    SCHEDULE_IG_POST = "SCHEDULE_IG_POST"
+    # Wait kind (#554): research is ready for the outline once the operator has
+    # resolved its fact-check (no PENDING / NEEDS_DEEP_RESEARCH claims). Replaces
+    # RESEARCH_FACT_CHECK + APPLY_RESEARCH_CORRECTIONS in new plans; those two
+    # values stay for goals planned before it.
+    WAIT_RESEARCH_READY = "WAIT_RESEARCH_READY"
+    # Wait kind (#555): between ARTICLE_FACT_CHECK and APPLY_ARTICLE_CORRECTIONS,
+    # held until the article has no PENDING / NEEDS_DEEP_RESEARCH claims (ABSENT
+    # grounding verdicts now queue for deep research).
+    WAIT_ARTICLE_CLAIMS_RESOLVED = "WAIT_ARTICLE_CLAIMS_RESOLVED"
+    # Wait kinds (#556): the operator's Grammarly pass in the pic-extension,
+    # held until ``articles.grammar_checked_en_at`` / ``_es_at`` is stamped.
+    # Replace GRAMMAR_CHECK_EN / GRAMMAR_CHECK_ES (the LLM pass) in new plans;
+    # those two values stay for goals planned before it.
+    WAIT_GRAMMAR_CHECKED_EN = "WAIT_GRAMMAR_CHECKED_EN"
+    WAIT_GRAMMAR_CHECKED_ES = "WAIT_GRAMMAR_CHECKED_ES"
+    # Normal kind (#557): after TRANSLATE and before WAIT_GRAMMAR_CHECKED_ES,
+    # a Sonnet pass that fixes Spanish that does not say what the (already
+    # fact-checked) English says — DeepL mistakes. Not a wait.
+    ES_ACCURACY_CHECK = "ES_ACCURACY_CHECK"
+
+
+class AgentTaskStatus(StrEnum):
+    """Lifecycle of one task row; the driver moves it through these states."""
+
+    PENDING = "PENDING"  # dependencies not yet all DONE
+    READY = "READY"  # claimable by a driver
+    LEASED = "LEASED"  # claimed; returns to the pool when the lease expires
+    # A wait kind's condition did not hold yet (operator work on the laptop);
+    # claimable again once next_check_at passes (#553).
+    WAITING = "WAITING"
+    DONE = "DONE"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
+
+
+class AgentTaskAction(StrEnum):
+    """A human (or MCP agent) intervention on one task (#420, #641).
+
+    Values are lowercase because they are the ``action`` verbs of
+    ``POST .../agent-tasks/{id}/action``; ``agent_task_actions.action`` stores
+    them verbatim.
+    """
+
+    RETRY = "retry"
+    SKIP = "skip"
+
+
+class AgentTaskSubject(StrEnum):
+    """What entity a task acts on (polymorphic, mirrors FactCheckSubject)."""
+
+    RESEARCH = "RESEARCH"
+    ARTICLE = "ARTICLE"
+    INSTAGRAM_POST = "INSTAGRAM_POST"
+
+
+class McpScope(StrEnum):
+    """Scopes an ``mcp_tokens`` row can grant (#638, epic #620).
+
+    Enforcement is the per-tool ``require_scope`` check in ``app.mcp.auth``;
+    tool annotations are only hints. No scope implies another.
+    """
+
+    READ = "read"  # knowledge search, articles, claims, pipeline status
+    PIPELINE = "pipeline"  # research intake, deep-research loop, task retry/skip
+    PUBLISH_REQUEST = "publish_request"  # *request* publish/approve; never executes
+
+
+class McpCallOutcome(StrEnum):
+    """Outcome of one MCP tool call in the ``mcp_tool_calls`` audit log (#639)."""
+
+    OK = "OK"
+    ERROR = "ERROR"  # the tool raised (a ToolError, a crash, or CancelledError: client gone)
+    DENIED = "DENIED"  # the token lacks the tool's scope; the tool body never ran
+
+
+class McpApprovalAction(StrEnum):
+    """What an MCP ``publish_request`` tool asks an admin to do (#642).
+
+    Stored in ``mcp_approval_requests.action``; executed only when an admin
+    approves the request, through ``app.services.article_publishing``.
+    """
+
+    PUBLISH = "PUBLISH"  # article_publishing.publish_article (all preconditions)
+    UNPUBLISH = "UNPUBLISH"  # article_publishing.unpublish_article
+    APPROVE_ARTICLE = "APPROVE_ARTICLE"  # article_publishing.approve_article
+
+
+class McpApprovalStatus(StrEnum):
+    """Lifecycle of an ``mcp_approval_requests`` row (#642).
+
+    An admin's approve executes the action in the same transaction, so an
+    approved request is stored as ``EXECUTED`` or ``FAILED`` (with the
+    reason in ``result``), never as a separate "approved, not yet run" state.
+    """
+
+    PENDING = "PENDING"
+    REJECTED = "REJECTED"
+    EXECUTED = "EXECUTED"
+    FAILED = "FAILED"
+
+
 def status_check(table: str, column: str, *enum_classes: type[StrEnum]) -> CheckConstraint:
     """Build a named ``CHECK`` constraint limiting *column* to the enums' values.
 
@@ -287,3 +525,19 @@ def status_check(table: str, column: str, *enum_classes: type[StrEnum]) -> Check
                 allowed_values.append(value)
     allowed = ", ".join(f"'{value}'" for value in allowed_values)
     return CheckConstraint(f"{column} IN ({allowed})", name=f"ck_{table}_{column}")
+
+
+def array_subset_check(table: str, column: str, *enum_classes: type[StrEnum]) -> CheckConstraint:
+    """Named ``CHECK`` limiting every element of an ARRAY *column* to the enums' values.
+
+    The array counterpart of :func:`status_check` (same ``ck_<table>_<column>``
+    name, so a new value is the same drop-and-recreate migration). ``<@`` is
+    "is contained by": an empty array passes, and so does ``NULL``.
+    """
+    allowed_values: list[str] = []
+    for enum_cls in enum_classes:
+        for value in enum_cls.values():
+            if value not in allowed_values:
+                allowed_values.append(value)
+    allowed = ", ".join(f"'{value}'" for value in allowed_values)
+    return CheckConstraint(f"{column} <@ ARRAY[{allowed}]::varchar[]", name=f"ck_{table}_{column}")

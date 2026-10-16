@@ -22,6 +22,14 @@ class ArticleBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RelatedArticle(ArticleBase):
+    """One entry of ``GET /articles/{id}/related`` (#629), localized by ``lang``."""
+
+    category_name: str | None = None
+    feature_image_url: str | None = None
+    feature_image_alt: str | None = None
+
+
 class ArticleListItem(ArticleBase):
     """Article data for list views."""
 
@@ -31,6 +39,16 @@ class ArticleListItem(ArticleBase):
     feature_image_url: str | None = None
     is_part_of_series: bool = False
     tags: list[TagItem] = []
+    # Grouping surface for the blog page: consecutive list items sharing a
+    # suggestion_id form one group headed by suggestion_title (localized).
+    # The list is already sorted category -> suggestion -> research -> series,
+    # so groups are contiguous by construction.
+    suggestion_id: int | None = None
+    suggestion_title: str | None = None
+    # True only on the Spanish surface when the article has generated
+    # narration (audio_url_es) — the blog card shows a listen badge, the
+    # article page the player.
+    has_audio: bool = False
 
 
 class ArticleSeriesInfo(BaseModel):
@@ -48,6 +66,13 @@ class ArticleDetail(ArticleBase):
 
     content_html: str
     ai_summary: str | None = None
+    # Diego-voice narration MP3 — populated only when the article was requested
+    # in Spanish (the narration is Spanish-only by design).
+    audio_url: str | None = None
+    # Total narration length from the segment manifest; None for narrations
+    # generated before the manifest existed (the player still shows duration
+    # once metadata loads).
+    audio_duration_ms: int | None = None
     category_name: str
     category_slug: str
     taxonomy_name: str

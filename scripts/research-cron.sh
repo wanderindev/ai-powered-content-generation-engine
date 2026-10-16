@@ -17,7 +17,25 @@ DOCS_DIR="$PROJECT_DIR/ai_generated_content/research_documents"
 LOG_FILE="$PROJECT_DIR/logs/research-cron.log"
 
 CLAUDE="/home/javier/.nvm/versions/node/v23.3.0/bin/claude"
-ALLOWED_TOOLS="Bash,Read,Write,Grep,Glob,Edit"
+# /research-process writes through the PIC MCP server (`pic` in the repo's
+# .mcp.json, tool submit_research, #643). Bash stays allowed for the skill's
+# file moves and for its direct-SQL fallback section.
+ALLOWED_TOOLS="Bash,Read,Write,Grep,Glob,Edit,mcp__pic__submit_research"
+
+# cron does not read the login shell, so the MCP bearer token (a `read,pipeline`
+# token minted with `python -m scripts.mcp_tokens`) comes from an env file
+# OUTSIDE the repo, e.g. a line `PIC_MCP_TOKEN=...` (chmod 600). Without it,
+# .mcp.json sends an empty bearer, the server answers 401, and the skill leaves
+# the research document in place for the next run. The `pic` server must also
+# have been approved once in an interactive `claude` session in this checkout
+# (project .mcp.json servers are opt-in); see docs/claude/mcp.md.
+MCP_ENV_FILE="${PIC_MCP_ENV_FILE:-$HOME/.config/pic/mcp.env}"
+if [ -f "$MCP_ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$MCP_ENV_FILE"
+  set +a
+fi
 
 mkdir -p "$(dirname "$LOG_FILE")"
 cd "$PROJECT_DIR"

@@ -1,9 +1,11 @@
 """Admin dashboard API endpoints."""
 
+import difflib
+import hashlib
 import logging
+import re
 from datetime import UTC, datetime
 from pathlib import Path as FilePath
-from typing import Literal
 
 import sentry_sdk
 from fastapi import (
@@ -18,12 +20,15 @@ from fastapi import (
 )
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import case, func
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, joinedload
 
-from app.api.dependencies import validate_admin_token
+from app.api.dependencies import validate_admin_or_allowlisted_driver_token
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.models import (
     AdminEmail,
+    AgentTask,
     Article,
     ArticleSuggestion,
     Booking,
@@ -37,13 +42,32 @@ from app.models import (
     Tag,
 )
 from app.models.category import Category, Taxonomy
-from app.models.crawl_job import CrawlJob, CrawlJobType
-from app.models.enums import ContentStatus
+from app.models.consistency_finding import ConsistencyFinding
+from app.models.crawl_job import CrawlJob
+from app.models.enums import (
+    AgentTaskKind,
+    AgentTaskStatus,
+    AgentTaskSubject,
+    ContentStatus,
+    FactCheckVerdict,
+    GrammarFixSource,
+    Language,
+)
 from app.models.fact_check import FactCheckClaim, FactCheckSubject
+from app.models.grammar_check import GrammarCheckFix
+from app.models.grammar_review import GrammarReviewDiff
 from app.models.instagram_post import InstagramPost
+from app.schemas.consistency import (
+    ConsistencyFindingItem,
+    ConsistencyFindingList,
+    ConsistencyResolveRequest,
+)
 from app.schemas.dashboard import (
     AdminEmailCreateRequest,
     AdminEmailItem,
+    ArticleAudioGenerateRequest,
+    ArticleAudioSegmentItem,
+    ArticleAudioSegmentsResponse,
     ArticleDetailAdmin,
     ArticleListItem,
     ArticleTagResponse,
@@ -66,7 +90,6 @@ from app.schemas.dashboard import (
     EditorialCalendarInstagramPost,
     EditorialCalendarResponse,
     FactCheckSummaryItem,
-    ImagePromptResponse,
     ImageUploadResponse,
     OutlineGenerateRequest,
     OutlineGenerateResponse,
@@ -97,7 +120,20 @@ from app.schemas.dashboard import (
     TagListItem,
     TranslateResponse,
 )
+from app.schemas.grammar_check import (
+    GrammarApplyRequest,
+    GrammarApplyResponse,
+    GrammarReviewDiffItem,
+    GrammarReviewDiffList,
+    GrammarSourceResponse,
+)
 from app.schemas.media_candidate import CrawlJobResponse
+from app.services import article_publishing, suggestion_dedup
+from app.services.article_audio import (
+    plan_narration,
+    segment_article,
+    segment_hash,
+)
 from app.services.article_generation import (
     create_article_records_from_outlines,
     generate_article_content,
@@ -105,11 +141,21 @@ from app.services.article_generation import (
     generate_outlines,
     generate_tags,
 )
+from app.services.article_narration_job import (
+    NarrationJobInFlightError,
+    create_narration_job,
+    run_article_narration_job,
+)
+from app.services.article_slugs import SlugCollisionError, sync_article_slugs
 from app.services.fact_check import (
+    DeepResearchScopeError,
+    FactCheckJobInFlightError,
+    VerdictDocumentRejected,
     active_fact_check_job,
-    generate_deep_research_prompt,
-    process_deep_research_verdicts,
+    create_fact_check_job,
+    deep_research_batch,
     run_fact_check_job,
+    submit_deep_research_verdicts,
 )
 from app.services.fact_check_corrections import (
     CorrectionEdit,
@@ -118,19 +164,25 @@ from app.services.fact_check_corrections import (
     correctable_claims,
     load_correction_subject,
 )
-from app.services.research import (
-    generate_research_prompt,
-    validate_research_document,
-)
+from app.services.grammar_revert import count_snippet
+from app.services.grammar_verdicts import run_meaning_check
+from app.services.knowledge.claims import schedule_claims_reindex
+from app.services.knowledge.indexer import schedule_reindex, schedule_series_reindex
+from app.services.research import generate_research_prompt
 from app.services.research_common import read_upload_text
-from app.services.series_sections import ABOUT_MARKER_EN
+from app.services.research_intake import (
+    ResearchConflictError,
+    SuggestionNotFoundError,
+    submit_research,
+)
+from app.services.series_sections import ABOUT_MARKER_EN, split_series_sections
 from app.services.suggestion_generation import generate_historical_suggestions
 from app.utils.markdown import html_to_markdown, markdown_to_html
 
 router = APIRouter(
     prefix="/admin/dashboard",
     tags=["dashboard"],
-    dependencies=[Depends(validate_admin_token)],
+    dependencies=[Depends(validate_admin_or_allowlisted_driver_token)],
 )
 
 logger = logging.getLogger(__name__)
@@ -237,6 +289,15 @@ def get_dashboard_stats(
     )
 
 
+def _duplicate_fields(db: Session, suggestions: list[ArticleSuggestion]) -> dict[int, dict]:
+    """Per-suggestion possible-duplicate fields (#630), ``{}`` for unflagged rows.
+
+    Read with Core by ``suggestion_dedup.duplicate_fields`` (the columns are off
+    the mapper), which degrades to ``{}`` on a database without migration 0045.
+    """
+    return suggestion_dedup.duplicate_fields(db, [s.id for s in suggestions])
+
+
 @router.get("/suggestions", response_model=list[SuggestionListItem])
 def list_suggestions(
     db: Session = Depends(get_db),
@@ -281,6 +342,7 @@ def list_suggestions(
         else:
             suggestion_articles_status[sugg_id] = "SOME"
 
+    duplicates = _duplicate_fields(db, suggestions)
     return [
         SuggestionListItem(
             id=s.id,
@@ -295,6 +357,7 @@ def list_suggestions(
             has_research=s.id in research_suggestion_ids,
             articles_status=suggestion_articles_status.get(s.id, "NONE"),
             created_at=s.created_at,
+            **duplicates.get(s.id, {}),
         )
         for s in suggestions
     ]
@@ -385,67 +448,41 @@ async def upload_research(
     force: bool = Query(False, description="Overwrite even if existing research is APPROVED"),
     db: Session = Depends(get_db),
 ):
-    """Upload a research document, validate it, and store in DB."""
+    """Upload a research document, validate it, and store in DB.
+
+    Runs the shared intake path (``services.research_intake.submit_research``,
+    also behind the MCP ``submit_research`` tool, #641) with ``replace=True``
+    and ``converge_identical=False``: existing research is overwritten and
+    reset to PENDING, identical body or not, and APPROVED research needs
+    ``force`` (#88).
+    """
     content = await read_upload_text(file)
 
-    suggestion = db.query(ArticleSuggestion).filter(ArticleSuggestion.id == suggestion_id).first()
-    if suggestion is None:
-        raise HTTPException(status_code=404, detail="Suggestion not found")
-
-    validation = validate_research_document(content, suggestion)
-    if not validation["valid"]:
+    try:
+        outcome = submit_research(
+            db, suggestion_id, content, replace=True, force=force, converge_identical=False
+        )
+    except SuggestionNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err)) from None
+    except ResearchConflictError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from None
+    if not outcome.accepted:
         raise HTTPException(
             status_code=400,
             detail={
                 "message": "Research document failed quality checks",
-                "checks": validation["checks"],
-                "word_count": validation["word_count"],
+                "checks": outcome.checks,
+                "word_count": outcome.word_count,
             },
         )
 
-    # Use possibly-fixed content (e.g. with auto-generated references)
-    final_content = validation["content"]
-
-    existing = db.query(Research).filter(Research.suggestion_id == suggestion.id).first()
-
-    now = datetime.now(UTC)
-    if existing:
-        # Re-uploading over APPROVED research would orphan any articles already
-        # generated from the old content. Block unless forced (#88).
-        if existing.status == "APPROVED" and not force:
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    "Research for this suggestion is already APPROVED. "
-                    "Re-uploading would orphan generated content. "
-                    "Pass force=true to overwrite."
-                ),
-            )
-        existing.content = final_content
-        existing.status = "PENDING"  # content changed \u2014 must re-enter review
-        existing.updated_at = now
-        db.commit()
-        db.refresh(existing)
-        research = existing
-    else:
-        research = Research(
-            suggestion_id=suggestion.id,
-            content=final_content,
-            status="PENDING",
-            created_at=now,
-            updated_at=now,
-        )
-        db.add(research)
-        db.commit()
-        db.refresh(research)
-
     return ResearchUploadResponse(
-        suggestion_id=suggestion.id,
-        suggestion_title=suggestion.title,
-        research_id=research.id,
-        word_count=validation["word_count"],
-        status=research.status,
-        references_generated=validation["content"] != content,
+        suggestion_id=outcome.suggestion_id,
+        suggestion_title=outcome.suggestion_title,
+        research_id=outcome.research_id,
+        word_count=outcome.word_count,
+        status=outcome.status,
+        references_generated=outcome.references_generated,
     )
 
 
@@ -542,6 +579,7 @@ def get_suggestion_detail(
             else None
         ),
         created_at=suggestion.created_at,
+        **_duplicate_fields(db, [suggestion]).get(suggestion.id, {}),
     )
 
 
@@ -561,6 +599,10 @@ def update_suggestion(
     if suggestion is None:
         raise HTTPException(status_code=404, detail="Suggestion not found")
 
+    # A changed title / main topic makes the stored dedup vector and duplicate
+    # flag (#630) stale: clear both so the next flag-on run re-embeds it.
+    if body.title != suggestion.title or body.main_topic != suggestion.main_topic:
+        suggestion_dedup.clear_embedding(db, suggestion.id)
     suggestion.title = body.title
     suggestion.title_es = body.title_es
     suggestion.main_topic = body.main_topic
@@ -584,6 +626,7 @@ def update_suggestion(
             else None
         ),
         created_at=suggestion.created_at,
+        **_duplicate_fields(db, [suggestion]).get(suggestion.id, {}),
     )
 
 
@@ -592,36 +635,28 @@ def _kickoff_fact_check(
     background_tasks: BackgroundTasks,
     subject_type: str,
     subject_id: int,
-    mode: str | None = None,
 ) -> CrawlJob:
     """Create a fact-check background job for one subject and schedule it (#384).
 
     Research-sized runs exceed the proxy timeout, so all fact-check runs execute
     off the request path (the #277 crawl_jobs pattern) and the endpoints return
-    202 + the job id; poll GET /media-library/jobs/{id}. Refuses a second job
-    for the SAME subject while one is in flight — a re-run replaces the
-    subject's rows, so overlapping runs would corrupt each other.
+    202 + the job id; poll GET /media-library/jobs/{id}. A second kickoff for
+    the SAME subject while one is in flight joins the running job (202 with
+    the existing id) instead of 409ing — a re-run replaces the subject's rows,
+    so overlapping runs would corrupt each other, and the agent driver races
+    the write endpoint's auto-kicked check (the 2026-09-02 drive burned its
+    whole retry budget on back-to-back 409s within one second).
 
-    *mode* (#389, suggestion/research only) picks the external tier —
-    ``deep_research`` (extract-only, the default) or ``web_search`` (the
-    API-only escape hatch). Articles always run the grounding tier.
+    Suggestions and research run the extract-only external tier (#389);
+    articles run the grounding tier.
     """
-    existing = active_fact_check_job(db, subject_type, subject_id)
-    if existing is not None:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Fact-check job {existing.id} is already running for this item",
+    try:
+        job = create_fact_check_job(db, subject_type, subject_id)
+    except FactCheckJobInFlightError as exc:
+        logger.info(
+            "Fact-check for %s %d joins in-flight job %d", subject_type, subject_id, exc.job.id
         )
-    params = {"subject_type": subject_type, "subject_id": subject_id}
-    if mode is not None:
-        params["mode"] = mode
-    job = CrawlJob(
-        job_type=CrawlJobType.FACT_CHECK.value,
-        params=params,
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
+        return exc.job
     background_tasks.add_task(run_fact_check_job, job.id)
     logger.info("Kicked off fact-check job %d for %s %d", job.id, subject_type, subject_id)
     return job
@@ -635,26 +670,22 @@ def _kickoff_fact_check(
 def fact_check_suggestion(
     background_tasks: BackgroundTasks,
     suggestion_id: int = Path(..., description="Suggestion ID"),
-    mode: Literal["deep_research", "web_search"] = Query(
-        "deep_research", description="External tier: extract-only (default) or web search"
-    ),
     db: Session = Depends(get_db),
 ):
     """External fact-check as a background job (#384).
 
     Extracts atomic claims from the suggestion's topic/sub-topics/point-of-view.
-    The default ``deep_research`` mode (#389) resolves them via the verified KB
-    and queues the rest as NEEDS_DEEP_RESEARCH for the free deep-research loop;
-    ``mode=web_search`` (API-only escape hatch) verifies them via the web-search
-    tool instead (#376). Returns 202 + a job id; poll
-    GET /media-library/jobs/{id}. Re-running replaces the previous rows.
+    The extract-only tier (#389) resolves them via the verified KB and queues
+    the rest as NEEDS_DEEP_RESEARCH for the free deep-research loop (#377).
+    Returns 202 + a job id; poll GET /media-library/jobs/{id}. Re-running
+    replaces the previous rows.
     """
     suggestion = db.query(ArticleSuggestion).filter(ArticleSuggestion.id == suggestion_id).first()
     if suggestion is None:
         raise HTTPException(status_code=404, detail="Suggestion not found")
 
     return _kickoff_fact_check(
-        db, background_tasks, FactCheckSubject.SUGGESTION.value, suggestion.id, mode=mode
+        db, background_tasks, FactCheckSubject.SUGGESTION.value, suggestion.id
     )
 
 
@@ -814,18 +845,13 @@ def update_research(
 def fact_check_research(
     background_tasks: BackgroundTasks,
     research_id: int = Path(..., description="Research ID"),
-    mode: Literal["deep_research", "web_search"] = Query(
-        "deep_research", description="External tier: extract-only (default) or web search"
-    ),
     db: Session = Depends(get_db),
 ):
     """External fact-check as a background job (#384).
 
-    The default ``deep_research`` mode (#389) extracts the doc's claims,
-    resolves what the verified KB already knows, and queues the rest as
-    NEEDS_DEEP_RESEARCH for the free deep-research loop (#377).
-    ``mode=web_search`` (API-only escape hatch) instead verifies ALL claims via
-    the web-search tool (#376, uncapped). Returns 202 + a job id; poll
+    The extract-only tier (#389) extracts the doc's claims, resolves what the
+    verified KB already knows, and queues the rest as NEEDS_DEEP_RESEARCH for
+    the free deep-research loop (#377). Returns 202 + a job id; poll
     GET /media-library/jobs/{id}.
     """
     research = db.query(Research).filter(Research.id == research_id).first()
@@ -834,9 +860,7 @@ def fact_check_research(
     if not research.content or not research.content.strip():
         raise HTTPException(status_code=400, detail="Research has no content")
 
-    return _kickoff_fact_check(
-        db, background_tasks, FactCheckSubject.RESEARCH.value, research.id, mode=mode
-    )
+    return _kickoff_fact_check(db, background_tasks, FactCheckSubject.RESEARCH.value, research.id)
 
 
 @router.get("/research/{research_id}/download")
@@ -950,7 +974,14 @@ def generate_article_outlines(
     body: OutlineGenerateRequest,
     db: Session = Depends(get_db),
 ):
-    """Phase 1: Generate article outline(s) from approved research."""
+    """Phase 1: Generate article outline(s) from approved research.
+
+    Idempotent: when articles already exist for the research, they are
+    returned with ``articles_created=0`` instead of a 400. The agent driver
+    can lose the response after the server has committed (the 2026-09-01
+    drive timed out client-side mid-call), and the replayed task must
+    converge rather than park the whole week as FAILED.
+    """
     research = (
         db.query(Research)
         .options(
@@ -966,11 +997,27 @@ def generate_article_outlines(
     if research.status != "APPROVED":
         raise HTTPException(status_code=400, detail="Research must be APPROVED")
 
-    existing_articles = db.query(Article).filter(Article.research_id == research.id).first()
+    existing_articles = (
+        db.query(Article).filter(Article.research_id == research.id).order_by(Article.id).all()
+    )
     if existing_articles:
-        raise HTTPException(
-            status_code=400,
-            detail="Articles already exist for this research",
+        is_series = len(existing_articles) > 1
+        return OutlineGenerateResponse(
+            research_id=research.id,
+            articles_created=0,
+            is_series=is_series,
+            articles=[
+                OutlineItem(
+                    article_id=a.id,
+                    title=a.title,
+                    outline=a.outline or "",
+                    outline_status=a.outline_status,
+                    summary=a.ai_summary,
+                    series_order=a.series_order,
+                    is_series_parent=(is_series and a.series_parent_id is None),
+                )
+                for a in existing_articles
+            ],
         )
 
     suggestion = research.suggestion
@@ -1060,6 +1107,9 @@ def write_article(
         logger.exception("Failed to enqueue grounding fact-check for article %d", article.id)
         db.rollback()
 
+    # After the kickoff: BackgroundTasks run in order, so grounding must not wait on embedding (#649).
+    schedule_reindex(background_tasks, article.id)
+
     return ArticleWriteResponse(
         article_id=article.id,
         title=article.title,
@@ -1102,12 +1152,13 @@ def fact_check_summary(
     response_model=SubjectFactCheckResponse,
 )
 def get_fact_check_claims(
-    subject_type: str = Path(..., description="SUGGESTION, RESEARCH, or ARTICLE"),
+    subject_type: str = Path(..., description="A FactCheckSubject value"),
     subject_id: int = Path(..., description="Subject ID"),
     db: Session = Depends(get_db),
 ):
     """Claim-level drill-in for one subject (#378): every checked claim with
-    its verdict, correction, and citation."""
+    its verdict, correction, and citation. Subject-agnostic — it accepts any
+    ``FactCheckSubject`` value, including the edu subjects (#460)."""
     normalized = subject_type.upper()
     if normalized not in FactCheckSubject.values():
         raise HTTPException(
@@ -1135,6 +1186,22 @@ def get_fact_check_claims(
         counts=counts,
         claims=claims,
     )
+
+
+def _subject_verdict_counts(db: Session, normalized: str, subject_id: int) -> dict[str, int]:
+    """Refreshed per-verdict claim counts for a subject (the grid badge)."""
+    return {
+        verdict: count
+        for verdict, count in (
+            db.query(FactCheckClaim.verdict, func.count(FactCheckClaim.id))
+            .filter(
+                FactCheckClaim.subject_type == normalized,
+                FactCheckClaim.subject_id == subject_id,
+            )
+            .group_by(FactCheckClaim.verdict)
+            .all()
+        )
+    }
 
 
 def _correction_subject_or_error(subject_type: str, subject_id: int, db: Session):
@@ -1171,9 +1238,53 @@ def preview_fact_check_corrections(
     normalized, subject = _correction_subject_or_error(subject_type, subject_id, db)
     claims = correctable_claims(normalized, subject_id, db)
     if not claims:
-        raise HTTPException(
-            status_code=400,
-            detail="No correctable claims (INACCURATE with a correction) for this item",
+        # Verdicts still in flight is a real "try later / park for a human"
+        # failure. A resolved-clean check is a SUCCESS with nothing to apply,
+        # and this is the only place that clean case is decided: the planner's
+        # plan-time "no correctable claims" skip (#481) is retired (articles in
+        # #555, research in #554), so every corrections row is planned and
+        # reaches this preview. (The 2026-09-03 drive burned its retry budget
+        # when this path still 400ed a clean article.)
+        unresolved = (
+            db.query(FactCheckClaim.id)
+            .filter(
+                FactCheckClaim.subject_type == normalized,
+                FactCheckClaim.subject_id == subject_id,
+                FactCheckClaim.verdict.in_(
+                    [
+                        FactCheckVerdict.PENDING.value,
+                        FactCheckVerdict.NEEDS_DEEP_RESEARCH.value,
+                    ]
+                ),
+            )
+            .count()
+        )
+        if unresolved:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Fact-check verdicts still pending ({unresolved} unresolved claims); "
+                    "nothing to apply yet"
+                ),
+            )
+        checked = (
+            db.query(FactCheckClaim.id)
+            .filter(
+                FactCheckClaim.subject_type == normalized,
+                FactCheckClaim.subject_id == subject_id,
+            )
+            .count()
+        )
+        if not checked:
+            raise HTTPException(
+                status_code=400,
+                detail="No fact-check claims for this item — run a fact-check first",
+            )
+        return CorrectionsPreviewResponse(
+            subject_type=normalized,
+            subject_id=subject_id,
+            correctable_claims=0,
+            edits=[],
         )
 
     edits = build_preview(normalized, subject, claims)
@@ -1201,6 +1312,7 @@ def preview_fact_check_corrections(
 )
 def apply_fact_check_corrections(
     payload: CorrectionsApplyRequest,
+    background_tasks: BackgroundTasks,
     subject_type: str = Path(..., description="SUGGESTION, RESEARCH, or ARTICLE"),
     subject_id: int = Path(..., description="Subject ID"),
     db: Session = Depends(get_db),
@@ -1208,41 +1320,47 @@ def apply_fact_check_corrections(
     """Apply previewed correction edits to the content (#387). Deterministic —
     no LLM call: each FIND is re-validated to still occur exactly once, edits
     are applied per claim atomically, and fully-corrected claims flip to
-    CORRECTED. Failures stay INACCURATE and are reported.
+    CORRECTED. Echoed "skipped" entries (content never asserted the
+    inaccuracy) also flip to CORRECTED without touching the content.
+    Failures stay INACCURATE and are reported.
     """
     normalized, subject = _correction_subject_or_error(subject_type, subject_id, db)
     if not payload.edits:
-        raise HTTPException(status_code=400, detail="No edits to apply")
+        # Mirror of the preview's clean no-op: the driver pipes the previewed
+        # edits verbatim, so an empty preview arrives here as an empty apply.
+        return CorrectionsApplyResponse(
+            subject_type=normalized,
+            subject_id=subject_id,
+            corrected_claim_ids=[],
+            failed=[],
+            counts=_subject_verdict_counts(db, normalized, subject_id),
+        )
 
     result = apply_corrections(
         normalized,
         subject,
-        [CorrectionEdit(e.claim_id, e.language, e.find, e.replace) for e in payload.edits],
+        [
+            CorrectionEdit(e.claim_id, e.language, e.find, e.replace, e.status)
+            for e in payload.edits
+        ],
         db,
     )
     db.commit()
-
-    counts: dict[str, int] = {}
-    for verdict, count in (
-        db.query(FactCheckClaim.verdict, func.count(FactCheckClaim.id))
-        .filter(
-            FactCheckClaim.subject_type == normalized,
-            FactCheckClaim.subject_id == subject_id,
-        )
-        .group_by(FactCheckClaim.verdict)
-        .all()
-    ):
-        counts[verdict] = count
+    if normalized == FactCheckSubject.ARTICLE.value:
+        schedule_reindex(background_tasks, subject_id)
+        # CORRECTED claims are indexed by their correction text (#625).
+        schedule_claims_reindex(background_tasks, [subject_id])
 
     return CorrectionsApplyResponse(
         subject_type=normalized,
         subject_id=subject_id,
         corrected_claim_ids=result["corrected_claim_ids"],
+        already_correct_claim_ids=result["already_correct_claim_ids"],
         failed=[
             CorrectionFailure(claim_id=cid, language=lang, reason=reason)
             for cid, lang, reason in result["failed"]
         ],
-        counts=counts,
+        counts=_subject_verdict_counts(db, normalized, subject_id),
     )
 
 
@@ -1258,22 +1376,14 @@ def generate_deep_research_fact_check_prompt(
     (#377). API surface of the /fact-check-prompt skill, so the deep-research
     loop can be driven by automation (pic-extension) instead of psql.
 
-    Batches at most 40 claims per prompt; call again after uploading verdicts
-    while pending_total exceeds claim_count. Stateless — nothing is persisted.
+    Batches at most DEEP_RESEARCH_BATCH_LIMIT (25) claims per prompt; call
+    again after uploading verdicts while pending_total exceeds claim_count.
+    Stateless — nothing is persisted.
     """
-    subject_type = payload.subject_type.upper() if payload.subject_type else None
-    if subject_type is not None and subject_type not in (
-        FactCheckSubject.SUGGESTION.value,
-        FactCheckSubject.RESEARCH.value,
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="subject_type must be SUGGESTION or RESEARCH",
-        )
-    if payload.subject_id is not None and subject_type is None:
-        raise HTTPException(status_code=400, detail="subject_id requires subject_type")
-
-    batch = generate_deep_research_prompt(db, subject_type, payload.subject_id)
+    try:
+        batch = deep_research_batch(db, payload.subject_type, payload.subject_id)
+    except DeepResearchScopeError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
     if batch is None:
         raise HTTPException(status_code=404, detail="No claims pending deep research")
 
@@ -1292,6 +1402,7 @@ def generate_deep_research_fact_check_prompt(
 )
 def upload_deep_research_verdicts(
     payload: DeepResearchVerdictsRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Write a deep-research verdict document back to fact_check_claims
@@ -1304,18 +1415,15 @@ def upload_deep_research_verdicts(
     verdict is an uncited UNVERIFIABLE is rejected as a failed run (400) so
     the extension's drain chain stops instead of recording bogus checks.
     """
-    result = process_deep_research_verdicts(payload.content, db, payload.claim_ids)
-    if result["rejected_reason"]:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Verdict document rejected: {result['rejected_reason']}",
-        )
-    if result["written"] == 0 and not result["skipped"]:
-        raise HTTPException(
-            status_code=400,
-            detail="No VERDICT lines found in the document",
-        )
-    db.commit()
+    try:
+        result = submit_deep_research_verdicts(db, payload.content, payload.claim_ids)
+    except VerdictDocumentRejected as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
+    # Claim chunks (#625): resolved ARTICLE claims may now be facts, and the KB
+    # may have new or changed rows. After the response, never fails it.
+    schedule_claims_reindex(
+        background_tasks, result["article_ids"], verified=result["kb_upserts"] > 0
+    )
 
     return DeepResearchVerdictsResponse(
         written=result["written"],
@@ -1381,6 +1489,135 @@ def generate_article_tags(
     )
 
 
+@router.post(
+    "/articles/{article_id}/generate-audio",
+    response_model=CrawlJobResponse,
+    status_code=202,
+)
+def generate_article_audio(
+    background_tasks: BackgroundTasks,
+    payload: ArticleAudioGenerateRequest | None = None,
+    article_id: int = Path(..., description="Article ID"),
+    db: Session = Depends(get_db),
+):
+    """Narrate the Spanish article in Diego's voice (ElevenLabs) and store it.
+
+    ``mode="all"`` (the default; also what a body-less POST gets) regenerates
+    every segment from the current ``content_es``; ``mode="changed"`` reuses
+    the stored per-segment MP3s and pays ElevenLabs only for segments whose
+    text changed since the manifest was written.
+
+    Runs as a background job (#547): a large article is minutes of TTS and
+    post-processing, past the 300s proxy ceiling. Returns 202 + a job id;
+    poll GET /media-library/jobs/{id}. On success ``stats`` is an
+    ``ArticleAudioResponse``. Nothing-to-narrate and no-changed-segments are
+    still refused here with a 400, before any job is queued; re-posting the
+    same mode while it runs joins the job, a different mode is a 409.
+    """
+    mode = payload.mode if payload else "all"
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    if not article.content_es or not article.content_es.strip():
+        raise HTTPException(status_code=400, detail="Article has no Spanish content")
+    try:
+        plan_narration(
+            article.title_es or article.title,
+            article.content_es,
+            article.audio_manifest_es,
+            mode,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    try:
+        job, created = create_narration_job(db, article_id, mode)
+    except NarrationJobInFlightError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if created:
+        background_tasks.add_task(run_article_narration_job, job.id)
+        # Mode next to the stored manifest size (#594): a surprise "all" run over
+        # an article that already has N narrated segments stands out in the logs.
+        logger.info(
+            "Kicked off narration job %d for article %d (%s, stored manifest: %d segments)",
+            job.id,
+            article_id,
+            mode,
+            len(article.audio_manifest_es or []),
+        )
+    else:
+        logger.info("Joined narration job %d for article %d (%s)", job.id, article_id, mode)
+    return job
+
+
+@router.get(
+    "/articles/{article_id}/audio-segments",
+    response_model=ArticleAudioSegmentsResponse,
+)
+def get_article_audio_segments(
+    article_id: int = Path(..., description="Article ID"),
+    db: Session = Depends(get_db),
+):
+    """Diff the current Spanish text against the stored narration manifest.
+
+    Drives the admin drawer's regenerate choice: which segments would a
+    ``mode="changed"`` run actually pay for. No manifest (audio generated
+    before selective regeneration existed, or never) marks every segment
+    changed — the first full run backfills it.
+    """
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    if not article.content_es or not article.content_es.strip():
+        raise HTTPException(status_code=400, detail="Article has no Spanish content")
+
+    stored_hashes = {entry["hash"] for entry in (article.audio_manifest_es or [])}
+    items = [
+        ArticleAudioSegmentItem(
+            position=i + 1,
+            is_heading=is_heading,
+            preview=text if len(text) <= 90 else text[:90] + "…",
+            changed=segment_hash(text) not in stored_hashes,
+        )
+        for i, (text, is_heading) in enumerate(
+            segment_article(article.title_es or article.title, article.content_es)
+        )
+    ]
+    return ArticleAudioSegmentsResponse(
+        article_id=article_id,
+        has_audio=bool(article.audio_url_es),
+        has_manifest=article.audio_manifest_es is not None,
+        segments=items,
+        changed_positions=[s.position for s in items if s.changed],
+    )
+
+
+def _grammar_wait_states(db: Session) -> dict[tuple[int, str], set[str]]:
+    """``(article_id, "en"|"es") -> {status, ...}`` of its grammar wait tasks (#556).
+
+    One query over every goal. An article absent from the map has no wait task
+    (not driven by the pipeline, or planned before #556).
+    """
+    kinds = {
+        AgentTaskKind.WAIT_GRAMMAR_CHECKED_EN.value: "en",
+        AgentTaskKind.WAIT_GRAMMAR_CHECKED_ES.value: "es",
+    }
+    states: dict[tuple[int, str], set[str]] = {}
+    for subject_id, kind, status in db.query(
+        AgentTask.subject_id, AgentTask.kind, AgentTask.status
+    ).filter(
+        AgentTask.subject_type == AgentTaskSubject.ARTICLE.value,
+        AgentTask.kind.in_(kinds),
+    ):
+        states.setdefault((subject_id, kinds[kind]), set()).add(status)
+    return states
+
+
+# A grammar wait in one of these states is the driver's go-ahead for Grammarly:
+# everything before it in the chain (fact-check corrections, translation) is done.
+_GRAMMAR_WAIT_OPEN = {AgentTaskStatus.READY.value, AgentTaskStatus.WAITING.value}
+
+
 @router.get("/articles", response_model=list[ArticleListItem])
 def list_articles(
     db: Session = Depends(get_db),
@@ -1413,6 +1650,27 @@ def list_articles(
             return research_suggestion_map[research_id][idx]
         return None
 
+    # Unresolved meaning-check diffs per article (#518), one grouped query.
+    review_counts = dict(
+        db.query(GrammarReviewDiff.article_id, func.count(GrammarReviewDiff.id))
+        .filter(GrammarReviewDiff.resolved_at.is_(None))
+        .group_by(GrammarReviewDiff.article_id)
+        .all()
+    )
+
+    consistency_counts = _open_consistency_counts(db)
+
+    grammar_waits = _grammar_wait_states(db)
+
+    def _ready_for_grammar(article: Article, language: str) -> bool:
+        body = article.content if language == "en" else article.content_es
+        stamp = article.grammar_checked_en_at if language == "en" else article.grammar_checked_es_at
+        if not (body and body.strip()) or stamp is not None:
+            return False
+        states = grammar_waits.get((article.id, language))
+        # Not driven by the pipeline: today's rule (content, no stamp).
+        return states is None or bool(states & _GRAMMAR_WAIT_OPEN)
+
     return [
         ArticleListItem(
             id=a.id,
@@ -1432,6 +1690,13 @@ def list_articles(
             is_series=a.series_parent_id is not None or len(a.series_children) > 0,
             series_parent_id=a.series_parent_id,
             published_at=a.published_at,
+            grammar_checked_en_at=a.grammar_checked_en_at,
+            grammar_checked_es_at=a.grammar_checked_es_at,
+            ready_for_grammar_en=_ready_for_grammar(a, "en"),
+            ready_for_grammar_es=_ready_for_grammar(a, "es"),
+            grammar_review_count=review_counts.get(a.id, 0),
+            consistency_open_count=consistency_counts.get(a.id, 0),
+            audio_qa_es=a.audio_qa_es,
             created_at=a.created_at,
         )
         for a in articles
@@ -1536,6 +1801,7 @@ def update_outline_status(
     response_model=TranslateResponse,
 )
 async def translate_article(
+    background_tasks: BackgroundTasks,
     article_id: int = Path(..., description="Article ID"),
     db: Session = Depends(get_db),
 ):
@@ -1563,7 +1829,12 @@ async def translate_article(
     article.title_es = title_es
     article.excerpt_es = excerpt_es
     article.content_es = content_es
+    try:
+        sync_article_slugs(db, article)
+    except SlugCollisionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     db.commit()
+    schedule_reindex(background_tasks, article.id)
 
     return TranslateResponse(
         article_id=article.id,
@@ -1577,6 +1848,7 @@ async def translate_article(
     response_model=SeriesSectionsResponse,
 )
 def generate_series_sections(
+    background_tasks: BackgroundTasks,
     article_id: int = Path(..., description="Article ID"),
     db: Session = Depends(get_db),
 ):
@@ -1618,6 +1890,7 @@ def generate_series_sections(
     success, message, articles_updated = generator.generate_sections_for_series(parent_id)
     if success:
         db.commit()
+        schedule_series_reindex(db, background_tasks, parent_id)
 
     return SeriesSectionsResponse(
         success=success,
@@ -1632,38 +1905,27 @@ def generate_series_sections(
 )
 def publish_article(
     article_id: int = Path(..., description="Article ID"),
-    body: PublishRequest = ...,
+    body: PublishRequest | None = None,
     db: Session = Depends(get_db),
 ):
-    """Set published_at and ensure article is APPROVED."""
-    article = (
-        db.query(Article)
-        .options(joinedload(Article.series_children))
-        .filter(Article.id == article_id)
-        .first()
-    )
-    if article is None:
-        raise HTTPException(status_code=404, detail="Article not found")
-    if article.status != "APPROVED":
-        raise HTTPException(status_code=400, detail="Article must be APPROVED before publishing")
-    if not article.content_es or not article.content_es.strip():
-        raise HTTPException(
-            status_code=400, detail="Article must have Spanish content before publishing"
-        )
-    if article.feature_image_id is None:
-        raise HTTPException(
-            status_code=400, detail="Article must have a feature image before publishing"
-        )
+    """Set published_at on an APPROVED article that meets every precondition.
 
-    is_series = article.series_parent_id is not None or len(article.series_children) > 0
-    if is_series and not (article.content and ABOUT_MARKER_EN in article.content):
-        raise HTTPException(
-            status_code=400, detail="Series articles must have series sections before publishing"
-        )
-
-    article.published_at = body.published_at
-    if article.status != "APPROVED":
-        article.status = "APPROVED"
+    With no ``published_at`` the server picks it (#558): the article's own
+    existing date, else a series sibling's, else the next free 12:00 UTC day
+    (one series per day) — see ``app/services/publish_slot.py``. That is the
+    driver's path, and it converges on replay. An explicit date (the admin UI)
+    is applied as given. A change of date moves the article's derived,
+    still-scheduled Instagram promo with it (#588). The rules live in
+    ``article_publishing.publish_article``, shared with the MCP approval
+    executor (#642).
+    """
+    requested = body.published_at if body is not None else None
+    try:
+        article = article_publishing.publish_article(db, article_id, requested)
+    except article_publishing.ArticleNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err)) from None
+    except article_publishing.PublishPreconditionError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
     db.commit()
 
     return StatusUpdateResponse(id=article.id, status=article.status)
@@ -1677,15 +1939,384 @@ def unpublish_article(
     article_id: int = Path(..., description="Article ID"),
     db: Session = Depends(get_db),
 ):
-    """Remove published_at from an article."""
-    article = db.query(Article).filter(Article.id == article_id).first()
-    if article is None:
-        raise HTTPException(status_code=404, detail="Article not found")
+    """Remove published_at from an article.
 
-    article.published_at = None
+    Also unschedules the article's derived, still-scheduled Instagram promo
+    (#588). Shared with the MCP approval executor (#642).
+    """
+    try:
+        article = article_publishing.unpublish_article(db, article_id)
+    except article_publishing.ArticleNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err)) from None
     db.commit()
 
     return StatusUpdateResponse(id=article.id, status=article.status)
+
+
+# --- Grammarly proofread flow (PIC Companion extension) ---------------------
+# The extension pastes ``body_html`` into Grammarly's web editor, accepts
+# suggestions, reads the corrected HTML back and posts it here. The contract:
+# the client never sees markdown and never holds the About / Continue Reading
+# series sections — this side splits, converts, re-attaches and stamps.
+
+_DIFF_PREVIEW_MAX_LINES = 80
+
+
+def _content_fingerprint(content: str) -> str:
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def _markdown_blocks(markdown_text: str) -> list[str]:
+    return [b.strip() for b in re.split(r"\n\s*\n", markdown_text.strip()) if b.strip()]
+
+
+def _normalize_markdown(markdown_text: str) -> str:
+    return "\n\n".join(_markdown_blocks(markdown_text))
+
+
+def _diff_preview(old: str, new: str) -> list[str]:
+    lines = difflib.unified_diff(
+        _markdown_blocks(old), _markdown_blocks(new), "stored", "corrected", n=0, lineterm=""
+    )
+    return list(lines)[:_DIFF_PREVIEW_MAX_LINES]
+
+
+def _language_content(article: Article, language: Language) -> str:
+    content = article.content if language == Language.EN else article.content_es
+    if not content or not content.strip():
+        raise HTTPException(
+            status_code=400, detail=f"Article has no {language.value} content to proofread"
+        )
+    return content
+
+
+@router.get("/articles/{article_id}/grammar-source", response_model=GrammarSourceResponse)
+def get_grammar_source(
+    article_id: int = Path(..., description="Article ID"),
+    language: Language = Query(..., description="Which language of the article to proofread"),
+    db: Session = Depends(get_db),
+):
+    """Return one language's article *body* as HTML for an external proofread.
+
+    Series sections are stripped; the response carries a fingerprint of the
+    stored column and the body's paragraph count, both checked again on apply.
+    """
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    content = _language_content(article, language)
+    about, body, continue_reading = split_series_sections(content)
+    title = article.title if language == Language.EN else (article.title_es or article.title)
+    return GrammarSourceResponse(
+        article_id=article.id,
+        language=language.value,
+        title=title,
+        body_html=markdown_to_html(body),
+        has_about=bool(about),
+        has_continue=bool(continue_reading),
+        fingerprint=_content_fingerprint(content),
+        block_count=len(_markdown_blocks(body)),
+    )
+
+
+@router.post("/articles/{article_id}/grammar-apply", response_model=GrammarApplyResponse)
+def apply_grammar_result(
+    background_tasks: BackgroundTasks,
+    article_id: int = Path(..., description="Article ID"),
+    language: Language = Query(..., description="Which language of the article was proofread"),
+    body: GrammarApplyRequest = ...,
+    db: Session = Depends(get_db),
+):
+    """Write a proofread body back, re-attaching the series sections untouched.
+
+    Rules, in order: fingerprint mismatch → 409 (the article changed since the
+    source was fetched); paragraph-count mismatch → 400 (a lossy read-back or a
+    suggestion that merged paragraphs — refused with a diff preview);
+    ``dry_run`` → report only; empty ``accepted`` → stamp
+    ``grammar_checked_<lang>_at`` without rewriting the content (so a clean
+    article never churns through the normalising round trip); otherwise run
+    the meaning check (#518 — Sonnet reviews each changed paragraph and reverts
+    edits that changed meaning; the rest it cannot vouch for are written but
+    filed as ``GrammarReviewDiff`` rows), write the body, stamp, and record one
+    ``GrammarCheckFix`` row per accepted item — reverted ones as
+    ``applied=False``. ``stamp=False`` skips the stamp only: the body is still
+    written, so a low-scoring article keeps its corrections and stays queued.
+    """
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    content = _language_content(article, language)
+    if _content_fingerprint(content) != body.fingerprint:
+        raise HTTPException(
+            status_code=409,
+            detail="Article content changed since grammar-source was fetched; fetch it again",
+        )
+
+    about, old_body, continue_reading = split_series_sections(content)
+    new_body = html_to_markdown(body.body_html)
+    if not new_body.strip():
+        raise HTTPException(status_code=400, detail="body_html converted to empty markdown")
+
+    old_blocks = _markdown_blocks(old_body)
+    new_blocks = _markdown_blocks(new_body)
+    if len(old_blocks) != len(new_blocks):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": (
+                    f"Paragraph count changed ({len(old_blocks)} stored, "
+                    f"{len(new_blocks)} corrected); refusing to apply"
+                ),
+                "diff_preview": _diff_preview(old_body, new_body),
+            },
+        )
+
+    changed = _normalize_markdown(old_body) != _normalize_markdown(new_body)
+    diff_preview = _diff_preview(old_body, new_body) if changed else []
+
+    if body.dry_run:
+        return GrammarApplyResponse(
+            article_id=article.id,
+            language=language.value,
+            changed=changed,
+            written=False,
+            accepted_count=len(body.accepted),
+            block_count=len(new_blocks),
+            checked_at=None,
+            diff_preview=diff_preview,
+        )
+
+    written = False
+    meaning = None
+    if body.accepted:
+        meaning = run_meaning_check(old_body, new_body)
+        new_body = meaning.body
+        # Keep the body's original leading/trailing whitespace so the joins
+        # with the (untouched) sections stay exactly as they were.
+        leading = old_body[: len(old_body) - len(old_body.lstrip())]
+        trailing = old_body[len(old_body.rstrip()) :]
+        new_content = about + leading + new_body + trailing + continue_reading
+        if language == Language.EN:
+            article.content = new_content
+        else:
+            article.content_es = new_content
+        for item in body.accepted:
+            reverted_reason = _reverted_reason_for(item.after, new_body, meaning)
+            db.add(
+                GrammarCheckFix(
+                    article_id=article.id,
+                    language=language.value,
+                    find_text=item.before,
+                    replace_text=item.after,
+                    applied=reverted_reason is None,
+                    skipped_reason=reverted_reason,
+                    source=GrammarFixSource.GRAMMARLY.value,
+                )
+            )
+        for pair, reason in meaning.review:
+            db.add(
+                GrammarReviewDiff(
+                    article_id=article.id,
+                    language=language.value,
+                    block_index=pair.index,
+                    before_text=pair.before,
+                    after_text=pair.after,
+                    reason=reason,
+                )
+            )
+        written = True
+        if meaning.called:
+            diff_preview = _diff_preview(old_body, new_body)
+
+    checked_at = datetime.now(UTC) if body.stamp else None
+    if body.stamp:
+        if language == Language.EN:
+            article.grammar_checked_en_at = checked_at
+        else:
+            article.grammar_checked_es_at = checked_at
+    db.commit()
+    schedule_reindex(background_tasks, article.id)
+
+    logger.info(
+        "grammar-apply article=%s lang=%s tool=%s accepted=%s written=%s changed=%s stamped=%s score=%s",
+        article.id,
+        language.value,
+        body.tool,
+        len(body.accepted),
+        written,
+        changed,
+        body.stamp,
+        body.score,
+    )
+    return GrammarApplyResponse(
+        article_id=article.id,
+        language=language.value,
+        changed=changed,
+        written=written,
+        accepted_count=len(body.accepted),
+        block_count=len(new_blocks),
+        checked_at=checked_at,
+        diff_preview=diff_preview,
+        stamped=body.stamp,
+        meaning_checked=bool(meaning and meaning.called),
+        reverted_count=len(meaning.reverted) if meaning else 0,
+        review_count=len(meaning.review) if meaning else 0,
+    )
+
+
+def _reverted_reason_for(after: str, final_body: str, meaning) -> str | None:
+    """Why an accepted item did not survive the meaning check, or None.
+
+    An item is reverted when its paragraph was reverted *and* its ``after``
+    snippet no longer occurs in the final body (emphasis-tolerant, since the
+    snippet is plain text and the body is markdown). Items whose paragraph the
+    check left alone stay applied.
+    """
+    if meaning is None or not meaning.reverted or not after.strip():
+        return None
+    for pair, reason in meaning.reverted:
+        if count_snippet(pair.after, after) and not count_snippet(final_body, after):
+            return f"reverted by meaning check: {reason}"
+    return None
+
+
+def _open_consistency_counts(db: Session) -> dict[int, int]:
+    """Open cross-article consistency findings per article (#631).
+
+    In a SAVEPOINT: on a database that has not run migration 0046 yet the
+    grid gets ``{}`` (no pill) and the caller's transaction stays usable, so
+    the articles listing never fails on the deploy window.
+    """
+    try:
+        with db.begin_nested():
+            return dict(
+                db.query(ConsistencyFinding.article_id, func.count(ConsistencyFinding.id))
+                .filter(ConsistencyFinding.resolved_at.is_(None))
+                .group_by(ConsistencyFinding.article_id)
+                .all()
+            )
+    except DBAPIError:
+        logger.warning("consistency findings count unavailable", exc_info=True)
+        return {}
+
+
+def _consistency_item(row: ConsistencyFinding, other: Article | None) -> ConsistencyFindingItem:
+    return ConsistencyFindingItem(
+        id=row.id,
+        article_id=row.article_id,
+        claim_id=row.claim_id,
+        claim_text=row.claim_text,
+        other_source_type=row.other_source_type,
+        other_source_id=row.other_source_id,
+        other_article_id=row.other_article_id,
+        other_article_title=other.title if other else None,
+        other_article_slug=other.slug if other else None,
+        other_text=row.other_text,
+        verdict=row.verdict,
+        explanation=row.explanation,
+        similarity=row.similarity,
+        resolved_at=row.resolved_at,
+        resolution=row.resolution,
+        created_at=row.created_at,
+    )
+
+
+@router.get(
+    "/articles/{article_id}/consistency-findings",
+    response_model=ConsistencyFindingList,
+)
+def list_consistency_findings(
+    article_id: int = Path(..., description="Article ID"),
+    include_resolved: bool = Query(False, description="Also return resolved findings"),
+    db: Session = Depends(get_db),
+):
+    """Cross-article contradictions found for an article (#631, shadow mode).
+
+    Records only: nothing here changes a fact-check verdict or gates publishing.
+    """
+    if db.get(Article, article_id) is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    query = db.query(ConsistencyFinding).filter(ConsistencyFinding.article_id == article_id)
+    if not include_resolved:
+        query = query.filter(ConsistencyFinding.resolved_at.is_(None))
+    rows = query.order_by(ConsistencyFinding.id).all()
+    other_ids = {r.other_article_id for r in rows if r.other_article_id is not None}
+    others = (
+        {a.id: a for a in db.query(Article).filter(Article.id.in_(other_ids)).all()}
+        if other_ids
+        else {}
+    )
+    return ConsistencyFindingList(
+        article_id=article_id,
+        open_count=sum(1 for r in rows if r.resolved_at is None),
+        findings=[_consistency_item(r, others.get(r.other_article_id)) for r in rows],
+    )
+
+
+@router.post(
+    "/articles/{article_id}/consistency-findings/{finding_id}/resolve",
+    response_model=ConsistencyFindingItem,
+)
+def resolve_consistency_finding(
+    body: ConsistencyResolveRequest,
+    article_id: int = Path(..., description="Article ID"),
+    finding_id: int = Path(..., description="Consistency finding ID"),
+    db: Session = Depends(get_db),
+):
+    """Dismiss a finding or mark it resolved. Bookkeeping only; idempotent (an
+    already-closed finding keeps its first resolution)."""
+    row = db.get(ConsistencyFinding, finding_id)
+    if row is None or row.article_id != article_id:
+        raise HTTPException(status_code=404, detail="Consistency finding not found")
+    if row.resolved_at is None:
+        row.resolved_at = datetime.now(UTC)
+        row.resolution = body.resolution
+        db.commit()
+        db.refresh(row)
+    other = db.get(Article, row.other_article_id) if row.other_article_id else None
+    return _consistency_item(row, other)
+
+
+@router.get("/articles/{article_id}/grammar-review", response_model=GrammarReviewDiffList)
+def list_grammar_review_diffs(
+    article_id: int = Path(..., description="Article ID"),
+    include_resolved: bool = Query(False, description="Also return resolved rows"),
+    db: Session = Depends(get_db),
+):
+    """Paragraphs the meaning check flagged for a human (#518), newest first."""
+    if db.get(Article, article_id) is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    query = db.query(GrammarReviewDiff).filter(GrammarReviewDiff.article_id == article_id)
+    if not include_resolved:
+        query = query.filter(GrammarReviewDiff.resolved_at.is_(None))
+    rows = query.order_by(GrammarReviewDiff.id.desc()).all()
+    pending = sum(1 for r in rows if r.resolved_at is None)
+    return GrammarReviewDiffList(
+        article_id=article_id,
+        pending_count=pending,
+        diffs=[GrammarReviewDiffItem.model_validate(r, from_attributes=True) for r in rows],
+    )
+
+
+@router.post(
+    "/articles/{article_id}/grammar-review/{diff_id}/resolve",
+    response_model=GrammarReviewDiffItem,
+)
+def resolve_grammar_review_diff(
+    article_id: int = Path(..., description="Article ID"),
+    diff_id: int = Path(..., description="Review diff ID"),
+    db: Session = Depends(get_db),
+):
+    """Mark one flagged paragraph as seen. Idempotent; the text itself is
+    edited in the drawer, not here."""
+    row = db.get(GrammarReviewDiff, diff_id)
+    if row is None or row.article_id != article_id:
+        raise HTTPException(status_code=404, detail="Review diff not found")
+    if row.resolved_at is None:
+        row.resolved_at = datetime.now(UTC)
+        db.commit()
+        db.refresh(row)
+    return GrammarReviewDiffItem.model_validate(row, from_attributes=True)
 
 
 @router.get("/articles/{article_id}", response_model=ArticleDetailAdmin)
@@ -1709,6 +2340,8 @@ def get_article_detail(
         title_es=article.title_es,
         excerpt_es=article.excerpt_es,
         content_html_es=markdown_to_html(article.content_es) if article.content_es else None,
+        audio_url_es=article.audio_url_es,
+        audio_qa_es=article.audio_qa_es,
         status=article.status,
         tags=[TagListItem.model_validate(t) for t in article.tags],
         created_at=article.created_at,
@@ -1717,6 +2350,7 @@ def get_article_detail(
 
 @router.put("/articles/{article_id}", response_model=ArticleDetailAdmin)
 def update_article(
+    background_tasks: BackgroundTasks,
     article_id: int = Path(..., description="Article ID"),
     body: ArticleUpdateRequest = ...,
     db: Session = Depends(get_db),
@@ -1735,6 +2369,11 @@ def update_article(
     article.excerpt_es = body.excerpt_es
     article.content_es = html_to_markdown(body.content_html_es) if body.content_html_es else None
 
+    try:
+        sync_article_slugs(db, article)
+    except SlugCollisionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     # Sync tags
     if body.tag_ids:
         tags = db.query(Tag).filter(Tag.id.in_(body.tag_ids)).all()
@@ -1744,6 +2383,7 @@ def update_article(
 
     db.commit()
     db.refresh(article)
+    schedule_reindex(background_tasks, article.id)
 
     return ArticleDetailAdmin(
         id=article.id,
@@ -1753,6 +2393,8 @@ def update_article(
         title_es=article.title_es,
         excerpt_es=article.excerpt_es,
         content_html_es=markdown_to_html(article.content_es) if article.content_es else None,
+        audio_url_es=article.audio_url_es,
+        audio_qa_es=article.audio_qa_es,
         status=article.status,
         tags=[TagListItem.model_validate(t) for t in article.tags],
         created_at=article.created_at,
@@ -1802,113 +2444,164 @@ def download_article(
 # --- Feature Image ---
 
 IMAGES_DIR = FilePath("/app/static/images/articles")
+FEATURE_IMAGE_URL_PREFIX = "/static/images/articles/"
+
+
+def _is_own_feature_image_file(media: Media, article_id: int) -> bool:
+    """True when *media* is this article's own generated file on the static volume.
+
+    Only such a row is reused (and only its file is ever deleted) on
+    regeneration. A catalog / CDN media row assigned through ``assign-media``
+    is someone else's record: it is left untouched and a new row is created.
+    """
+    return bool(
+        media.file_path
+        and media.file_path.startswith(FEATURE_IMAGE_URL_PREFIX)
+        and media.filename
+        and re.fullmatch(rf"article_{article_id}(_\d+)?\.(jpg|png|webp)", media.filename)
+    )
+
+
+def _persist_feature_image(
+    db: Session,
+    article: Article,
+    jpeg_bytes: bytes,
+    original_filename: str,
+) -> Media:
+    """Write *jpeg_bytes* to the static images dir and (re)point the feature image.
+
+    Every write gets a fresh, timestamped ``article_{id}_{ts}.jpg`` (#580): nginx
+    serves ``/static/`` with a one-day ``max-age``, so overwriting a fixed name
+    would keep showing the superseded image in the admin and on the public site.
+    The superseded file is deleted only after the new file and the DB row are
+    committed, only when it was this article's own generated file, and a failed
+    delete only logs.
+    """
+    stamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
+    filename = f"article_{article.id}_{stamp}.jpg"
+    file_path = IMAGES_DIR / filename
+    url_path = f"{FEATURE_IMAGE_URL_PREFIX}{filename}"
+
+    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    file_path.write_bytes(jpeg_bytes)
+
+    now = datetime.now(UTC)
+    existing_media = None
+    if article.feature_image_id:
+        existing_media = db.query(Media).filter(Media.id == article.feature_image_id).first()
+
+    superseded: str | None = None
+    try:
+        if existing_media is not None and _is_own_feature_image_file(existing_media, article.id):
+            if existing_media.filename != filename:
+                superseded = existing_media.filename
+            existing_media.filename = filename
+            existing_media.original_filename = original_filename
+            existing_media.file_path = url_path
+            existing_media.file_size = len(jpeg_bytes)
+            existing_media.mime_type = "image/jpeg"
+            existing_media.updated_at = now
+            media = existing_media
+        else:
+            media = Media(
+                filename=filename,
+                original_filename=original_filename,
+                file_path=url_path,
+                file_size=len(jpeg_bytes),
+                mime_type="image/jpeg",
+                media_type="IMAGE",
+                source="GENERATED",
+                title=f"Feature image for: {article.title}",
+                created_at=now,
+                updated_at=now,
+            )
+            db.add(media)
+            db.flush()
+
+        article.feature_image_id = media.id
+        db.commit()
+    except Exception:
+        db.rollback()
+        file_path.unlink(missing_ok=True)
+        raise
+
+    if superseded:
+        try:
+            (IMAGES_DIR / superseded).unlink(missing_ok=True)
+        except OSError as exc:
+            logger.warning(
+                "Could not delete superseded feature image %s for article %s: %s",
+                superseded,
+                article.id,
+                exc,
+            )
+
+    db.refresh(media)
+    return media
 
 
 @router.post(
-    "/articles/{article_id}/image-prompt",
-    response_model=ImagePromptResponse,
+    "/articles/{article_id}/generate-image",
+    response_model=ImageUploadResponse,
 )
-def generate_article_image_prompt(
+def generate_article_feature_image(
     article_id: int = Path(..., description="Article ID"),
     db: Session = Depends(get_db),
 ):
-    """Generate a watercolor image prompt for an article's feature image."""
+    """Generate the article's feature image with Gemini and store it (#419).
+
+    The only way a feature image is made (#580 removed the manual
+    prompt-copy / upload loop): the watercolor prompt is generated fresh
+    (Sonnet), sent to the image API, and the JPEG stored under a new
+    timestamped filename. It always regenerates — the agent driver's
+    ``GENERATE_FEATURE_IMAGE`` step and the admin grid's Generate / Regenerate
+    action call it identically, so a replay simply converges on a new image.
+
+    Both model calls are external I/O measured in tens of seconds, so the DB
+    session is closed between the reads and the write (Connection Pool rule):
+    SQLAlchemy checks a connection back out when the article is re-read.
+    """
+    settings = get_settings()
+    if not settings.gemini_api_key:
+        raise HTTPException(status_code=503, detail="Feature-image generation is not configured")
+
     article = db.query(Article).filter(Article.id == article_id).first()
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found")
     if not article.content or not article.content.strip():
         raise HTTPException(status_code=400, detail="Article has no content")
 
+    # The prompt service only reads title + content, both already loaded; the
+    # detached instance keeps them after close() (close does not expire).
+    db.close()  # release the pooled connection during the Sonnet + Gemini calls
+
     from app.services.image_prompt import generate_image_prompt
 
     prompt_text = generate_image_prompt(article)
 
-    return ImagePromptResponse(
-        article_id=article.id,
-        title=article.title,
-        prompt_text=prompt_text,
-    )
+    from app.services.gemini_image import GeminiImageError, generate_feature_image
 
+    try:
+        jpeg_bytes = generate_feature_image(prompt_text)
+    except GeminiImageError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-@router.post(
-    "/articles/{article_id}/upload-image",
-    response_model=ImageUploadResponse,
-)
-async def upload_feature_image(
-    article_id: int = Path(..., description="Article ID"),
-    file: UploadFile = ...,
-    db: Session = Depends(get_db),
-):
-    """Upload a feature image for an article."""
     article = db.query(Article).filter(Article.id == article_id).first()
-    if article is None:
+    if article is None:  # deleted while generating
         raise HTTPException(status_code=404, detail="Article not found")
 
-    # Validate file type
-    allowed_types = {"image/jpeg", "image/png", "image/webp"}
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type: {file.content_type}. Allowed: {', '.join(allowed_types)}",
-        )
-
-    # Determine extension from content type
-    ext_map = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
-    ext = ext_map[file.content_type]
-    filename = f"article_{article_id}.{ext}"
-    file_path = IMAGES_DIR / filename
-
-    # Ensure directory exists
-    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Save file
-    content = await file.read()
-    file_path.write_bytes(content)
-
-    # Create or update Media record
-    now = datetime.now(UTC)
-    existing_media = None
-    if article.feature_image_id:
-        existing_media = db.query(Media).filter(Media.id == article.feature_image_id).first()
-
-    url_path = f"/static/images/articles/{filename}"
-
-    if existing_media:
-        # Remove old file if different
-        old_full_path = IMAGES_DIR / existing_media.filename
-        if old_full_path.exists() and old_full_path != file_path:
-            old_full_path.unlink(missing_ok=True)
-        existing_media.filename = filename
-        existing_media.original_filename = file.filename or filename
-        existing_media.file_path = url_path
-        existing_media.file_size = len(content)
-        existing_media.mime_type = file.content_type
-        existing_media.updated_at = now
-        media = existing_media
-    else:
-        media = Media(
-            filename=filename,
-            original_filename=file.filename or filename,
-            file_path=url_path,
-            file_size=len(content),
-            mime_type=file.content_type,
-            media_type="IMAGE",
-            source="GENERATED",
-            title=f"Feature image for: {article.title}",
-            created_at=now,
-            updated_at=now,
-        )
-        db.add(media)
-        db.flush()
-
-    article.feature_image_id = media.id
-    db.commit()
-    db.refresh(media)
+    media = _persist_feature_image(db, article, jpeg_bytes, f"gemini_article_{article_id}.jpg")
+    logger.info(
+        "Generated feature image for article %s (media %s, %d bytes)",
+        article_id,
+        media.id,
+        len(jpeg_bytes),
+    )
 
     return ImageUploadResponse(
-        article_id=article.id,
+        article_id=article_id,
         media_id=media.id,
-        file_path=f"/static/images/articles/{filename}",
+        file_path=media.file_path,
     )
 
 
@@ -1946,12 +2639,6 @@ ENTITY_MODEL_MAP = {
     "articles": Article,
 }
 
-VALID_TRANSITIONS = {
-    "PENDING": {"APPROVED", "REJECTED"},
-    "APPROVED": {"PENDING", "REJECTED"},
-    "REJECTED": {"PENDING", "APPROVED"},
-}
-
 
 @router.patch(
     "/{entity}/{entity_id}/status",
@@ -1975,21 +2662,10 @@ def update_entity_status(
     if record is None:
         raise HTTPException(status_code=404, detail=f"{entity} with id {entity_id} not found")
 
-    current_status = record.status
-    new_status = body.status
-
-    if new_status not in VALID_TRANSITIONS.get(current_status, set()):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid transition from {current_status} to {new_status}",
-        )
-
-    record.status = new_status
-
-    if new_status == "APPROVED":
-        record.approved_at = datetime.now(UTC)
-    elif current_status == "APPROVED":
-        record.approved_at = None
+    try:
+        article_publishing.transition_status(record, body.status)
+    except article_publishing.InvalidStatusTransitionError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
 
     db.commit()
 

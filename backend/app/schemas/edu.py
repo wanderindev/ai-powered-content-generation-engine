@@ -110,6 +110,13 @@ class EduMaterialListItem(BaseModel):
     status: str
     published_at: datetime | None = None  # set = live on the public delivery surface (#326)
     has_spanish: bool = False  # a Spanish translation exists (hides the translate action)
+    # Structured guide blocks exist (#340). Gates the fact-check action (#461):
+    # blocks are the correctable target, so a legacy block-less guide can't be
+    # grounded until it is regenerated.
+    has_blocks: bool = False
+    # The deck has slide rows (#464). Gates the fact-check action for a deck the
+    # same way has_blocks does for a guide — the rows are the correctable target.
+    has_slides: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -122,6 +129,8 @@ class EduResearchForMaterials(BaseModel):
     suggestion_id: int
     suggestion_title: str
     grade_bands: list[str] = []
+    # Bands without an APPROVED guide — what a generate run will (re)write.
+    bands_to_generate: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -164,6 +173,10 @@ class EduMaterialDetail(BaseModel):
     excursion_key: str | None = None
     has_spanish: bool = False
     file_url: str | None = None
+    # Guides render one PDF per language at a deterministic key, but the row
+    # stores only the last one rendered on file_url. Both are surfaced here
+    # (None = not rendered yet) so the drawer can link EN and ES side by side.
+    pdf_urls: dict[str, str | None] | None = None
     thumbnail_url: str | None = None
     status: str
     published_at: datetime | None = None  # set = live on the public delivery surface (#326)

@@ -1,10 +1,10 @@
 """
-Tests for the educator API endpoints and the public-media access gate.
+Tests for the educator API endpoints.
 
 The state-machine logic lives in test_educator_service. Here we cover the thin
-API layer (status mapping, 502 error branches) plus the end-to-end gate: that
-``require_educator_access`` actually blocks unauthenticated public-media calls
-(#50) and that a real issued token unlocks them.
+API layer (status mapping, 502 error branches), plus a guard that the public
+media library stays open to anonymous visitors now that its educator gate (#50)
+has been removed.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -158,62 +158,27 @@ class TestUnsubscribeEndpoint:
 
 
 # ---------------------------------------------------------------------------
-# Public-media access gate (#50) — end-to-end through require_educator_access
+# Public media is open to everyone (the #50 educator gate was removed)
 # ---------------------------------------------------------------------------
 
 
-class TestPublicMediaGate:
-    """These use the default test_client (no dependency override), so the real
-    ``require_educator_access`` runs."""
+class TestPublicMediaIsOpen:
+    """The media library no longer requires an educator token. A stale or
+    garbage token from an old localStorage session must not 401 either."""
 
-    def test_list_without_token_is_401(self, test_client):
-        resp = test_client.get("/api/v1/public-media")
-        # ORACLE: the gate must reject anonymous access (the #50 gap).
-        assert resp.status_code == 401
+    @pytest.mark.parametrize(
+        "path",
+        ["/api/v1/public-media", "/api/v1/public-media/stats", "/api/v1/public-media/tags"],
+    )
+    def test_anonymous_access_is_allowed(self, test_client, path):
+        assert test_client.get(path).status_code == 200
 
-    def test_stats_without_token_is_401(self, test_client):
-        assert test_client.get("/api/v1/public-media/stats").status_code == 401
+    def test_detail_without_token_is_404_not_401(self, test_client):
+        assert test_client.get("/api/v1/public-media/1").status_code == 404
 
-    def test_detail_without_token_is_401(self, test_client):
-        assert test_client.get("/api/v1/public-media/1").status_code == 401
-
-    def test_download_without_token_is_401(self, test_client):
-        assert test_client.get("/api/v1/public-media/1/download").status_code == 401
-
-    def test_malformed_authorization_header_is_401(self, test_client):
-        resp = test_client.get(
-            "/api/v1/public-media", headers={"Authorization": "Basic abc"}
-        )
-        assert resp.status_code == 401
-
-    def test_invalid_bearer_token_is_401(self, test_client):
+    def test_stale_bearer_token_is_ignored(self, test_client):
         resp = test_client.get(
             "/api/v1/public-media", headers={"Authorization": "Bearer not-a-real-token"}
         )
-        assert resp.status_code == 401
-
-    def test_expired_token_is_401(self, test_client, test_db):
-        _make_educator(
-            test_db,
-            email="gate-exp@example.com",
-            access_token="gate-expired",
-            access_expires_at=datetime.now(UTC) - timedelta(seconds=1),
-        )
-        resp = test_client.get(
-            "/api/v1/public-media", headers={"Authorization": "Bearer gate-expired"}
-        )
-        assert resp.status_code == 401
-
-    def test_valid_token_unlocks_list(self, test_client, test_db):
-        _make_educator(
-            test_db,
-            email="gate-ok@example.com",
-            access_token="gate-valid",
-            access_expires_at=datetime.now(UTC) + timedelta(days=3),
-        )
-        resp = test_client.get(
-            "/api/v1/public-media", headers={"Authorization": "Bearer gate-valid"}
-        )
-        # ORACLE: a valid issued token unlocks the gated route.
         assert resp.status_code == 200
         assert "items" in resp.json()

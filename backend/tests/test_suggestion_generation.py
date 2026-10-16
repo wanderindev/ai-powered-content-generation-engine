@@ -170,7 +170,7 @@ class TestGenerateHistoricalSuggestions:
 
         # Streamed call (max_tokens over the 8k threshold) lands on messages.stream.
         kwargs = mock_client.messages.stream.call_args.kwargs
-        assert kwargs["model"] == "claude-sonnet-5"
+        assert kwargs["model"] == "claude-sonnet-5-5"
         assert kwargs["thinking"] == {"type": "adaptive"}
         assert kwargs["output_config"] == {"effort": "high"}
 

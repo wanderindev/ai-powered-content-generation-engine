@@ -9,6 +9,20 @@ description: Build production Docker images and push to Digital Ocean container 
 
 Builds production Docker images for backend and frontend, then pushes them to the Digital Ocean container registry. Watchtower running on the production server automatically detects new images and restarts containers.
 
+## Automatic deploys on merge to `main` (#421)
+
+Merges to `main` now build and push `pic-backend` / `pic-frontend` automatically via
+`.github/workflows/deploy.yml`, gated on a green `CI` run and path-filtered so
+docs-only commits build nothing. Each image is pushed with both `latest` and the
+full commit SHA.
+
+This skill remains the **manual escape hatch** and is still the right tool for:
+
+- deploying from a branch (the workflow only ever deploys `main`),
+- `pic-cert-watcher`, which the workflow deliberately does not build,
+- data-only or out-of-band situations where you need to ship without a merge,
+- re-pushing after a failed or skipped workflow run.
+
 ## Registry
 
 - Registry: `registry.digitalocean.com/wanderindev/`
@@ -20,9 +34,11 @@ Builds production Docker images for backend and frontend, then pushes them to th
 
 | Service | Dockerfile | Base | Build context |
 |---------|-----------|------|---------------|
-| Backend | `docker/backend/Dockerfile.prod` | python:3.11-slim + uvicorn | repo root |
-| Frontend | `docker/frontend/Dockerfile.prod` | node:20-alpine (build) → nginx:alpine (serve) | repo root |
-| Cert-watcher | `docker/cert-watcher/Dockerfile` | python:3.12-slim | `docker/cert-watcher/` |
+| Backend | `docker/backend/Dockerfile.prod` | python:3.11-slim (ECR mirror) + uvicorn | repo root |
+| Frontend | `docker/frontend/Dockerfile.prod` | node:20-alpine (build) → nginx:alpine (serve), ECR mirror | repo root |
+| Cert-watcher | `docker/cert-watcher/Dockerfile` | python:3.12-slim (ECR mirror) | `docker/cert-watcher/` |
+
+Base images are pulled from `public.ecr.aws/docker/library/` (the AWS mirror of the Docker official images), not Docker Hub, to avoid anonymous pull limits (#647).
 
 ## Procedure
 

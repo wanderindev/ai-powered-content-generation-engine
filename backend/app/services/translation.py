@@ -11,6 +11,14 @@ Sentry-captured with context before re-raising. No retry/timeout layer is added
 here — the deepl SDK already retries transient failures (429/5xx) with
 exponential backoff and manages connection timeouts internally, so a wrapper
 retry would only double-retry. ``formality`` is a per-call override.
+
+Glossary (#633): with ``deepl_glossary_enabled`` on and ``deepl_glossary_id``
+set, every DeepL call (all three entry points) also passes ``glossary=<id>``
+and an explicit ``source_lang="EN"`` — the SDK refuses a glossary without a
+source language. DeepL glossaries are not regional: one created EN→ES (the
+SDK strips ``ES-419`` to ``ES`` at creation) applies to an ``ES-419`` target,
+so the target dialect is unchanged. Off — or on with no id, which logs one
+warning — the SDK receives exactly the pre-#633 kwargs.
 """
 
 import asyncio
@@ -31,15 +39,74 @@ logger = logging.getLogger(__name__)
 
 Formality = Literal["default", "more", "less", "prefer_more", "prefer_less"]
 
+# The glossary is keyed EN→ES; DeepL requires an explicit source with a glossary.
+GLOSSARY_SOURCE_LANG = "EN"
+
+# --- Spanish thousands separator (#531) ----------------------------------------
+# DeepL (ES-419) writes thousands inconsistently: "1.500" in some articles,
+# "1,500" in others, sometimes both in one. Panama uses the comma form, matching
+# the English source, and DeepL has no separator setting for ES-419, so the
+# output is normalised here. A dot counts as a thousands separator only between
+# a 1-3 digit group that does not start with 0 and exactly three digits, not
+# followed by another digit or a ",d"/".d" continuation — so decimals (3.5,
+# 2.75, 0.125), four-digit years, dates (12.05.1903) and European decimals
+# (1.500,75) are left alone. Chains convert whole: 1.234.567 -> 1,234,567.
+_ES_THOUSANDS_RE = re.compile(r"(?<![\d.,])[1-9]\d{0,2}(?:\.\d{3})+(?!\d|[.,]\d)")
+# Never rewrite inside code or a URL.
+_ES_THOUSANDS_SHIELD_RE = re.compile(
+    r"```.*?```|~~~.*?~~~|(`+)[^`]*?\1|\]\([^)]*\)|<[^>\s]+://[^>\s]*>|https?://[^\s)\]>]+"
+    r"|<(code|pre)\b.*?</\2>",
+    re.DOTALL,
+)
+
+
+def normalize_es_thousands(text: str) -> str:
+    """Rewrite dot-form thousands (``1.500``) to the comma form (``1,500``).
+
+    Idempotent; comma-form numbers, decimals and anything inside code spans,
+    fenced code, ``<code>``/``<pre>`` or URLs are untouched. Shared by
+    ``TranslationService`` and ``scripts.normalize_es_thousands``.
+    """
+    if not text:
+        return text
+    out: list[str] = []
+    last = 0
+    for shield in _ES_THOUSANDS_SHIELD_RE.finditer(text):
+        out.append(
+            _ES_THOUSANDS_RE.sub(
+                lambda m: m.group(0).replace(".", ","), text[last : shield.start()]
+            )
+        )
+        out.append(shield.group(0))
+        last = shield.end()
+    out.append(_ES_THOUSANDS_RE.sub(lambda m: m.group(0).replace(".", ","), text[last:]))
+    return "".join(out)
+
 
 class TranslationService:
     """Service for translating content using DeepL API."""
 
-    def __init__(self, api_key: str):
-        """Initialize with DeepL API key."""
+    def __init__(self, api_key: str, *, glossary_enabled: bool = False, glossary_id: str = ""):
+        """Initialize with DeepL API key and the optional EN→ES glossary (#633)."""
         self.translator = deepl.Translator(api_key)
         self.target_lang = "ES-419"  # Latin American Spanish
         self.md_parser = MarkdownIt("commonmark", {"html": True})
+        self.glossary_id: str | None = None
+        if glossary_enabled:
+            if glossary_id and glossary_id.strip():
+                self.glossary_id = glossary_id.strip()
+            else:
+                # Empty credentials disable a feature, they don't crash it.
+                logger.warning(
+                    "deepl glossary enabled but DEEPL_GLOSSARY_ID is empty; "
+                    "translating without a glossary"
+                )
+
+    def _glossary_kwargs(self) -> dict:
+        """Extra SDK kwargs for the glossary; empty (no change at all) when off."""
+        if not self.glossary_id:
+            return {}
+        return {"source_lang": GLOSSARY_SOURCE_LANG, "glossary": self.glossary_id}
 
     async def translate_text(self, text: str, formality: Formality = "default") -> str:
         """
@@ -57,7 +124,7 @@ class TranslationService:
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, self._sync_translate_text, text, formality)
-        return result
+        return self._normalize(result)
 
     async def translate_markdown(
         self, markdown_content: str, formality: Formality = "default"
@@ -86,7 +153,7 @@ class TranslationService:
         result = await loop.run_in_executor(
             None, self._sync_translate_markdown, markdown_content, formality
         )
-        return result
+        return self._normalize(result)
 
     async def translate_blocks(
         self, blocks: list[dict], formality: Formality = "default"
@@ -113,17 +180,21 @@ class TranslationService:
         timeout is layered here — the deepl SDK handles both internally.
         """
         try:
-            result = self.translator.translate_text(text, target_lang=self.target_lang, **kwargs)
+            result = self.translator.translate_text(
+                text, target_lang=self.target_lang, **kwargs, **self._glossary_kwargs()
+            )
         except deepl.DeepLException as e:
             logger.error("deepl translate failed: chars=%d error=%s", len(text), e)
             sentry_sdk.capture_exception(e)
             raise
         logger.info(
-            "deepl translate: chars=%d detected_source_lang=%s target_lang=%s formality=%s",
+            "deepl translate: chars=%d detected_source_lang=%s target_lang=%s formality=%s"
+            " glossary=%s",
             len(text),
             getattr(result, "detected_source_lang", "?"),
             self.target_lang,
             kwargs.get("formality", "default"),
+            self.glossary_id or "off",
         )
         return result
 
@@ -176,7 +247,10 @@ class TranslationService:
         total_chars = sum(len(t) for t in texts)
         try:
             results = self.translator.translate_text(
-                texts, target_lang=self.target_lang, formality=formality
+                texts,
+                target_lang=self.target_lang,
+                formality=formality,
+                **self._glossary_kwargs(),
             )
         except deepl.DeepLException as e:
             logger.error(
@@ -188,11 +262,12 @@ class TranslationService:
             sentry_sdk.capture_exception(e)
             raise
         logger.info(
-            "deepl translate batch: items=%d chars=%d target_lang=%s formality=%s",
+            "deepl translate batch: items=%d chars=%d target_lang=%s formality=%s glossary=%s",
             len(texts),
             total_chars,
             self.target_lang,
             formality,
+            self.glossary_id or "off",
         )
         # translate_text returns a single result for a str, a list for a list.
         if not isinstance(results, list):
@@ -275,8 +350,14 @@ class TranslationService:
             return out
 
         for set_, translated in zip(setters, self._translate_many(texts, formality), strict=True):
-            set_(translated)
+            set_(self._normalize(translated))
         return out
+
+    def _normalize(self, text: str) -> str:
+        """Post-process DeepL output for the target locale (#531: ES thousands)."""
+        if self.target_lang.upper().startswith("ES"):
+            return normalize_es_thousands(text)
+        return text
 
     def _protect_code_blocks(self, html: str) -> str:
         """
@@ -324,4 +405,8 @@ def get_translation_service() -> TranslationService | None:
     settings = get_settings()
     if not settings.deepl_api:
         return None
-    return TranslationService(settings.deepl_api)
+    return TranslationService(
+        settings.deepl_api,
+        glossary_enabled=settings.deepl_glossary_enabled,
+        glossary_id=settings.deepl_glossary_id,
+    )
