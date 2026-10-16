@@ -67,7 +67,7 @@ There are four gates:
 - **Article claims resolved**: the same test on the article, between its fact-check and the corrections. Claims the research doesn't cover now go to deep research instead of being marked unverifiable, so this gate has teeth.
 - **Grammarly EN** and **Grammarly ES**: a `grammar_checked_en_at` / `_es_at` stamp on the article, written by the extension when I apply a proofread.
 
-Readiness flows the other way too. The admin articles endpoint exposes `ready_for_grammar_en` and `_es`, true only while that article's wait row is READY or WAITING, and the extension builds its Grammarly queue from them.
+Readiness is meant to flow the other way too. The admin articles endpoint exposes `ready_for_grammar_en` and `_es`, true only while that article's wait row is READY or WAITING. The extension doesn't read them yet: it still applies its own rule (an approved article with content and no grammar stamp for that language, or any such article when drafts are included in its settings). Driven articles stay drafts until the driver approves them at the end, so the extension offers them only with drafts included, and then it can offer one before its wait is ready. Switching it to the flags is an open follow-up.
 
 That changes the honest description of the pipeline. "A human approves every step" stopped being literally true: the driver approves outlines and articles and picks the publish date. The human gates moved to where the judgement is: which research goes in, which claims are true, and whether the prose reads right in both languages. Anything an agent wants to publish outside this graph goes through the approvals queue on [the MCP page](11-mcp-server.md).
 

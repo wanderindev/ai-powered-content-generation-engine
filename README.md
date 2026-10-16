@@ -39,12 +39,12 @@ operate under.
 
 ## Tech Stack
 
-- **Frontend**: React 19, Vite, Tailwind CSS 4, i18next, React Router
+- **Frontend**: React 19, Vite 6, Tailwind CSS 4, i18next 23, React Router 7
 - **Backend**: FastAPI, SQLAlchemy 2.0 (sync), Pydantic 2, Alembic
 - **Database**: PostgreSQL 17 + pgvector
 - **AI**: Anthropic (Opus, Sonnet, Haiku), Voyage embeddings + rerank, Gemini feature images, DeepL translation, ElevenLabs narration
 - **Agents**: an MCP server (official Python SDK) mounted inside the FastAPI app
-- **Infrastructure**: Docker Compose, DigitalOcean (Droplet + Managed Postgres + Spaces), Sentry
+- **Infrastructure**: Docker Compose, GitHub Actions (CI + deploy-on-merge), DigitalOcean (Droplet + Managed Postgres + Spaces + Container Registry), Sentry
 
 ## How the Project Is Organized
 
@@ -52,7 +52,7 @@ operate under.
 frontend/            React SPA (Vite + Tailwind)
   src/components/    UI components (public site + admin CMS)
   src/pages/         Route-level pages
-  public/locales/    i18next translations (es = default, en = fallback)
+  public/locales/    i18next translations (es and en; browser-detected, es as fallback)
 backend/             FastAPI API server
   app/api/           Routers, grouped by domain (articles, tours, edu, admin, …)
   app/models/        SQLAlchemy models (+ enums.py as the status vocabulary)
@@ -62,8 +62,11 @@ backend/             FastAPI API server
   app/mcp/           MCP server: scoped tools, audit, approval requests
   tests/             pytest suite (runs against a throwaway Postgres container)
   alembic/           Database migrations
-docker/              Production Dockerfiles (backend, frontend, cert-watcher)
-scripts/             Operational scripts (incl. scripts/run-tests.sh)
+  scripts/           Backend operational scripts (imports, backfills, reindex, evals)
+  eval/              RAG evaluation sets and results
+docker/              Production Dockerfiles (backend, frontend, cert-watcher) and the CI test-db image
+scripts/             Repo scripts (incl. scripts/run-tests.sh) and one-off maintenance scripts
+.github/workflows/   CI (gitleaks, pytest + ruff, frontend lint + build) and deploy-on-merge
 docs/                The 14-part system write-up, plus docs/claude/ (agent reference docs)
 .claude/             Agentic development config: skills, hooks, permission fence
 CLAUDE.md            Project constitution for AI-assisted development
@@ -74,7 +77,7 @@ CLAUDE.md            Project constitution for AI-assisted development
 ### 1. Clone and configure environment
 
 ```bash
-git clone git@github.com:wanderindev/ai-powered-content-generation-engine.git
+git clone https://github.com/wanderindev/ai-powered-content-generation-engine.git
 cd ai-powered-content-generation-engine
 
 # Copy environment templates
@@ -82,21 +85,21 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-The templates document every variable the app reads. For local development the
-defaults mostly work as-is: Docker Compose provides a local PostgreSQL and a
-MinIO object-storage sidecar, so at minimum you only need `DATABASE_URL`
-(already pointed at the compose db). Add real keys only for the features you
-want to exercise:
+The templates cover the main variables; `backend/app/core/config.py`
+(`Settings`) is the full list, with a default for each. For local development
+nothing is required to boot: Docker Compose provides a local PostgreSQL and a
+MinIO object-storage sidecar, and sets `DATABASE_URL` to the compose db for
+you. Add real keys only for the features you want to exercise:
 
 | Variable | Enables |
 |----------|---------|
-| `ANTHROPIC_API_KEY` | Article generation, fact-checking, media scoring, Ask PIC |
+| `ANTHROPIC_API_KEY` | Article generation, fact-checking, media scoring, Ask PIC (which also needs `ASK_PIC_ENABLED=true` and `ASK_PIC_IP_HASH_SECRET`) |
 | `VOYAGE_API_KEY` | Knowledge layer: embeddings, rerank, related articles |
 | `GEMINI_API_KEY` | Feature-image generation |
 | `DEEPL_API` | Spanish ↔ English translation |
-| `ELEVENLABS_API_KEY` | Narrated slide-deck videos |
-| `PAYPAL_CLIENT_ID` / `SECRET` | Checkout + webhook verification (sandbox by default) |
-| `INSTAGRAM_ACCESS_TOKEN` / `ACCOUNT_ID` | Instagram publishing (disabled when empty) |
+| `ELEVENLABS_API_KEY` / `ELEVENLABS_VOICE_DIEGO` | Narration for slide-deck videos and article audio |
+| `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | Checkout + webhook verification (sandbox by default) |
+| `INSTAGRAM_ACCESS_TOKEN` / `INSTAGRAM_ACCOUNT_ID` | Instagram drafts and scheduling; posting also needs `INSTAGRAM_PUBLISHING_ENABLED=true` |
 
 ### 2. Start all services
 
@@ -105,7 +108,7 @@ docker-compose up -d
 ```
 
 - **frontend** at `http://localhost:5173` (hot reload)
-- **backend** at `http://localhost:8000` (hot reload; Swagger UI at `/docs`)
+- **backend** at `http://localhost:8000` (source is mounted, but uvicorn runs without `--reload`: restart the container after edits; Swagger UI at `/docs`)
 - **db** (PostgreSQL) on port `5433` (mapped to avoid conflicts)
 - **minio** (S3-compatible storage) standing in for DigitalOcean Spaces
 
@@ -136,6 +139,12 @@ docker-compose exec backend ruff check /app --fix
 docker-compose exec backend ruff format /app
 ```
 
+Frontend (the same checks as CI):
+
+```bash
+cd frontend && npm ci && npm run lint && npm run build
+```
+
 A [pre-commit](https://pre-commit.com/) hook runs **gitleaks** against staged
 changes so secrets never land in a commit (same config as the CI job):
 
@@ -153,19 +162,25 @@ for the full picture):
    point `DATABASE_URL` at it.
 2. **Spaces** — an S3-compatible bucket for media, plus its CDN endpoint
    (`DO_SPACES_*` variables).
-3. **Container Registry** — build the production images and push:
+3. **Container Registry** — merging to main is the deploy. After CI passes,
+   `.github/workflows/deploy.yml` builds whichever of `pic-backend` /
+   `pic-frontend` changed (from `docker/backend/Dockerfile.prod` and
+   `docker/frontend/Dockerfile.prod`) and pushes `latest` plus a commit-SHA
+   tag. Only the cert-watcher image is built by hand:
    ```bash
-   docker build -f docker/backend/Dockerfile.prod  -t registry.digitalocean.com/<registry>/backend:latest .
-   docker build -f docker/frontend/Dockerfile.prod -t registry.digitalocean.com/<registry>/frontend:latest .
-   docker build -t registry.digitalocean.com/<registry>/cert-watcher:latest docker/cert-watcher
-   docker push  # each image
+   docker build -t registry.digitalocean.com/<registry>/pic-cert-watcher:latest docker/cert-watcher
+   docker push registry.digitalocean.com/<registry>/pic-cert-watcher:latest
    ```
 4. **Droplet** — copy `docker-compose.prod.yml` and a filled-in `.env`
-   (template: [`.env.example`](.env.example), `chmod 600`), then
+   (template: [`.env.example`](.env.example), `chmod 600`), create the
+   external network once (`docker network create shared-web`), then
    `docker-compose -f docker-compose.prod.yml up -d`. The stack includes
    [Watchtower](https://containrrr.dev/watchtower/), which polls the registry
    and auto-deploys new images within ~5 minutes of a push.
-5. **TLS + monitoring** — the frontend container terminates TLS (certbot);
+5. **TLS + monitoring** — the frontend container's nginx terminates TLS
+   (Let's Encrypt under `/opt/letsencrypt`, renewed by a certbot sidecar) and
+   is the droplet's single public entry point, reverse-proxying the other
+   sites that share it;
    the `cert-watcher` sidecar probes certificate expiry daily and reports to a
    Sentry cron monitor. Run `alembic upgrade head` on the droplet after any
    deploy that ships a migration — there is deliberately no auto-migrate on

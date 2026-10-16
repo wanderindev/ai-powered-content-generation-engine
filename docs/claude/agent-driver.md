@@ -286,14 +286,19 @@ after the corrections so a correction never rewrites Grammarly'd text, and
 before `TRANSLATE` so the Spanish is made from the polished English. Three
 traps:
 
-- **The extension's readiness comes from the same rows.**
+- **The extension's readiness is meant to come from the same rows.**
   `GET /admin/dashboard/articles` (the extension's queue) exposes
   `ready_for_grammar_en` / `_es`, true only while that article's wait is
   `READY` / `WAITING` — so `PENDING` (corrections or translation still ahead),
   `LEASED`, `DONE` and `SKIPPED` all read false, and so does any stamped
   article. An article with **no** wait task (not pipeline-driven, or planned
-  before #556) keeps the old has-content-and-no-stamp rule. Skipping a wait from
-  the admin queue therefore also drops it from the extension's queue.
+  before #556) keeps the old has-content-and-no-stamp rule. The extension
+  doesn't read these flags yet (it still queues on content-and-no-stamp,
+  `APPROVED` only unless `grammarIncludeDrafts` is on, until pic-extension#38
+  lands). Driven articles are drafts until `APPROVE_ARTICLE`, so by default it
+  doesn't offer them during the waits; with drafts included it can offer one
+  whose wait is still `PENDING`; once it does, skipping a wait from the admin queue will also drop
+  it from the extension's queue.
 - **In-flight chains keep their LLM rows.** When the article already has a
   `GRAMMAR_CHECK_EN` (or `_ES`) row, the planner chains off it and plans no
   wait (`_LEGACY_GRAMMAR` in `weekly_plan.py`) — the next step's `depends_on`
@@ -336,7 +341,7 @@ with `ck_agent_tasks_kind`). Four traps:
   (`_ES_GRAMMAR_KINDS` in `weekly_plan.py`): that row already depends on
   `TRANSLATE` and is never rewritten, so a check planned now would run in
   parallel with Grammarly instead of before it. Because the ES wait now depends
-  on the check, the extension's `ready_for_grammar_es` stays false until the
+  on the check, `ready_for_grammar_es` stays false until the
   check is `DONE` (the wait is `PENDING` until then).
 
 **The publish date is picked when the series is finished (#558).** With the

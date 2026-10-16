@@ -502,11 +502,14 @@ never sees markdown and never holds the series sections:
   Note the empty-`accepted` shortcut above is a *stamp-only* write, so
   `stamp=False` with an empty `accepted` list writes nothing at all.
 - **The queue is `GET /admin/dashboard/articles`, and readiness is server-side
-  (#556).** The extension lists every article and, until pic-extension#38,
-  queues `has_content` / `has_spanish` with no stamp. `ArticleListItem` now also
+  (#556).** The extension lists every article and queues `has_content` /
+  `has_spanish` with no stamp, `APPROVED` only unless its `grammarIncludeDrafts`
+  setting is on; it does **not** read the flags below yet (pic-extension#38,
+  open). Pipeline-driven articles are drafts until `APPROVE_ARTICLE`, so by
+  default it doesn't offer them during the waits at all. `ArticleListItem` now also
   carries `ready_for_grammar_en` / `_es`: for an article the agent driver is
   running (it has a `WAIT_GRAMMAR_CHECKED_<LANG>` task) it is true only while
-  that wait is `READY` / `WAITING`, so Grammarly never polishes text a pending
+  that wait is `READY` / `WAITING`, so that (once the extension reads it) Grammarly never polishes text a pending
   fact-check correction (or, for ES, the translation) would rewrite; with no
   wait task it is the old content-and-no-stamp rule. A stamp always makes it
   false. Computed from one grouped `agent_tasks` query (`_grammar_wait_states`
